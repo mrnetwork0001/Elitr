@@ -76,7 +76,16 @@ const STEPS: { n: string; title: string; body: string; api: string }[] = [
   { n: "05", title: "Quote the trade", body: "Asks the aggregator for the best route. Only regular swap routes are accepted, because only those can be simulated.", api: "Trading API" },
   { n: "06", title: "Run the risk checks", body: "14 rules on a buy (portfolio cap included), 6 on a sell. Every rule is logged with its observed value and limit. One failure and the agent holds.", api: "Risk engine" },
   { n: "07", title: "Dry-run, then fill", body: "The swap is simulated first. In paper mode a passing simulation is booked at the real quoted amounts; in live mode the agent signs locally and broadcasts.", api: "Transaction API" },
-  { n: "08", title: "Score the analyst", body: "When a signal's horizon ends (1 hour for news, 30 minutes for flow), the trader checks the pool price: was the call right, and by how many basis points? It updates that analyst's hit rate, trust and weight, and can post the rating on-chain to the ERC-8004 reputation registry.", api: "Reputation" },
+  { n: "08", title: "Score the analyst", body: "When a signal's horizon ends (1 hour for news, 30 minutes for flow), the trader checks the pool price: was the call right, and by how many basis points? It updates that analyst's hit rate, trust and weight, and posts the rating on-chain to the ERC-8004 reputation registry.", api: "Reputation" },
+];
+
+const TX = "https://bscscan.com/tx/";
+const PROOF: [string, string, string][] = [
+  ["ERC-8004 identities", "News analyst #365554 · Flow analyst #365555 · Trader #365556", "0x81f46ff719e2a7c244ccb39622ae05fd9960883bd19000e0c731c60a8c168237"],
+  ["Agent pays agent (b402)", "Trader → flow analyst, 0.01 USDT for a signal, settled by Binance's facilitator", "0xe2a30c0801799c2b1c128fdc4e332c8485ce3249eacedd52470e2b1971a6c49f"],
+  ["Agent rates agent (ERC-8004)", "Trader posts the news analyst's accuracy to the reputation registry", "0xf09e9f6edd8d64d0fd4f4a75f463ba2106093b16b2f986ad774c7b584aa887d6"],
+  ["Live trade", "2 USDT → 0.008433 NVDAB, simulated with the Transaction API, then broadcast", "0x0ce91120a0e7f14792a20565aa99f4a1819afafc0d1f1e9ee51ee3e36aa03807"],
+  ["Binance Agentic Wallet buys a signal", "Paid in U via EIP-3009, no approval needed, 3.5 s from signature to signal", "0xd2535021423ae6d30b4bbc6fde8f2b58fc0bc22dba7831c7d97c7eed78ca2e4e"],
 ];
 
 const B402_STEPS = [
@@ -199,7 +208,7 @@ const FAQ: [string, ReactNode][] = [
   ],
   [
     "What is ERC-8004?",
-    "A standard for on-chain agent identity and reputation. Each Elitr agent gets an ERC-8004 identity on BSC, and the trader posts every analyst's accuracy to the reputation registry, so any other agent can read an analyst's record before buying from it. The code is built and tested against the live BSC registries; Elitr's agents are being registered on mainnet now.",
+    "A standard for on-chain agent identity and reputation. Each Elitr agent gets an ERC-8004 identity on BSC, and the trader posts every analyst's accuracy to the reputation registry, so any other agent can read an analyst's record before buying from it. Elitr's three agents are registered on BSC mainnet (#365554 news analyst, #365555 flow analyst, #365556 trader), and the trader has been posting ratings since 7 Oct 2026.",
   ],
   [
     "Can I check the agents myself?",
@@ -297,6 +306,40 @@ export function Sections() {
             </div>
           ))}
         </dl>
+      </Section>
+
+      {/* On-chain proof */}
+      <Section id="proof">
+        <Head
+          idx="LIVE"
+          eyebrow="On-chain proof"
+          title={{ lead: "Not a mock-up. ", muted: "Real agents, ", accent: "real transactions." }}
+          intro="Elitr runs live on BSC mainnet. Every row below is a transaction the system made itself — open any of them on BscScan."
+        />
+        <div {...reveal("fade", 0, l.scrollX)}>
+          <table className={cx(l.table, l.proofTable)}>
+            <thead>
+              <tr>
+                <th scope="col">What happened</th>
+                <th scope="col">Details</th>
+                <th scope="col">Transaction</th>
+              </tr>
+            </thead>
+            <tbody>
+              {PROOF.map(([what, detail, hash]) => (
+                <tr key={hash}>
+                  <td>{what}</td>
+                  <td>{detail}</td>
+                  <td>
+                    <a className={l.proofLink} href={`${TX}${hash}`} target="_blank" rel="noreferrer">
+                      {hash.slice(0, 10)}…{hash.slice(-4)} ↗
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Section>
 
       {/* Problem */}
@@ -439,12 +482,12 @@ export function Sections() {
           ))}
         </div>
         <div {...reveal("wipe", 0.1, l.callout)}>
-          <span className={l.calloutTag}>Built · registering</span>
+          <span className={l.calloutTag}>Live on BSC</span>
           <p>
             <strong>Agents rating agents, on-chain.</strong> Each agent gets an ERC-8004 identity on BSC, and after every scored call the trader posts the
-            analyst&apos;s accuracy to the ERC-8004 reputation registry, where any other agent can check it before paying. The integration is built and
-            tested end to end against BSC mainnet&apos;s live registries; registering Elitr&apos;s agents on mainnet is the remaining step. The dashboard
-            shows an identity and an on-chain rating only once they exist.
+            analyst&apos;s accuracy to the ERC-8004 reputation registry, where any other agent can check it before paying. Elitr&apos;s agents are
+            registered on BSC mainnet as <strong>#365554</strong> (news analyst), <strong>#365555</strong> (flow analyst) and <strong>#365556</strong>{" "}
+            (trader), and the trader posts a rating after every scored call. Every identity and rating links to BscScan from the dashboard.
           </p>
         </div>
       </Section>

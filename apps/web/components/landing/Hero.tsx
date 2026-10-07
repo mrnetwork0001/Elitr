@@ -4,10 +4,11 @@ import { useEffect, useState, type CSSProperties } from "react";
 import s from "@/app/hero.module.css";
 
 const LINKS = [
-  ["How it works", "#how", "0.02s"],
-  ["Analysts", "#market", "0.08s"],
-  ["Safety", "#safety", "0.14s"],
-  ["FAQ", "#faq", "0.2s"],
+  ["Proof", "#proof", "0.02s"],
+  ["How it works", "#how", "0.08s"],
+  ["Analysts", "#market", "0.14s"],
+  ["Safety", "#safety", "0.2s"],
+  ["FAQ", "#faq", "0.26s"],
 ] as const;
 
 const d = (delay: string) => ({ "--d": delay }) as CSSProperties;

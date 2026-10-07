@@ -4,6 +4,7 @@ import l from "@/app/landing.module.css";
 import { Mark, cx } from "./parts";
 
 const LINKS = [
+  ["Proof", "proof"],
   ["How it works", "how"],
   ["Analysts", "market"],
   ["Safety", "safety"],
