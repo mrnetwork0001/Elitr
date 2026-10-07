@@ -96,3 +96,18 @@ export const IconRun = (p: P) => (
     <path d="M6 4v12l9.5-6z" fill="currentColor" />
   </Svg>
 );
+
+// Sidebar collapse / expand: a panel edge with a chevron.
+export const IconCollapse = (p: P) => (
+  <Svg {...p}>
+    <path d="M3.5 3.5h13v13h-13zM7.5 3.5v13" />
+    <path d="M13 7.5 10.5 10l2.5 2.5" />
+  </Svg>
+);
+
+export const IconExpand = (p: P) => (
+  <Svg {...p}>
+    <path d="M3.5 3.5h13v13h-13zM7.5 3.5v13" />
+    <path d="M10.5 7.5 13 10l-2.5 2.5" />
+  </Svg>
+);

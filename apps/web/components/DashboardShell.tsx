@@ -13,7 +13,9 @@ import {
   IconActivity,
   IconAnalysts,
   IconClose,
+  IconCollapse,
   IconControls,
+  IconExpand,
   IconMarkets,
   IconMenu,
   IconOverview,
@@ -60,7 +62,7 @@ function Brand({ compact = false }: { compact?: boolean }) {
       </span>
       <span className="flex min-w-0 flex-col">
         <span className="text-[17px] leading-none font-semibold tracking-[-0.03em] text-fg">Elitr</span>
-        {compact ? null : <span className="mt-1.5 text-[10px] leading-none font-medium tracking-[0.18em] text-faint uppercase">Agent trading desk</span>}
+        {compact ? null : <span className="mt-1.5 text-[10px] leading-none font-medium tracking-[0.12em] whitespace-nowrap text-faint uppercase">Agent trading desk</span>}
       </span>
     </Link>
   );
@@ -116,7 +118,7 @@ function KillChip() {
 
 // ---------------------------------------------------------------- sidebar
 
-function NavList({ items, pathname, onNavigate }: { items: NavItem[]; pathname: string; onNavigate?: () => void }) {
+function NavList({ items, pathname, onNavigate, collapsed = false }: { items: NavItem[]; pathname: string; onNavigate?: () => void; collapsed?: boolean }) {
   const d = useDashboard();
   const current = activeItem(pathname);
   const badge = (k?: BadgeKey): { text: string; label: string; tone: "count" | "new" | "warn" } | null => {
@@ -138,14 +140,23 @@ function NavList({ items, pathname, onNavigate }: { items: NavItem[]; pathname: 
               href={n.href}
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
-              className={`group relative flex h-11 items-center gap-3 pr-3 pl-4 text-[14px] transition-colors lg:h-10 ${
+              title={collapsed ? (b ? `${n.label} · ${b.label}` : n.label) : undefined}
+              className={`group relative flex h-11 items-center text-[14px] transition-colors lg:h-10 ${collapsed ? "justify-center" : "gap-3 pr-3 pl-4"} ${
                 active ? "bg-ink font-semibold text-white" : "font-medium text-dim hover:bg-panel-2 hover:text-fg"
               }`}
             >
               <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-[3px] ${active ? "bg-accent" : "bg-transparent group-hover:bg-line-strong"}`} />
               <Icon className={`size-[18px] ${active ? "text-[var(--color-accent)]" : "text-faint group-hover:text-fg"}`} />
-              <span className="min-w-0 flex-1 truncate">{n.label}</span>
-              {b ? (
+              <span className={collapsed ? "sr-only" : "min-w-0 flex-1 truncate"}>{n.label}</span>
+              {b && collapsed ? (
+                <>
+                  <span
+                    aria-hidden="true"
+                    className={`absolute top-2 right-3.5 size-2 ${b.tone === "warn" ? "bg-neg" : b.tone === "new" ? "bg-accent" : active ? "bg-white/70" : "bg-line-strong"}`}
+                  />
+                  <span className="sr-only">, {b.label}</span>
+                </>
+              ) : b ? (
                 <>
                   <span
                     aria-hidden="true"
@@ -169,6 +180,40 @@ function NavList({ items, pathname, onNavigate }: { items: NavItem[]; pathname: 
         );
       })}
     </ul>
+  );
+}
+
+function StatusRail() {
+  const d = useDashboard();
+  const execUp = d.stateStatus === "ok";
+  return (
+    <section aria-label="Desk status" className="flex flex-col items-center gap-3 border border-line bg-bg py-3">
+      <ul className="flex flex-col items-center gap-2.5">
+        {AGENTS.map((a) => {
+          const st = d.conn[a.id as AgentId]?.status ?? "connecting";
+          return (
+            <li key={a.id} title={`${SHORT[a.id] ?? a.name}: ${DOT_LABEL[st]}`} className="grid size-4 place-items-center">
+              <StatusDot status={st} />
+              <span className="sr-only">
+                {SHORT[a.id] ?? a.name}: {DOT_LABEL[st]}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      {d.canControl ? (
+        <button
+          type="button"
+          onClick={() => void d.act("cycle")}
+          disabled={!execUp || d.busy !== null || d.killed}
+          aria-label={d.busy === "cycle" ? "Running cycle" : "Run cycle"}
+          title={!execUp ? "Execution agent offline" : d.killed ? "Kill switch engaged" : "Run cycle"}
+          className="grid size-10 place-items-center bg-accent text-ink transition-colors hover:bg-[#ffc81a] disabled:cursor-not-allowed disabled:bg-line disabled:text-dim"
+        >
+          <IconRun className="size-3.5" />
+        </button>
+      ) : null}
+    </section>
   );
 }
 
@@ -239,10 +284,58 @@ function StatusCard() {
   );
 }
 
-function SidebarContent({ pathname, onClose, closeRef, onNavigate }: { pathname: string; onClose?: () => void; closeRef?: React.Ref<HTMLButtonElement>; onNavigate?: () => void }) {
+function SidebarContent({
+  pathname,
+  onClose,
+  closeRef,
+  onNavigate,
+  collapsed = false,
+  onToggle,
+}: {
+  pathname: string;
+  onClose?: () => void;
+  closeRef?: React.Ref<HTMLButtonElement>;
+  onNavigate?: () => void;
+  collapsed?: boolean;
+  onToggle?: () => void;
+}) {
+  const toggle = onToggle ? (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      aria-expanded={!collapsed}
+      aria-controls="dash-sidebar"
+      title={`${collapsed ? "Expand" : "Collapse"} sidebar  [`}
+      className="grid size-8 shrink-0 place-items-center text-faint transition-colors hover:bg-panel-2 hover:text-fg"
+    >
+      {collapsed ? <IconExpand className="size-[18px]" /> : <IconCollapse className="size-[18px]" />}
+    </button>
+  ) : null;
+
+  if (collapsed)
+    return (
+      <div className="flex h-full min-h-0 flex-col items-center">
+        <div className="flex shrink-0 flex-col items-center gap-2 border-b border-line py-3.5 w-full">
+          <Link href="/" aria-label="Elitr — about the project" title="Elitr" className="grid size-9 place-items-center bg-ink">
+            <LogoMark className="h-[18px] w-auto text-[var(--color-accent)]" />
+          </Link>
+          {toggle}
+        </div>
+        <nav aria-label="Dashboard" className="w-full flex-1 overflow-y-auto px-2 py-4">
+          <NavList items={NAV.filter((n) => n.group === "desk")} pathname={pathname} onNavigate={onNavigate} collapsed />
+          <div className="mx-3 my-3 h-px bg-line" aria-hidden="true" />
+          <NavList items={NAV.filter((n) => n.group === "operate")} pathname={pathname} onNavigate={onNavigate} collapsed />
+        </nav>
+        <div className="w-full shrink-0 px-2 pb-4">
+          <StatusRail />
+        </div>
+      </div>
+    );
+
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-line px-5">
+      <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-line pr-3 pl-5">
         <Brand />
         {onClose ? (
           <button
@@ -254,7 +347,9 @@ function SidebarContent({ pathname, onClose, closeRef, onNavigate }: { pathname:
           >
             <IconClose />
           </button>
-        ) : null}
+        ) : (
+          toggle
+        )}
       </div>
       <nav aria-label="Dashboard" className="flex-1 overflow-y-auto px-3 py-5">
         <p className="mb-2 px-4 text-[10px] font-semibold tracking-[0.18em] text-faint uppercase" aria-hidden="true">
@@ -272,6 +367,43 @@ function SidebarContent({ pathname, onClose, closeRef, onNavigate }: { pathname:
       </div>
     </div>
   );
+}
+
+// Desktop sidebar collapse, remembered per browser; "[" toggles it.
+const COLLAPSE_KEY = "elitr.sidebar.collapsed";
+
+function useCollapsed() {
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(COLLAPSE_KEY) === "1") setCollapsed(true);
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
+  const toggle = useCallback(() => {
+    setCollapsed((c) => {
+      const next = !c;
+      try {
+        window.localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "[" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      if (!window.matchMedia("(min-width: 1024px)").matches) return;
+      toggle();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [toggle]);
+  return { collapsed, toggle };
 }
 
 // ---------------------------------------------------------------- drawer
@@ -420,6 +552,7 @@ function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "/dashboard";
   const item = activeItem(pathname);
   const drawer = useDrawer(pathname);
+  const side = useCollapsed();
   const { markActivitySeen, liveIds } = useDashboard();
   const onActivity = item.href === "/dashboard/activity";
 
@@ -428,14 +561,17 @@ function Shell({ children }: { children: ReactNode }) {
   }, [onActivity, liveIds, markActivitySeen]);
 
   return (
-    <div className="dash-shell min-h-dvh lg:pl-[272px]">
+    <div className={`dash-shell min-h-dvh transition-[padding] duration-200 motion-reduce:transition-none ${side.collapsed ? "lg:pl-[76px]" : "lg:pl-[272px]"}`}>
       <a href="#dash-main" className="sr-only z-50 bg-ink px-4 py-3 text-sm font-semibold text-white focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
         Skip to content
       </a>
 
       {/* Desktop: permanent sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[272px] border-r border-line bg-panel lg:block">
-        <SidebarContent pathname={pathname} />
+      <aside
+        id="dash-sidebar"
+        className={`fixed inset-y-0 left-0 z-30 hidden overflow-hidden border-r border-line bg-panel transition-[width] duration-200 motion-reduce:transition-none lg:block ${side.collapsed ? "w-[76px]" : "w-[272px]"}`}
+      >
+        <SidebarContent pathname={pathname} collapsed={side.collapsed} onToggle={side.toggle} />
       </aside>
 
       {/* Mobile: top bar + drawer */}
