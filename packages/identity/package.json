@@ -1,0 +1,33 @@
+{
+  "name": "@elitr/identity",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsc -p tsconfig.json && node --test dist/*.test.js",
+    "register": "tsx src/cli.ts register",
+    "card": "tsx src/cli.ts card",
+    "set-uri": "tsx src/cli.ts set-uri",
+    "show": "tsx src/cli.ts show"
+  },
+  "dependencies": {
+    "@elitr/shared": "workspace:*",
+    "viem": "^2.57.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "elitr-identity": "dist/cli.js"
+  }
+}
