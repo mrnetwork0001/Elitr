@@ -27,3 +27,17 @@ logs/
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# BNB Agent Studio workspaces (studio/*) — secrets + build output.
+# .studio/ holds the encrypted wallet keystore, WALLET_PASSWORD, Pieverse key,
+# B402 merchant credentials (+ .studio/b402/ RSA keys) and run logs.
+studio/**/.studio/
+studio/**/.env.local
+studio/**/.env
+studio/**/node_modules/
+studio/**/dist/
+studio/**/vendor/*.tgz
+# `bag dev --container` writes the runtime secret bundle here.
+studio/**/agentcore/.env.local
+# Regenerable via `bag skills install`.
+studio/**/.claude/skills/
