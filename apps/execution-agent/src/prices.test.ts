@@ -33,3 +33,10 @@ test("decimal adjustment: 18-dec token0 vs 6-dec token1", () => {
 test("rejects a zero price", () => {
   assert.throws(() => priceFromSqrtX96(0n, 18, 18, true));
 });
+
+import { safeGasLimit } from "./trade.js";
+test("safeGasLimit takes the larger of suggested and simulated gas, plus 25%", () => {
+  assert.equal(safeGasLimit("450000", "457414", "t"), 571767n);
+  assert.equal(safeGasLimit("500000", "457414", "t"), 625000n);
+  assert.equal(safeGasLimit("450000", undefined, "t"), 562500n);
+});

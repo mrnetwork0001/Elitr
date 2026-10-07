@@ -148,6 +148,17 @@ export async function quoteSwap(
   };
 }
 
+/**
+ * Gas limit for a live send: the larger of the API-suggested limit and the Transaction API's simulated
+ * gas, plus 25% headroom. The Trading API's /swap tx.gas (450,000) once came in below the simulated
+ * usage (457,414) and the swap reverted out of gas on-chain (tx 0xc52edf5c…bfa6, 2026-10-07).
+ */
+export function safeGasLimit(suggested: unknown, simulated: string | undefined, label: string): bigint {
+  const a = toBig(suggested, label);
+  const b = simulated && /^\d+$/.test(simulated) ? BigInt(simulated) : 0n;
+  return ((a > b ? a : b) * 125n) / 100n;
+}
+
 /** Back-compat wrapper for the buy leg. */
 export const quoteBuy = (binance: BinanceWeb3Client, asset: TokenizedStock, owner: Address, amountIn: bigint) =>
   quoteSwap(binance, "buy", asset, owner, amountIn);
@@ -235,7 +246,7 @@ export async function executeSwap(
         const { txHash: approveHash } = await sendTx(
           d,
           label,
-          { to: from.address, data: ap.data, value: 0n, gas: toBig(ap.gasLimit, "approve.gasLimit"), gasPrice: toBig(ap.gasPrice, "approve.gasPrice") },
+          { to: from.address, data: ap.data, value: 0n, gas: safeGasLimit(ap.gasLimit, sim.gasUsed, "approve.gasLimit"), gasPrice: toBig(ap.gasPrice, "approve.gasPrice") },
           side,
         );
         d.hub.emit({ type: "tx.confirmed", symbol: label, txHash: approveHash, amountIn: `approve ${formatUnits(amountIn, from.decimals)} ${from.symbol}`, amountOut: "0", side });
@@ -280,7 +291,7 @@ export async function executeSwap(
       to: tx.to,
       data: tx.data,
       value,
-      gas: toBig(tx.gas, "swap.gas"),
+      gas: safeGasLimit(tx.gas, sim.gasUsed, "swap.gas"),
       gasPrice: toBig(tx.gasPrice, "swap.gasPrice"),
       maxPriorityFeePerGas: tx.maxPriorityFeePerGas ? toBig(tx.maxPriorityFeePerGas, "swap.maxPriorityFeePerGas") : undefined,
     },
