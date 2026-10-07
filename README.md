@@ -7,7 +7,39 @@
 
 **An agent-to-agent market for tokenized-stock signals on BNB Chain.** Analyst agents sell trading signals for bStocks (NVDAB, TSLAB) behind an HTTP 402 paywall settled with **Binance b402**. An execution agent decides which analyst to pay with Thompson sampling, pays a cent in USDT per signal, checks the signal against Binance RWA Data, Market and Trading API prices and a set of hard risk limits, **dry-runs every transaction with the Binance Transaction API**, and then fills on PancakeSwap: as a paper fill, or live once you turn that on. Every signal is scored against the price after its horizon, so analysts earn a track record. That track record decides who gets paid next time, and it is posted on-chain as ERC-8004 reputation feedback. A Next.js dashboard streams the whole loop live over SSE.
 
-> Built for **BNB Hack: Tokenized Stocks**. BSC mainnet only. Simulate-only by default (`LIVE_TRADING=0`).
+> Built for **BNB Hack: Tokenized Stocks**. BSC mainnet only. The repo defaults to paper mode (`LIVE_TRADING=0`); the hosted desk runs **live** with small limits.
+
+## Live now
+
+| | |
+| --- | --- |
+| Landing | **https://elitr.xyz** |
+| Live dashboard | **https://elitr.xyz/dashboard** (read-only for visitors; operator controls need `CONTROL_TOKEN`) |
+| News analyst (b402 seller) | https://analyst.elitr.xyz/info · paid `GET /signal?symbol=NVDAB` |
+| Flow analyst (b402 seller) | https://flow.elitr.xyz/info · paid `GET /signal?symbol=TSLAB` |
+| Execution agent (trader) | https://agent.elitr.xyz/health · `/state` · `/summary/today` · `/rwa/board` |
+| ERC-8004 registration files | `/.well-known/agent-registration.json` on each agent host |
+
+Hosted on an AWS Lightsail instance in Frankfurt (eu-central-1, an allowed region for the Binance Web3 API), behind Caddy with automatic HTTPS, each service a systemd unit that restarts on failure. See [Deployment](#deployment).
+
+### On-chain proof (BSC mainnet)
+
+Every row is a real transaction made by the running system.
+
+| What | Transaction / record |
+| --- | --- |
+| ERC-8004 identity: News analyst **#365554** | [0x81f46ff7…8237](https://bscscan.com/tx/0x81f46ff719e2a7c244ccb39622ae05fd9960883bd19000e0c731c60a8c168237) |
+| ERC-8004 identity: Flow analyst **#365555** | [0x902e8d14…db16](https://bscscan.com/tx/0x902e8d14dd118d069151834019f09fc92ceadc0f094fa78ffeb7d35cfcd9db16) |
+| ERC-8004 identity: Execution agent **#365556** | [0xeb36036e…cd03](https://bscscan.com/tx/0xeb36036e4d62fad5a6919205de0cecbeb402a03afc6f282d1d0a8432fe5fcd03) |
+| First agent-to-agent b402 payment (trader → flow analyst, 0.01 USDT) | [0xe2a30c08…c49f](https://bscscan.com/tx/0xe2a30c0801799c2b1c128fdc4e332c8485ce3249eacedd52470e2b1971a6c49f) |
+| First on-chain agent rating (trader → news analyst, ERC-8004 `giveFeedback`) | [0xf09e9f6e…87d6](https://bscscan.com/tx/0xf09e9f6edd8d64d0fd4f4a75f463ba2106093b16b2f986ad774c7b584aa887d6) |
+| First live trade: 2 USDT → 0.008433 NVDAB @ $237.15 (Trading API → Transaction API simulate → broadcast) | [0x0ce91120…3807](https://bscscan.com/tx/0x0ce91120a0e7f14792a20565aa99f4a1819afafc0d1f1e9ee51ee3e36aa03807) |
+| Binance **Agentic Wallet** buys a signal: USDT via Permit2 (sponsored approve → b402 settle) | [approve 0x62c33233…c822](https://bscscan.com/tx/0x62c332337eb1eb24fd2589dfe9c5afea30c9024d12ec5624cd7744724f1cc822) · [settle 0x559b481e…59b9](https://bscscan.com/tx/0x559b481ee017167040751bac274f5daf62d0bc97c75bac295ef03a9b338659b9) |
+| Binance **Agentic Wallet** buys a signal: U via EIP-3009 (no approval, 3.5 s sign → signal) | [0xd2535021…2e4e](https://bscscan.com/tx/0xd2535021423ae6d30b4bbc6fde8f2b58fc0bc22dba7831c7d97c7eed78ca2e4e) |
+| One-time trading approvals (Permit2 for b402; router for USDT, NVDAB, TSLAB) | [0x6996a008…ee66](https://bscscan.com/tx/0x6996a0086d528ce9b4f14fbd8b1378b4e4f31a57ad63f0f0b0ca11d82d44ee66) · [0x56210274…718c](https://bscscan.com/tx/0x56210274fab2121ccc2e74e9df7cb8a3dc9b6350e4ec153669073094eb7b718c) · [0x65de22f1…4314](https://bscscan.com/tx/0x65de22f18f696c0707b95531e35cf92fdd04b5f068712f8acf5bd47e582b4314) · [0x81aebdcf…c9c3](https://bscscan.com/tx/0x81aebdcfa1affb6212e00f887c37495870c628f539ce285fc38e47de644ec9c3) |
+| A failed swap we learned from: the Trading API's suggested gas (450k) was below the simulated 457k and the swap reverted out of gas; gas is now max(suggested, simulated) × 1.25 | [0xc52edf5c…bfa6](https://bscscan.com/tx/0xc52edf5c5eacec5e43fc608cb32f5e25a7126454aa7b149f8ed3b06b8e28bfa6) |
+
+Wallets: agent (trader) `0xc742AdA2872a042dD36D2E706907b4036968960C` · analyst payee `0x66A4c73e7C02858B49F15fBC24589A76B97C0F5a` · analyst identity owner `0xCd0a2370F2dC12c1802707B7d9aB3fec891E3c02` · Agentic Wallet demo buyer `0xD15590ba7DfDD11D47a5a13b83E6cf5CC74f6207`.
 
 | Landing | Dashboard |
 | --- | --- |
@@ -17,7 +49,7 @@
 
 ## Contents
 
-[Architecture](#architecture) · [One cycle](#one-cycle-sequence) · [Features vs judging criteria](#features-mapped-to-judging-criteria) · [Risk controls](#risk-controls) · [Binance APIs used](#binance-web3-apis-used) · [Quickstart](#quickstart) · [Configuration](#configuration) · [Safety](#safety-notes) · [Repo layout](#repo-layout) · [Docs](#more-docs)
+[Live now](#live-now) · [Architecture](#architecture) · [One cycle](#one-cycle-sequence) · [Features vs judging criteria](#features-mapped-to-judging-criteria) · [Agentic Wallet](#binance-agentic-wallet-elitr-skill) · [Agent Studio](#bnb-agent-studio-elitr-desk-brief) · [Risk controls](#risk-controls) · [Binance APIs used](#binance-web3-apis-used) · [Quickstart](#quickstart) · [Deployment](#deployment) · [Configuration](#configuration) · [Safety](#safety-notes) · [Repo layout](#repo-layout) · [Docs](#more-docs)
 
 ## Architecture
 
@@ -73,7 +105,9 @@ Three services, all plain `node:http`, no framework:
 | `apps/analyst-agent` (news) | 4001 | b402 merchant. Pulls NVDA/TSLA headlines (Yahoo Finance + Google News RSS) and scores them 1-100 with Claude through the 0G Compute Router (Anthropic Messages format). Charges per `GET /signal`. |
 | `apps/analyst-agent` (flow) | 4003 | Second seller in the same process. Deterministic signal from PancakeSwap on-chain flow. |
 | `apps/execution-agent` | 4002 | b402 buyer and trader: chooses an analyst, pays, prices, runs risk checks, simulates, fills, exits, scores signals, posts reputation. |
-| `apps/web` | 3000 | Landing page + live dashboard (SSE from all agents, `GET /state` from execution). |
+| `apps/web` | 3000 | Scrollable landing page + live dashboard app shell (Overview, Analysts, Markets, Gap board, Portfolio, Trades, Activity, Controls); SSE from all agents, `GET /state` from execution. |
+
+Analysts offer **two ways to pay** in every 402 (`accepts[]`): USDT via `permit2-exact` (the Elitr trader's route) and U via `eip3009` (no approval, used by Binance Agentic Wallet buyers). The buyer picks one; the analyst verifies and settles exactly that option.
 
 ## One cycle (sequence)
 
@@ -120,26 +154,24 @@ sequenceDiagram
 
 | Criterion (weight) | What Elitr does |
 | --- | --- |
-| **Technical implementation (30%)** | Hand-written signed client for 5 Binance Web3 API modules (RWA Data, Market, Trading, Transaction, b402) in `packages/binance`. Full b402 merchant (x402 v2 `402` / `PAYMENT-SIGNATURE` / `PAYMENT-RESPONSE`, single-use authorizations, settle only after the signal is produced) and buyer (`@x402/fetch` + `@bnb-chain/b402`, Permit2 approval handling). Every approve and swap is simulated through the Transaction API before broadcast. Risk engine fails closed on missing data, and it has unit tests. State persists atomically. CI runs on Node 22 and 24, and Docker images are provided. |
-| **Creativity & originality (25%)** | Agents *buy information from each other*: a market of competing analysts with real micropayments. The buyer learns which seller to trust (Beta-Bernoulli posterior + Thompson sampling, price-aware) and publishes the result as portable ERC-8004 on-chain reputation. Two very different sellers compete: an LLM news reader and a deterministic on-chain flow reader. |
-| **Developer Experience Report (25%)** | [`DEVELOPER_EXPERIENCE.md`](DEVELOPER_EXPERIENCE.md) is written by the team. It is backed by [`docs/dx-raw-log.md`](docs/dx-raw-log.md), a timestamped evidence log that the execution agent also appends to automatically when it hits API friction. |
-| **Product quality & UX (20%)** | The dashboard shows the payment between agents, the signal and its sources, both reference prices, every risk check with observed vs limit values, the simulation result, fills, positions and P&L, live. There is a kill switch. Defaults are safe: simulate-only, small limits. |
+| **Technical implementation (30%)** | Signed client for 7 Binance Web3 API modules (RWA Data, Market, Trading, Transaction, Wallet, Address Portfolio, b402) in `packages/binance`, running live on BSC mainnet with real b402 settlements, a live trade, and ERC-8004 identities and feedback (see [On-chain proof](#on-chain-proof-bsc-mainnet)). Full b402 merchant (x402 v2 `402` / `PAYMENT-SIGNATURE` / `PAYMENT-RESPONSE`, single-use authorizations, settle only after the signal is produced) and buyer (`@x402/fetch` + `@bnb-chain/b402`, Permit2 approval handling). Every approve and swap is simulated through the Transaction API before broadcast. Risk engine fails closed on missing data, and it has unit tests. State persists atomically. CI runs on Node 22 and 24, and Docker images are provided. |
+| **Creativity & originality (25%)** | Agents *buy information from each other*: a market of competing analysts with real micropayments. The buyer learns which seller to trust (Beta-Bernoulli posterior + Thompson sampling, price-aware) and publishes the result as portable ERC-8004 on-chain reputation. Two very different sellers compete: an LLM news reader and a deterministic on-chain flow reader. Any **Binance Agentic Wallet** can buy the same signals through the [Elitr Skill](skills/elitr-signals/). A **Weekend Gap board** makes the brief's opening story (frozen Friday reference vs 24/7 tokens) visible across every bStocks and Ondo token. |
+| **Developer Experience Report (25%)** | [`DEVELOPER_EXPERIENCE.md`](DEVELOPER_EXPERIENCE.md) is written by the team. It is backed by [`docs/dx-raw-log.md`](docs/dx-raw-log.md), a timestamped evidence log (the execution agent also appends to it when it hits API friction), sorted by report question in [`docs/dx-evidence.md`](docs/dx-evidence.md). |
+| **Product quality & UX (20%)** | The dashboard shows the payment between agents, the signal and its sources, both reference prices, every risk check with observed vs limit values, the simulation result, fills, positions and P&L, live. There is a kill switch. A plain-English **"Today on the desk"** summary with a glossary is written for people new to crypto. Defaults are safe: simulate-only, small limits. |
 
 ### Status
 
-The repo is under active development until the 11 Oct 2026 deadline. The table shows what is in the code today.
-
 | Feature | Status |
 | --- | --- |
-| News analyst (:4001) + flow analyst (:4003), both b402 merchants (verify / settle via the Binance facilitator) | Shipped |
-| Execution agent: b402 buyer, RWA/Market/Trading/Transaction APIs, risk engine, Transaction API dry-runs | Shipped |
-| Thompson-sampling analyst selection, signal scoring, trust / weight / pause (`packages/reputation`) | Shipped |
-| NVDAB + TSLAB, exits (take-profit / stop-loss / bearish), paper vs live ledger and P&L | Shipped |
-| Control-endpoint auth (`CONTROL_TOKEN`; refuses to bind non-loopback without it) | Shipped |
-| Dashboard (landing + live SSE dashboard), CI, Docker images, docker compose | Shipped |
-| ERC-8004 identity registration CLI + on-chain reputation feedback (`packages/identity`) | Shipped, opt-in (`ERC8004_POST_FEEDBACK=1`) |
-| Agents registered on BSC mainnet ERC-8004, BNB Agent Studio demo | In progress: see [`docs/agent-studio.md`](docs/agent-studio.md) |
-| Live (non-paper) trades on mainnet, hosted deployment link | Not yet: default is paper mode |
+| News analyst + flow analyst as b402 merchants (two payment options: USDT/Permit2, U/EIP-3009) | Live on mainnet |
+| Execution agent: b402 buyer, RWA/Market/Trading/Transaction/Wallet/Portfolio APIs, risk engine, Transaction API dry-runs | Live on mainnet |
+| Thompson-sampling analyst selection, signal scoring, trust / weight / pause | Live, building a track record every 15 min |
+| NVDAB + TSLAB, exits (take-profit / stop-loss / bearish), paper vs live ledger and P&L | Live (`LIVE_TRADING=1` on the hosted desk) |
+| ERC-8004 identities (#365554, #365555, #365556) + on-chain reputation feedback after each scored signal | Live on mainnet |
+| Binance Agentic Wallet buying Elitr signals ([Elitr Skill](skills/elitr-signals/)) | Proven on mainnet (USDT and U routes) |
+| Weekend Gap board, Wallet API / Address Portfolio, "Today on the desk" summary | Shipped |
+| Hosted deployment (https://elitr.xyz), HTTPS, operator auth | Live |
+| BNB Agent Studio seller agent ([`studio/`](studio/)) | Built; managed 48 h testnet deploy scheduled before the demo recording |
 
 ## Risk controls
 
@@ -152,7 +184,7 @@ Defaults come from [`packages/shared/src/risk.ts`](packages/shared/src/risk.ts).
 | Max position | `RISK_MAX_POSITION_USD` | $25 | Per asset, after the trade. |
 | Max portfolio | `RISK_MAX_PORTFOLIO_USD` | $50 | All positions combined. |
 | Max daily spend | `RISK_MAX_DAILY_SPEND_USD` | $25 | USDT spent on buys per UTC day. |
-| Max daily data spend | `RISK_MAX_DAILY_DATA_USD` | $1 | b402 spend on signals per UTC day. |
+| Max daily data spend | `RISK_MAX_DAILY_DATA_USD` | $2 | b402 spend on signals per UTC day. |
 | Max slippage | `RISK_MAX_SLIPPAGE_BPS` | 100 bps | Route price impact; also pinned as swap slippage. Hard cap 500. |
 | Min liquidity | `RISK_MIN_LIQUIDITY_USD` | $50,000 | USDT in the primary PancakeSwap v3 pool. |
 | Min confidence | `RISK_MIN_CONFIDENCE` | 65 | Signal score (after the reputation weight), 1-100. |
@@ -181,7 +213,13 @@ Base `https://web3.binance.com/build`. Every call is signed (`X-OC-APIKEY`, `X-O
 | Trading | `GET /api/v1/dex/aggregator/swap` | execution | Swap calldata with slippage and price-impact protection. |
 | Transaction | `POST /api/v1/dex/pre-transaction/simulate` | execution | Dry-run of every approve and swap (and the Permit2 approve). |
 | Transaction | `POST /api/v1/dex/pre-transaction/broadcast-transaction` | execution | Broadcast with MEV protection (live mode only). |
+| Transaction | `POST /api/v1/dex/pre-transaction/gas-limit` | execution | Gas figure for each simulated transaction (used to size the live gas limit). |
 | Transaction | `GET /api/v1/dex/post-transaction/transaction-detail-by-txhash` | execution | Post-trade detail. |
+| Wallet | `GET /api/v1/dex/balance/all-token-balances-by-address` | execution | Agent wallet holdings for the Portfolio view. |
+| Wallet | `GET /api/v1/dex/post-transaction/transactions-by-address` | execution | Recent on-chain transactions for the Portfolio view. |
+| Address Portfolio | `GET /api/v1/dex/market/portfolio/overview` | execution | Portfolio overview of the agent wallet. |
+| RWA Data | `GET /api/v1/dex/market/rwa/platforms`, `/rwa/tokens?tabId=…` | execution | Weekend Gap board: every bStocks and Ondo token, sector tabs (Mag 7, AI chips, ETF…). |
+| Market | `GET /api/v1/dex/market/token/top-liquidity` | execution | Liquidity for traded and cross-issuer tokens on the Gap board. |
 | b402 | `POST /api/v2/b402/supported` | analysts | Payment kinds (scheme, network, Permit2 / EIP-3009, signer). |
 | b402 | `POST /api/v2/b402/verify` | analysts | Verify the buyer's signed authorization. |
 | b402 | `POST /api/v2/b402/settle` | analysts | Settle on-chain after the signal is produced. |
@@ -189,6 +227,20 @@ Base `https://web3.binance.com/build`. Every call is signed (`X-OC-APIKEY`, `X-O
 Other data: BSC JSON-RPC via viem (balances, pool liquidity, receipts), Yahoo Finance chart API (independent TradFi reference; the RWA `referencePrice` is derived from the on-chain price), and Yahoo Finance / Google News RSS (headlines).
 
 **Tokenized stocks.** Traded: **NVDAB**, **TSLAB** (bStocks; deep PancakeSwap v3 USDT pools). Tracked but not traded because DEX liquidity is negligible: NVDAon (Ondo), TSLAx (xStocks). Addresses are in [`packages/shared/src/assets.ts`](packages/shared/src/assets.ts) and were verified on-chain.
+
+## Binance Agentic Wallet: Elitr Skill
+
+[`skills/elitr-signals/`](skills/elitr-signals/) is a Binance Wallet Skill. With it, any Agentic Wallet (any Claude Code / AI agent with the Binance skills) can:
+1. **discover** Elitr's analysts (`GET /info`: price, horizon, ERC-8004 id)
+2. **pay for a signal** with the wallet's own x402 support: `baw x402-payment preview` → `sign` → replay with `PAYMENT-SIGNATURE`
+3. explain it in plain English
+4. on explicit confirmation, **buy the bStock** in the user's own wallet (`baw market-order`)
+
+Proven on mainnet with both payment routes (see [On-chain proof](#on-chain-proof-bsc-mainnet)). Install and runbook: [`docs/agentic-wallet.md`](docs/agentic-wallet.md).
+
+## BNB Agent Studio: Elitr Desk Brief
+
+[`studio/ElitrDesk/`](studio/ElitrDesk/) is a `bag init` seller agent ("Elitr Desk Brief"). It runs on Agent Studio's managed runtime with its own ERC-8004 identity and A2A + x402 faces, and sells a brief of the live Elitr desk: summary, analysts' track records, positions and P&L, and weekend-gap spreads. It pays its own way per request, the "self-funding via x402" model. Details and deploy steps: [`studio/README.md`](studio/README.md).
 
 ## Quickstart
 
@@ -217,6 +269,23 @@ docker compose down          # state survives in the elitr-data volume
 ```
 
 Compose overrides what must differ inside containers: execution binds `0.0.0.0`, which is why `CONTROL_TOKEN` is required, and it reaches the analysts at `http://analyst:4001` / `:4003`. `NEXT_PUBLIC_*` URLs are baked into the dashboard at **build** time. Rebuild `web` after you change them. Port 4002 is published on loopback only. See [`docs/deploy.md`](docs/deploy.md) for hosting (Vercel + Railway/Fly/VPS).
+
+## Deployment
+
+Production runs on one AWS Lightsail instance (Ubuntu 24.04, 2 GB, Frankfurt):
+
+| Piece | How |
+| --- | --- |
+| Code | built on the server with pnpm (`pnpm install --frozen-lockfile`, `pnpm -r build`); the dashboard is built with `NEXT_PUBLIC_*_URL=https://{analyst,flow,agent}.elitr.xyz` |
+| Services | systemd units `elitr-analyst` (4001 + 4003), `elitr-execution` (4002), `elitr-web` (3000), all bound to `127.0.0.1`, `Restart=always` |
+| HTTPS | Caddy with automatic Let's Encrypt certificates for `elitr.xyz`, `www` (redirects), `analyst.`, `flow.`, `agent.`; SSE streams proxied unbuffered |
+| Secrets | `~/elitr/.env` (mode 600), never committed; the analyst-owner key is not on the server |
+| Operator controls | `POST /cycle`, `/kill`, `/trade` need `Authorization: Bearer $CONTROL_TOKEN`; browsers may only call the agents from `https://elitr.xyz` (CORS) |
+| State | `~/elitr/data/` (events, ledger, reputation) |
+
+`POST /trade` (operator only) runs one small buy or a full-position sell through the same quote → simulate → broadcast path as an autonomous cycle, capped at `RISK_MAX_TRADE_USD`. It proves live execution on demand.
+
+Alternatives (Docker compose, Railway/Fly, VPS) are in [`docs/deploy.md`](docs/deploy.md).
 
 ## Configuration
 
@@ -270,12 +339,16 @@ All apps read one `.env` at the repo root. The full annotated list is in [`.env.
 apps/
   analyst-agent/     b402 merchant: news analyst :4001 (+ flow analyst :4003), signal + scorer
   execution-agent/   b402 buyer + trader: cycle, pay, prices, risk, trade, ledger, state
-  web/               Next.js dashboard (landing + /dashboard)
+  web/               Next.js: scrollable landing + /dashboard app shell (7 views + Gap board)
 packages/
   binance/           signed Binance Web3 API client (RWA, Market, Trading, Transaction, b402)
   shared/            assets, risk config, event types, SSE EventHub
   reputation/        signal scoring, Beta trust, Thompson-sampling analyst selection
   identity/          ERC-8004 identity + reputation registry client
+skills/
+  elitr-signals/     Binance Wallet Skill: Agentic Wallet discovers, pays for and acts on Elitr signals
+studio/
+  ElitrDesk/         BNB Agent Studio seller agent ("Elitr Desk Brief"), managed testnet runtime
 docker/              agent.Dockerfile (both agents), web.Dockerfile
 docs/                deploy guide, DX evidence log, API reference snapshots
 data/                runtime state + event logs (git-ignored, Docker volume)
@@ -286,7 +359,10 @@ data/                runtime state + event logs (git-ignored, Docker volume)
 - [`ARCHITECTURE.md`](ARCHITECTURE.md): how it works, module by module.
 - [`DEVELOPER_EXPERIENCE.md`](DEVELOPER_EXPERIENCE.md): developer experience report (written by the team).
 - [`docs/dx-raw-log.md`](docs/dx-raw-log.md): timestamped raw evidence behind the DX report.
+- [`docs/dx-evidence.md`](docs/dx-evidence.md): that evidence sorted by DX report question.
+- [`docs/agentic-wallet.md`](docs/agentic-wallet.md): Elitr Skill for Binance Agentic Wallet, install + paid-run runbook.
 - [`docs/agent-studio.md`](docs/agent-studio.md): BNB Agent Studio + ERC-8004 setup.
-- [`docs/deploy.md`](docs/deploy.md): Vercel (dashboard) + Railway / Fly.io / VPS (agents).
+- [`docs/deploy.md`](docs/deploy.md): alternative deployments (Docker compose, Railway / Fly.io, VPS).
+- [`studio/README.md`](studio/README.md): Elitr Desk Brief on BNB Agent Studio.
 
 License: none chosen yet.
