@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Hero } from "@/components/landing/Hero";
+import { Reveal } from "@/components/landing/Reveal";
+import { Sections } from "@/components/landing/Sections";
+import { StickyHeader } from "@/components/landing/StickyHeader";
 
 export const metadata: Metadata = {
   title: "Elitr — Agent-to-agent trading on BNB Chain",
@@ -8,5 +11,14 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <Hero />;
+  return (
+    <>
+      <StickyHeader />
+      <div id="top">
+        <Hero />
+      </div>
+      <Sections />
+      <Reveal />
+    </>
+  );
 }
