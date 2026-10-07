@@ -3,14 +3,11 @@ import Link from "next/link";
 import { useEffect, useState, type CSSProperties } from "react";
 import s from "@/app/hero.module.css";
 
-const VIDEO =
-  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260808_075824_7c8a2ef3-826c-43ca-81a1-162429faa306.mp4";
-
 const LINKS = [
-  ["How it works", "/learn#how", "0.02s"],
-  ["Analysts", "/learn#market", "0.08s"],
-  ["Safety", "/learn#safety", "0.14s"],
-  ["FAQ", "/learn#faq", "0.2s"],
+  ["How it works", "#how", "0.02s"],
+  ["Analysts", "#market", "0.08s"],
+  ["Safety", "#safety", "0.14s"],
+  ["FAQ", "#faq", "0.2s"],
 ] as const;
 
 const d = (delay: string) => ({ "--d": delay }) as CSSProperties;
@@ -23,10 +20,9 @@ function Arrow() {
   );
 }
 
-function DashboardButton({ variant, style }: { variant: "nav" | "light"; style?: CSSProperties }) {
-  const cls = variant === "nav" ? `${s.btn} ${s.btnNav}` : `${s.btn} ${s.btnLight} ${s.wipe}`;
+function DashboardButton({ style }: { style?: CSSProperties }) {
   return (
-    <Link href="/dashboard" className={cls} style={style}>
+    <Link href="/dashboard" className={`${s.btn} ${s.btnLight} ${s.wipe}`} style={style}>
       <span className={s.btnLabel}>Open Dashboard</span>
       <span className={s.btnIcon}>
         <Arrow />
@@ -48,20 +44,31 @@ export function Hero() {
   return (
     <div className={s.page}>
       <div className={s.bg} aria-hidden="true">
-        <video className={s.bgVideo} autoPlay muted loop playsInline>
-          <source src={VIDEO} type="video/mp4" />
-        </video>
+        <div className={s.bgArt}>
+          <picture>
+            {/* Portrait art on phones; motion layers re-centre for it in hero.module.css (max-width: 820px). */}
+            <source media="(max-width: 820px)" srcSet="/hero-mobile.jpg" />
+            <img
+              className={s.bgImg}
+              src="/hero.jpg"
+              srcSet="/hero-sm.jpg 900w, /hero.jpg 1672w"
+              sizes="100vw"
+              alt=""
+              aria-hidden="true"
+              fetchPriority="high"
+              decoding="async"
+            />
+          </picture>
+          <span className={s.glow} />
+          <span className={s.shimmer} />
+          <span className={`${s.mist} ${s.mistA}`} />
+          <span className={`${s.mist} ${s.mistB}`} />
+        </div>
+        <span className={s.veil} />
+        <span className={s.shade} />
       </div>
 
       <header className={s.nav}>
-        <nav className={s.navLinks} aria-label="Primary">
-          {LINKS.map(([label, href, delay]) => (
-            <a key={label} href={href} className={s.navLink} style={d(delay)}>
-              {label}
-            </a>
-          ))}
-        </nav>
-
         <Link className={s.logo} href="/" aria-label="Elitr">
           <svg viewBox="0 0 42 34" aria-hidden="true">
             <polygon points="12,0 30,0 33.2,3.2 15.2,3.2" />
@@ -73,9 +80,13 @@ export function Hero() {
           </svg>
         </Link>
 
-        <div className={s.navEnd}>
-          <DashboardButton variant="nav" />
-        </div>
+        <nav className={s.navLinks} aria-label="Primary">
+          {LINKS.map(([label, href, delay]) => (
+            <a key={label} href={href} className={s.navLink} style={d(delay)}>
+              {label}
+            </a>
+          ))}
+        </nav>
 
         <button
           type="button"
@@ -99,9 +110,6 @@ export function Hero() {
             </a>
           ))}
         </nav>
-        <div onClick={() => setOpen(false)}>
-          <DashboardButton variant="nav" />
-        </div>
       </div>
 
       <main className={s.hero}>
@@ -127,10 +135,10 @@ export function Hero() {
         </h1>
 
         <div className={s.actions}>
-          <DashboardButton variant="light" style={d("0.56s")} />
-          <Link href="/learn" className={`${s.btn} ${s.btnGhost} ${s.wipe}`} style={d("0.66s")}>
+          <DashboardButton style={d("0.56s")} />
+          <a href="#how" className={`${s.btn} ${s.btnGhost} ${s.wipe}`} style={d("0.66s")}>
             <span className={s.btnLabel}>See How It Works</span>
-          </Link>
+          </a>
         </div>
       </main>
 
