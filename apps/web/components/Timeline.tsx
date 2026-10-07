@@ -8,7 +8,7 @@ import { assetSymbol, clock, isTxHash, price, shortAddr, shortHash, usd, usdFrom
 import { AGENTS, agentMeta } from "@/lib/config";
 import { Empty, ExtLink, IconChevron, Panel } from "./ui";
 
-function summary(e: AgentEvent): string {
+export function summary(e: AgentEvent): string {
   switch (e.type) {
     case "payment.required":
       return `402 challenge ${usdFromUnits(e.amount)} ${assetSymbol(e.asset)} for ${e.resource}`;
@@ -166,7 +166,7 @@ export function Timeline({
       ) : filtered.length === 0 ? (
         <Empty title="No events match these filters" />
       ) : (
-        <ol className="max-h-[560px] overflow-y-auto pb-2 font-mono text-xs">
+        <ol className="pb-2 font-mono text-xs">
           {filtered.slice(0, limit).map((e) => {
             const g = groupOf(e.type);
             const isOpen = open.has(e.id);

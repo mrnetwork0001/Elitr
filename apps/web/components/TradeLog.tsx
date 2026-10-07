@@ -177,7 +177,7 @@ export function TradeLog({
           />
         )
       ) : (
-        <ol className="max-h-[480px] divide-y divide-line overflow-y-auto">
+        <ol className="divide-y divide-line">
           {attempts.slice(0, 30).map((a, i) => (
             <Attempt key={a.key} a={a} now={now} liveTrading={liveTrading} isLatest={i === 0} />
           ))}

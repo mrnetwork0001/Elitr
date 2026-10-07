@@ -160,7 +160,18 @@ export function parseState(raw: unknown): ExecState {
     if (r && !assets.some((x) => x.symbol === r.symbol)) assets.push(r);
   }
   const legacy = parseAsset(o.asset);
-  if (legacy && !assets.some((x) => x.symbol === legacy.symbol)) assets.push(legacy);
+  if (legacy) {
+    // The legacy `asset` object may carry details the plain `assets` symbol list lacks.
+    const i = assets.findIndex((x) => x.symbol === legacy.symbol);
+    if (i < 0) assets.push(legacy);
+    else
+      assets[i] = {
+        symbol: legacy.symbol,
+        underlying: assets[i].underlying ?? legacy.underlying,
+        platform: assets[i].platform ?? legacy.platform,
+        address: assets[i].address ?? legacy.address,
+      };
+  }
 
   const tokens: Record<string, number | null> = {};
   for (const [k, v] of Object.entries(tokensRaw)) tokens[k] = balance(v);
@@ -191,7 +202,8 @@ export function parseState(raw: unknown): ExecState {
     positions,
     marks: Object.fromEntries(
       Object.entries(obj(o.marks) ?? {})
-        .map(([k, v]) => [k, toNum(v)] as const)
+        // Marks arrive as numbers or { price, source }.
+        .map(([k, v]) => [k, toNum(obj(v)?.price ?? v)] as const)
         .filter((x): x is readonly [string, number] => x[1] !== null),
     ),
     pnl: parsePnl(o.pnl),
