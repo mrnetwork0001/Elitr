@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import Link from "next/link";
+import { LogoMark } from "./LogoMark";
 import type { AgentId } from "@elitr/shared";
 import type { AgentConn } from "@/lib/useAgentStream";
 import type { ActionResult, ExecState, StateStatus } from "@/lib/useExecutionState";
@@ -112,7 +113,8 @@ export function TopBar({
     <header className="sticky top-0 z-30 border-b border-line bg-bg/90 backdrop-blur">
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-2.5 gap-y-2 px-4 py-2.5 lg:px-6">
         <div className="mr-1 flex items-baseline gap-2">
-          <Link href="/" className="text-lg font-semibold tracking-tight text-fg hover:text-accent" title="About Elitr">
+          <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight text-fg hover:text-accent" title="About Elitr">
+            <LogoMark className="h-[18px] w-auto text-accent" />
             Elitr<span className="text-accent">.</span>
           </Link>
           <span className="hidden text-xs text-faint 2xl:inline">agent-to-agent trading desk</span>
