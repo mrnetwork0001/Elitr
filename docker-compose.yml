@@ -1,0 +1,87 @@
+# Elitr: the three services on one host.
+#   cp .env.example .env    # fill in keys; set CONTROL_TOKEN (required, see below)
+#   docker compose up -d --build
+#   open http://localhost:3000
+#
+# Secrets come from .env at runtime via env_file and are never baked into images.
+# `environment:` entries below override .env for values that must differ inside containers
+# (bind addresses, service-to-service URLs).
+
+name: elitr
+
+x-env-file: &env_file
+  env_file:
+    - path: .env
+      required: false # lets `docker compose build` / CI run without secrets
+
+services:
+  analyst:
+    build:
+      context: .
+      dockerfile: docker/agent.Dockerfile
+      args:
+        APP: analyst-agent
+    image: elitr-analyst:local
+    <<: *env_file
+    environment:
+      HEALTH_PORT: "4001"
+      ANALYST_PORT: "4001"
+      FLOW_ANALYST_PORT: "4003"
+      DASHBOARD_ORIGIN: ${DASHBOARD_ORIGIN:-http://localhost:3000}
+    ports:
+      - "4001:4001" # news-sentiment analyst (b402-paid GET /signal)
+      - "4003:4003" # on-chain flow analyst, same process
+    volumes:
+      - elitr-data:/app/data
+    restart: unless-stopped
+
+  execution:
+    build:
+      context: .
+      dockerfile: docker/agent.Dockerfile
+      args:
+        APP: execution-agent
+    image: elitr-execution:local
+    <<: *env_file
+    environment:
+      HEALTH_PORT: "4002"
+      EXECUTION_PORT: "4002"
+      # Must listen on all interfaces inside the container to be reachable through the port mapping.
+      # The agent refuses to bind a non-loopback host without CONTROL_TOKEN (protects POST /cycle and /kill),
+      # so CONTROL_TOKEN must be set in .env, e.g. `openssl rand -hex 32`.
+      EXECUTION_HOST: 0.0.0.0
+      CONTROL_TOKEN: ${CONTROL_TOKEN:-}
+      ANALYST_URL: http://analyst:4001
+      ANALYSTS: analyst=http://analyst:4001,analyst-flow=http://analyst:4003
+      DASHBOARD_ORIGIN: ${DASHBOARD_ORIGIN:-http://localhost:3000}
+    ports:
+      # Published on loopback only; put a TLS reverse proxy in front for remote access (docs/deploy.md).
+      - "127.0.0.1:4002:4002"
+    volumes:
+      - elitr-data:/app/data
+    depends_on:
+      analyst:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      # NEXT_PUBLIC_* are inlined into the browser bundle at build time. They are URLs the *browser*
+      # uses, so for a local stack they point at the ports published on localhost, not service names.
+      # Change them (in .env or the shell) and rebuild: `docker compose build web`.
+      args:
+        NEXT_PUBLIC_ANALYST_URL: ${NEXT_PUBLIC_ANALYST_URL:-http://localhost:4001}
+        NEXT_PUBLIC_FLOW_ANALYST_URL: ${NEXT_PUBLIC_FLOW_ANALYST_URL:-http://localhost:4003}
+        NEXT_PUBLIC_EXECUTION_URL: ${NEXT_PUBLIC_EXECUTION_URL:-http://localhost:4002}
+    image: elitr-web:local
+    ports:
+      - "3000:3000"
+    depends_on:
+      - analyst
+      - execution
+    restart: unless-stopped
+
+volumes:
+  elitr-data:
