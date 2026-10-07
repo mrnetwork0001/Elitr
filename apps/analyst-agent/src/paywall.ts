@@ -70,9 +70,9 @@ export function startAnalystServer(o: AnalystServerOptions): Server {
     const missing = o.notReady();
     if (missing.length) return send(res, 503, { error: `${info.analystId} cannot produce signals`, missing });
 
-    let requirements: PaymentRequirements;
+    let accepts: PaymentRequirements[];
     try {
-      requirements = await gateway.requirements();
+      accepts = await gateway.allRequirements();
     } catch (e) {
       hub.emit({ type: "error", where: "b402.supported", message: errMsg(e) });
       return send(res, 503, { error: `b402 unavailable: ${errMsg(e)}` });
@@ -84,13 +84,13 @@ export function startAnalystServer(o: AnalystServerOptions): Server {
       mimeType: "application/json",
     };
     const paymentRequired = (error: string) => {
-      const body: PaymentRequired = { x402Version: 2, error, resource, accepts: [requirements] };
+      const body: PaymentRequired = { x402Version: 2, error, resource, accepts };
       send(res, 402, body, { "PAYMENT-REQUIRED": encodeHeader(body), "Cache-Control": "no-store" });
     };
 
     const header = req.headers["payment-signature"];
     if (typeof header !== "string" || !header) {
-      hub.emit({ type: "payment.required", resource: resource.url, amount: requirements.amount, asset: requirements.asset });
+      hub.emit({ type: "payment.required", resource: resource.url, amount: accepts[0].amount, asset: accepts[0].asset });
       return paymentRequired("Payment required");
     }
     let payload: PaymentPayload;
@@ -99,8 +99,10 @@ export function startAnalystServer(o: AnalystServerOptions): Server {
     } catch (e) {
       return paymentRequired(errMsg(e));
     }
-    if (!deepEqual(payload.accepted, requirements)) {
-      return paymentRequired("paymentPayload.accepted does not match the server-held payment requirements");
+    // The buyer picks one of accepts[]; verify and settle against exactly that server-held option.
+    const requirements = accepts.find((r) => deepEqual(payload.accepted, r));
+    if (!requirements) {
+      return paymentRequired("paymentPayload.accepted does not match any server-held payment requirement");
     }
     const authId = authorizationId(payload);
     if (used.has(authId)) return paymentRequired("payment authorization already used");

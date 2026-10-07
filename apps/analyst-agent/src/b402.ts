@@ -40,12 +40,21 @@ export interface PaymentPayload {
   extensions?: unknown;
 }
 
+/** One way to pay: a token and its b402 transfer method. */
+export interface PaymentOption {
+  asset: string;
+  method: Method;
+  tokenName?: string;
+}
+
 export interface B402Config {
   payTo: string;
   asset: string;
   amount: string;
   method: Method;
   tokenName?: string;
+  /** Extra accepted options, offered after the primary one (e.g. U via eip3009 for Agentic Wallet buyers). */
+  alternates: PaymentOption[];
   maxTimeoutSeconds: number;
   rpcUrl: string;
 }
@@ -83,6 +92,15 @@ export function b402ConfigFromEnv(
   if (!/^[1-9]\d*$/.test(amount)) problems.push(`${priceVar.var} must be a positive integer in atomic units`);
   if (!METHODS.includes(method)) problems.push(`ANALYST_PAYMENT_METHOD must be one of ${METHODS.join(", ")}`);
   if (!Number.isInteger(maxTimeoutSeconds) || maxTimeoutSeconds <= 0) problems.push("ANALYST_PAYMENT_TIMEOUT_SEC must be a positive integer");
+  const alternates: PaymentOption[] = [];
+  const altAsset = env.ANALYST_PAYMENT_ALT_ASSET ?? "";
+  if (altAsset) {
+    const altMethod = (env.ANALYST_PAYMENT_ALT_METHOD || "eip3009") as Method;
+    if (!ADDR.test(altAsset)) problems.push("ANALYST_PAYMENT_ALT_ASSET is not an EVM address");
+    if (!METHODS.includes(altMethod)) problems.push(`ANALYST_PAYMENT_ALT_METHOD must be one of ${METHODS.join(", ")}`);
+    if (altAsset.toLowerCase() === asset.toLowerCase() && altMethod === method) problems.push("ANALYST_PAYMENT_ALT_* duplicates the primary payment option");
+    alternates.push({ asset: altAsset, method: altMethod, tokenName: env.ANALYST_PAYMENT_ALT_TOKEN_NAME || undefined });
+  }
   if (problems.length) return { problems };
   return {
     problems,
@@ -92,6 +110,7 @@ export function b402ConfigFromEnv(
       amount,
       method,
       tokenName: env.ANALYST_PAYMENT_TOKEN_NAME || undefined,
+      alternates,
       maxTimeoutSeconds,
       rpcUrl: env.BSC_RPC_URL || "https://bsc-dataseed.bnbchain.org",
     },
@@ -105,6 +124,7 @@ const USD_STABLES_18 = new Set(
     "0x55d398326f99059fF775485246999027B3197955", // USDT
     "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", // USDC
     "0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d", // USD1
+    "0xcE24439F2D9C6a2289F741120FE202248B666666", // U (United Stables)
   ].map((a) => a.toLowerCase()),
 );
 export function priceUsd(asset: string, amount: string): number | null {
@@ -145,7 +165,7 @@ export const authorizationId = (p: PaymentPayload) =>
 export class B402Gateway {
   private supported?: { value: { kinds: any[] }; expires: number };
   private inflight?: Promise<{ kinds: any[] }>;
-  private tokenName?: string;
+  private readonly tokenNames = new Map<string, string>();
 
   constructor(
     readonly config: B402Config,
@@ -164,9 +184,31 @@ export class B402Gateway {
     return (await this.inflight).kinds ?? [];
   }
 
-  /** The single requirement this server accepts, built from the live /supported config. */
-  async requirements(): Promise<PaymentRequirements> {
-    const { method, asset, amount, payTo, maxTimeoutSeconds } = this.config;
+  /** The primary requirement, built from the live /supported config. */
+  requirements(): Promise<PaymentRequirements> {
+    const { asset, method, tokenName } = this.config;
+    return this.requirementFor({ asset, method, tokenName });
+  }
+
+  /**
+   * Every requirement this server accepts: the primary first, then alternates. A buyer picks any one
+   * (x402 `accepts[]`). An alternate the facilitator cannot build is skipped, never the primary.
+   */
+  async allRequirements(): Promise<PaymentRequirements[]> {
+    const out = [await this.requirements()];
+    for (const alt of this.config.alternates) {
+      try {
+        out.push(await this.requirementFor(alt));
+      } catch (e) {
+        console.warn(`[b402] alternate ${alt.asset}/${alt.method} skipped: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    return out;
+  }
+
+  private async requirementFor(opt: PaymentOption): Promise<PaymentRequirements> {
+    const { amount, payTo, maxTimeoutSeconds } = this.config;
+    const { asset, method } = opt;
     let candidates = (await this.kinds()).filter(
       (k) =>
         k?.network === NETWORK &&
@@ -177,14 +219,18 @@ export class B402Gateway {
     // kinds[] carries no asset field; when several share the method, pick by EIP-712 token name
     // (extra.name is the token's on-chain name() — see @bnb-chain/b402 Types.ts PaymentRequirementsExtra).
     if (candidates.length > 1) {
-      const name = this.config.tokenName ?? (this.tokenName ??= await erc20Name(this.config.rpcUrl, asset));
+      let name = opt.tokenName ?? this.tokenNames.get(asset.toLowerCase());
+      if (!name) {
+        name = await erc20Name(this.config.rpcUrl, asset);
+        this.tokenNames.set(asset.toLowerCase(), name);
+      }
       candidates = candidates.filter((k) => k.extra?.name === name);
     }
     if (candidates.length !== 1) {
       const names = (await this.kinds()).map((k) => `${k?.network}/${k?.scheme}/${k?.extra?.assetTransferMethod}/${k?.extra?.name}`);
       throw new Error(
         `b402 /supported has ${candidates.length} matching kinds for ${NETWORK} exact/${method} asset ${asset} ` +
-          `(set ANALYST_PAYMENT_TOKEN_NAME to disambiguate). Available: ${names.join(", ") || "none"}`,
+          `(set the token name to disambiguate). Available: ${names.join(", ") || "none"}`,
       );
     }
     // Copy extra as returned. Null-valued keys are dropped: the doc types spenderAddress as `string | null`
