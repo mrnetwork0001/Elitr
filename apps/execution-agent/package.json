@@ -1,0 +1,27 @@
+{
+  "name": "@elitr/execution-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts",
+    "start": "node --env-file-if-exists=../../.env dist/index.js",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test dist/*.test.js",
+    "approve": "tsx --env-file-if-exists=../../.env src/approve.ts"
+  },
+  "dependencies": {
+    "@bnb-chain/b402": "^0.2.1",
+    "@elitr/binance": "workspace:*",
+    "@elitr/identity": "workspace:^",
+    "@elitr/reputation": "workspace:^",
+    "@elitr/shared": "workspace:*",
+    "@x402/core": "^2.28.0",
+    "@x402/fetch": "^2.28.0",
+    "viem": "^2.57.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
+  }
+}
