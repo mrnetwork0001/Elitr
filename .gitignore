@@ -1,0 +1,28 @@
+# Secrets — API keys and wallet private keys must never be committed
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+keystore/
+wallets/
+
+# Deps / build
+node_modules/
+dist/
+.next/
+out/
+*.tsbuildinfo
+
+# Runtime data
+data/
+*.sqlite
+*.db
+logs/
+*.log
+
+# OS / editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
