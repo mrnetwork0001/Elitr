@@ -25,6 +25,16 @@ const P = {
 } as const;
 
 /** tabId labels exactly as the Get RWA Token List docs enumerate them. */
+/**
+ * Beyond ±20% the token and the Yahoo quote are almost certainly on a different share basis (a stock split
+ * the token hasn't mirrored, a reverse-split ETF, a share multiplier), so the number is not a tradable gap.
+ * Observed live: NFLXon +992,875 bps, SOXSon −9,891 bps.
+ */
+export const MAX_COMPARABLE_BPS = 2000;
+export function comparableBps(bps: number | null): number | null {
+  return bps === null || !Number.isFinite(bps) || Math.abs(bps) > MAX_COMPARABLE_BPS ? null : bps;
+}
+
 export const SECTORS: Record<number, string> = {
   1: "Serenity Call",
   2: "SpaceX",
@@ -162,7 +172,9 @@ export interface BoardToken {
   refSpreadBps: number | null; // on-chain vs Binance referencePrice (+ = premium)
   yahooPrice: number | null;
   yahooTime: number | null;
-  yahooSpreadBps: number | null; // on-chain vs Yahoo (+ = premium)
+  yahooSpreadBps: number | null; // on-chain vs Yahoo (+ = premium); null when the share basis differs
+  yahooBasisMismatch: boolean; // |raw spread| > MAX_COMPARABLE_BPS: split / share multiplier, not a tradable gap
+  yahooRawSpreadBps: number | null; // the uncorrected figure, kept for transparency
   traderGapBps: number | null; // trader's minGapBps convention (+ = on-chain below Yahoo)
   market: MarketState | null;
   volume24hUsd: number | null;
@@ -395,6 +407,8 @@ export class RwaBoard {
           yahooPrice: null,
           yahooTime: null,
           yahooSpreadBps: null,
+          yahooBasisMismatch: false,
+          yahooRawSpreadBps: null,
           traderGapBps: null,
           market: marketStateOf(t),
           volume24hUsd: num(t.volume24H),
@@ -463,8 +477,11 @@ export class RwaBoard {
       if (!y) continue;
       t.yahooPrice = y.price;
       t.yahooTime = y.time;
-      t.yahooSpreadBps = spreadBps(t.tokenPrice, y.price);
-      t.traderGapBps = traderGapBps(t.tokenPrice, y.price);
+      const raw = spreadBps(t.tokenPrice, y.price);
+      t.yahooRawSpreadBps = raw;
+      t.yahooBasisMismatch = comparableBps(raw) === null && raw !== null;
+      t.yahooSpreadBps = comparableBps(raw);
+      t.traderGapBps = t.yahooBasisMismatch ? null : traderGapBps(t.tokenPrice, y.price);
     }
     view.yahoo.priced = tokens.filter((t) => t.yahooPrice != null).length;
     view.yahoo.note =

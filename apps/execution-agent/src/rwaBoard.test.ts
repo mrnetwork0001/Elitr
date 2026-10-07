@@ -77,3 +77,11 @@ test("yahooTicker maps class shares", () => {
   assert.equal(yahooTicker("brk.b"), "BRK-B");
   assert.equal(yahooTicker("NVDA"), "NVDA");
 });
+
+import { comparableBps } from "./rwaBoard.js";
+test("spreads beyond ±2000 bps are treated as a share-basis mismatch, not a gap", () => {
+  assert.equal(comparableBps(992875.2), null); // NFLXon after Netflix's 10-for-1 split
+  assert.equal(comparableBps(-9890.7), null); // SOXSon (reverse-split leveraged ETF)
+  assert.equal(comparableBps(-193.1), -193.1);
+  assert.equal(comparableBps(null), null);
+});

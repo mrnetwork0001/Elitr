@@ -26,6 +26,8 @@ export interface BoardToken {
   yahooPrice: number | null;
   yahooTime: number | null;
   yahooSpreadBps: number | null;
+  yahooBasisMismatch?: boolean;
+  yahooRawSpreadBps?: number | null;
   traderGapBps: number | null;
   market: MarketState | null;
   volume24hUsd: number | null;

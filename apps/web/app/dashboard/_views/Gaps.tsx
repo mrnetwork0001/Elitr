@@ -96,7 +96,16 @@ function sortVal(t: BoardToken, k: SortKey): number | string | null {
   }
 }
 
-function SpreadCell({ v, cand }: { v: number | null; cand?: boolean }) {
+function SpreadCell({ v, cand, mismatch, raw }: { v: number | null; cand?: boolean; mismatch?: boolean; raw?: number | null }) {
+  if (mismatch)
+    return (
+      <span
+        className="text-[11px] font-medium tracking-[0.06em] text-faint uppercase"
+        title={`Not comparable: a ${raw != null ? `${Math.round(raw).toLocaleString()} bps` : "very large"} difference means the token and the Yahoo quote are on a different share basis (stock split or share multiplier), not a tradable gap.`}
+      >
+        n/c · share basis
+      </span>
+    );
   return (
     <span className={`num font-medium ${spreadTone(v)}`}>
       {bpsTxt(v)}
@@ -169,7 +178,7 @@ function BoardTable({ tokens, minGap, now }: { tokens: BoardToken[]; minGap: num
                 </td>
                 <td className="num px-3 py-2 text-right text-dim">{t.yahooPrice != null ? price(t.yahooPrice) : <span className="text-faint">—</span>}</td>
                 <td className="px-3 py-2 text-right whitespace-nowrap">
-                  <SpreadCell v={t.yahooSpreadBps} cand={cand} />
+                  <SpreadCell v={t.yahooSpreadBps} cand={cand} mismatch={t.yahooBasisMismatch} raw={t.yahooRawSpreadBps} />
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">
                   {m ? (
