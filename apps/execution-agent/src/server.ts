@@ -3,6 +3,7 @@ import { REGISTRATION_WELL_KNOWN_PATH, registrationFromEnv } from "@elitr/identi
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { ExecutionAgent } from "./cycle.js";
 import { errMsg } from "./trade.js";
+import { makeExtras } from "./routes.js";
 
 export function isLoopback(host: string): boolean {
   const h = host.trim().toLowerCase().replace(/^\[|\]$/g, "");
@@ -34,6 +35,7 @@ export function startServer(agent: ExecutionAgent, port: number, host: string, c
     res.end(JSON.stringify(body));
   };
   const authorized = (req: IncomingMessage) => !controlToken || bearerOk(req.headers.authorization, controlToken);
+  const extras = makeExtras(agent);
 
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     const path = new URL(req.url ?? "/", "http://x").pathname;
@@ -44,7 +46,7 @@ export function startServer(agent: ExecutionAgent, port: number, host: string, c
       }
       if (req.method === "GET" && path === "/health") return send(res, 200, { ok: true, agent: "execution", running: agent.running });
       if (req.method === "GET" && path === "/events") return agent.d.hub.sse(req, res);
-      if (req.method === "GET" && path === "/state") return send(res, 200, await state(agent));
+      if (req.method === "GET" && path === "/state") return send(res, 200, { ...(await state(agent)), ...extras.stateFields() });
       if (req.method === "GET" && path === REGISTRATION_WELL_KNOWN_PATH) return send(res, 200, registrationFromEnv("execution"));
       if (req.method === "POST" && (path === "/cycle" || path === "/kill") && !authorized(req)) {
         res.setHeader("WWW-Authenticate", 'Bearer realm="elitr-execution"');
@@ -59,6 +61,8 @@ export function startServer(agent: ExecutionAgent, port: number, host: string, c
         if (!agent.killSwitch) agent.engageKill("POST /kill");
         return send(res, 200, { killSwitch: true });
       }
+      const extra = await extras.route(req.method ?? "GET", path);
+      if (extra) return send(res, extra.status, extra.body);
       send(res, 404, { error: "not found" });
     } catch (e) {
       send(res, 500, { error: errMsg(e) });

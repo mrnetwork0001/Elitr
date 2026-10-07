@@ -6,6 +6,7 @@ import { agentMeta } from "@/lib/config";
 import { forSymbol, groupOf, GROUP_LABEL, latest, latestSelections, paymentSummary } from "@/lib/derive";
 import { ago, clock, ruleLabel, signedUsd, toNum, usd } from "@/lib/format";
 import { DeskBanner } from "@/components/DeskBanner";
+import { TodayCard } from "@/components/TodayCard";
 import { AgentFlow } from "@/components/AgentFlow";
 import { summary } from "@/components/Timeline";
 import { ModeTag } from "@/components/ui";
@@ -71,6 +72,8 @@ export function OverviewView() {
   return (
     <>
       <DeskBanner mode={d.mode} />
+
+      <TodayCard />
 
       <section aria-label="Key figures" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <Tile

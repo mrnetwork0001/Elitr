@@ -46,6 +46,14 @@ export const IconMarkets = (p: P) => (
   </Svg>
 );
 
+/** Two price levels with a gap between them — the weekend gap board. */
+export const IconGaps = (p: P) => (
+  <Svg {...p}>
+    <path d="M2.5 13.5h6M11.5 6.5h6M10 4.5v11" />
+    <path d="M8.5 11.5l3-3" strokeDasharray="1.5 1.5" />
+  </Svg>
+);
+
 export const IconPortfolio = (p: P) => (
   <Svg {...p}>
     <rect x="2.75" y="6" width="14.5" height="10.5" />

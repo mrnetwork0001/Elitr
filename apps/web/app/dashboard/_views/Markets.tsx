@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useDashboard } from "@/lib/dashboard";
 import { BSCSCAN_ADDRESS } from "@/lib/config";
 import { forSymbol, latest } from "@/lib/derive";
@@ -7,6 +8,7 @@ import { SignalCard } from "@/components/SignalCard";
 import { PriceCard } from "@/components/PriceCard";
 import { RiskPanel } from "@/components/RiskPanel";
 import { AssetTabs } from "@/components/ui";
+import { IconArrowRight } from "@/components/NavIcons";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -72,6 +74,14 @@ export function MarketsView() {
           </Field>
         </dl>
       </div>
+
+      <Link href="/dashboard/gaps" className="group flex items-center justify-between gap-3 border border-line bg-panel px-4 py-3 transition-colors hover:border-line-strong">
+        <span className="min-w-0">
+          <span className="block text-[10px] font-semibold tracking-[0.16em] text-gold uppercase">Weekend gap board</span>
+          <span className="mt-0.5 block text-[13px] text-dim">Every bStocks and Ondo token on BSC: on-chain vs Binance reference vs Yahoo, market status and cross-issuer spreads.</span>
+        </span>
+        <IconArrowRight className="size-4 shrink-0 text-faint transition-transform group-hover:translate-x-0.5 group-hover:text-fg" />
+      </Link>
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-4">
