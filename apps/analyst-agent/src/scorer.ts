@@ -1,5 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { jsonSchemaOutputFormat } from "@anthropic-ai/sdk/helpers/json-schema";
 import type { TokenizedStock } from "@elitr/shared";
 import type { Headline } from "./news.js";
 
@@ -12,21 +11,34 @@ export interface Score {
   cited: Headline[];
 }
 
-const OUTPUT = jsonSchemaOutputFormat({
-  type: "object",
-  properties: {
-    score: { type: "integer", description: "1 = extremely bearish, 50 = neutral, 100 = extremely bullish" },
-    stance: { type: "string", enum: ["bullish", "neutral", "bearish"] },
-    rationale: { type: "string", description: "2-4 sentences naming the specific headlines that drove the score" },
-    citedHeadlineIds: {
-      type: "array",
-      items: { type: "integer" },
-      description: "ids of the headlines that most influenced the score",
+// Forced tool use rather than output_config: the 0G Compute Router passes tools/tool_choice through
+// to Claude but does not enforce output_config, which came back as fenced markdown JSON.
+const SUBMIT: Anthropic.Tool = {
+  name: "submit_score",
+  description: "Submit the sentiment score for the stock.",
+  input_schema: {
+    type: "object",
+    properties: {
+      score: { type: "integer", description: "1 = extremely bearish, 50 = neutral, 100 = extremely bullish" },
+      stance: { type: "string", enum: ["bullish", "neutral", "bearish"] },
+      rationale: { type: "string", description: "2-4 sentences naming the specific headlines that drove the score" },
+      citedHeadlineIds: {
+        type: "array",
+        items: { type: "integer" },
+        description: "ids of the headlines that most influenced the score",
+      },
     },
+    required: ["score", "stance", "rationale", "citedHeadlineIds"],
+    additionalProperties: false,
   },
-  required: ["score", "stance", "rationale", "citedHeadlineIds"],
-  additionalProperties: false,
-});
+};
+
+interface Submitted {
+  score: number;
+  stance: Score["stance"];
+  rationale: string;
+  citedHeadlineIds: number[];
+}
 
 const SYSTEM = `You are an equity news-sentiment analyst. You receive recent news headlines about one US-listed stock and rate the short-term (next 1-3 trading days) sentiment they imply for that stock.
 Judge only from the headlines provided; do not use outside knowledge about prices. Discount generic listicles and promotional pieces, weight concrete company news (earnings, guidance, contracts, regulation, analyst rating changes) more heavily.
@@ -41,7 +53,7 @@ export class Scorer {
       .map((h, i) => `[${i}] ${h.publishedAt.slice(0, 16).replace("T", " ")}Z${h.source ? ` (${h.source})` : ""}: ${h.title}`)
       .join("\n");
     this.client ??= new Anthropic(); // reads ANTHROPIC_API_KEY or ANTHROPIC_AUTH_TOKEN + ANTHROPIC_BASE_URL (0G Router)
-    const res = await this.client.messages.parse({
+    const res = await this.client.messages.create({
       model: this.model,
       max_tokens: 2000,
       system: SYSTEM,
@@ -51,11 +63,15 @@ export class Scorer {
           content: `Stock: ${asset.underlying} (traded on BSC as tokenized ${asset.symbol} via ${asset.platform}).\nHeadlines, newest first:\n${list}`,
         },
       ],
-      output_config: { format: OUTPUT },
+      tools: [SUBMIT],
+      tool_choice: { type: "tool", name: SUBMIT.name },
     });
-    if (res.stop_reason !== "end_turn") throw new Error(`model stopped with ${res.stop_reason}`);
-    const out = res.parsed_output;
-    if (!out) throw new Error("model returned no parseable output");
+    const call = res.content.find((b) => b.type === "tool_use" && b.name === SUBMIT.name);
+    if (!call || call.type !== "tool_use") throw new Error(`model did not call ${SUBMIT.name} (stop_reason ${res.stop_reason})`);
+    const out = call.input as Submitted;
+    if (!["bullish", "neutral", "bearish"].includes(out.stance)) throw new Error(`model stance invalid: ${String(out.stance)}`);
+    if (typeof out.rationale !== "string" || !out.rationale.trim()) throw new Error("model rationale missing");
+    if (!Array.isArray(out.citedHeadlineIds)) throw new Error("model citedHeadlineIds missing");
 
     const score = out.score;
     if (!Number.isInteger(score) || score < 1 || score > 100) throw new Error(`model score out of range: ${score}`);

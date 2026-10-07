@@ -1,6 +1,7 @@
-// One-time operator step: approve USDT (buys) and each traded token (sells) to the Trading API's
-// spender, so swap dry-runs — and therefore paper fills — can pass. Every approve is simulated via
-// the Transaction API first; nothing is broadcast without --yes.
+// One-time operator step: approve USDT to Permit2 (b402 signal payments), USDT (buys) and each traded
+// token (sells) to the Trading API's spender, so signal purchases and swap dry-runs — and therefore
+// paper fills — can pass. Every approve is simulated via the Transaction API first; nothing is
+// broadcast without --yes.
 //
 //   pnpm --filter @elitr/execution-agent approve                 # plan + simulate only
 //   pnpm --filter @elitr/execution-agent approve --yes           # also sign + broadcast
@@ -13,7 +14,8 @@ import { EventHub, TRADED_ASSETS, USDT_BSC, loadRiskConfig, type Side, type Toke
 import { makeBinance } from "./cycle.js";
 import { poolPrice } from "./prices.js";
 import { approveTxFor, errMsg, legs, quoteSwap, sendTx, simulateTx, type TxDeps } from "./trade.js";
-import { erc20Allowance, loadAccount, makePublicClient, toBig, type Address } from "./wallet.js";
+import { B402_PERMIT2_ADDRESS } from "@bnb-chain/b402/client";
+import { approveCalldata, erc20Allowance, loadAccount, makePublicClient, toBig, type Address } from "./wallet.js";
 
 const args = process.argv.slice(2);
 const flag = (name: string) => args.find((a) => a.startsWith(`--${name}=`))?.split("=")[1];
@@ -113,7 +115,39 @@ async function run(j: Job): Promise<void> {
   console.log(`    confirmed: ${txHash}`);
 }
 
+// b402 pays analysts in USDT via Permit2: approve 30 days of the signal budget to the canonical Permit2 contract.
+async function permit2(): Promise<void> {
+  const amount = parseUnits((usdOverride ?? risk.maxDailyDataUsd * 30).toFixed(6), USDT_BSC.decimals);
+  const amt = `${formatUnits(amount, USDT_BSC.decimals)} USDT`;
+  const have = await erc20Allowance(pc, USDT_BSC.address as Address, account.address, B402_PERMIT2_ADDRESS as Address);
+  console.log(`  USDT (b402 signal payments): spender Permit2 ${B402_PERMIT2_ADDRESS}, current allowance ${formatUnits(have, USDT_BSC.decimals)}`);
+  if (have >= amount) {
+    console.log(`    already ≥ ${amt} — nothing to do`);
+    return;
+  }
+  const data = approveCalldata(B402_PERMIT2_ADDRESS as Address, amount);
+  console.log(`    plan: ${USDT_BSC.address}.approve(${B402_PERMIT2_ADDRESS}, ${amt})`);
+  const sim = await simulateTx(txd, "USDT:approve-permit2", { to: USDT_BSC.address as Address, data, value: 0n });
+  if (!sim.ok) {
+    console.log(`    simulation FAILED: ${sim.failReason} — not sending`);
+    return;
+  }
+  console.log(`    simulation OK${sim.gasUsed ? ` (gas ~${sim.gasUsed})` : ""}`);
+  if (!yes) {
+    console.log("    not sent (dry run; pass --yes to broadcast)");
+    return;
+  }
+  const [gas, gasPrice] = await Promise.all([pc.estimateGas({ account: account.address, to: USDT_BSC.address as Address, data }), pc.getGasPrice()]);
+  const { txHash } = await sendTx(txd, "USDT:approve-permit2", { to: USDT_BSC.address as Address, data, value: 0n, gas: (gas * 12n) / 10n, gasPrice });
+  console.log(`    confirmed: ${txHash}`);
+}
+
 console.log(`[approve] wallet ${account.address} — ${yes ? "WILL BROADCAST approvals that simulate OK" : "dry run (simulate only)"}`);
+try {
+  await permit2();
+} catch (e) {
+  console.log(`  USDT (b402 signal payments): error — ${errMsg(e)}`);
+}
 const jobs = await plan();
 for (const j of jobs) {
   try {
