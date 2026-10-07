@@ -11,6 +11,7 @@ wallets/
 node_modules/
 dist/
 .next/
+.next-*/
 out/
 *.tsbuildinfo
 
