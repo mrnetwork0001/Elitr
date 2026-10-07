@@ -138,6 +138,55 @@ export class ExecutionAgent {
     }
   }
 
+  /**
+   * Operator-initiated trade (POST /trade): the same quote → Transaction API simulation → (live) sign + broadcast
+   * path as an autonomous cycle, used to prove the execution flow with a small amount on demand. It skips the
+   * signal/gap rules but keeps every safety the swap path has: kill switch, trade-size cap, SWAP-only routes,
+   * slippage/price-impact protection and a passing simulation before anything is sent.
+   */
+  async operatorTrade(symbol: string, side: Side, usd?: number): Promise<{ ok: boolean; detail: string; txHash?: string }> {
+    if (this.killSwitch || this.d.risk.killSwitch) return { ok: false, detail: "kill switch engaged" };
+    if (this.running) return { ok: false, detail: "a cycle is running — retry in a minute" };
+    const asset = this.assets.find((a) => a.symbol.toLowerCase() === symbol.toLowerCase());
+    if (!asset) return { ok: false, detail: `unknown symbol; traded: ${this.assets.map((a) => a.symbol).join(", ")}` };
+    const { hub, binance, account, risk, store } = this.d;
+    const txd = this.txDeps();
+    if (!txd || !binance || !account) return { ok: false, detail: "wallet or Binance Web3 API not configured" };
+    this.running = true;
+    try {
+      const bal = await readBalances(this.d.pc, account.address, this.assets);
+      this.balCache = bal;
+      let amountIn: bigint;
+      if (side === "buy") {
+        const want = Math.min(usd ?? risk.maxTradeUsd, risk.maxTradeUsd);
+        if (!(want > 0)) return { ok: false, detail: "usd must be positive" };
+        amountIn = parseUnits(want.toFixed(6), 18);
+        if (bal.raw.usdt < amountIn) return { ok: false, detail: `insufficient USDT: have ${bal.usdt}, need ${want}` };
+      } else {
+        const held = heldWei(store.get().ledgers[this.mode], asset.symbol);
+        const onchain = bal.raw.tokens[asset.symbol] ?? 0n;
+        amountIn = held < onchain ? held : onchain;
+        if (amountIn <= 0n) return { ok: false, detail: `no ${asset.symbol} position to sell (ledger ${held}, wallet ${onchain})` };
+      }
+      const choice = await quoteSwap(binance, side, asset, account.address, amountIn);
+      if (!choice.route) {
+        hub.emit({ type: "risk.blocked", symbol: asset.symbol, rule: choice.marketClosed ? "marketClosed" : "simulatableRoute", detail: choice.detail });
+        return { ok: false, detail: choice.detail };
+      }
+      hub.emit({ type: "decision", symbol: asset.symbol, action: side, reasons: [`operator test trade via POST /trade (${this.mode})`, choice.detail] });
+      const res = await executeSwap(txd, risk, side, asset, amountIn, choice);
+      this.balCache = null;
+      this.bookFill(asset, side, amountIn, res);
+      if (!res.simulated) return { ok: false, detail: `simulation failed: ${res.failReason ?? "unknown"}` };
+      return { ok: true, detail: this.mode === "live" ? "broadcast and confirmed" : "simulated (paper fill booked)", txHash: res.txHash };
+    } catch (e) {
+      hub.emit({ type: "error", where: `operatorTrade:${asset.symbol}`, message: errMsg(e) });
+      return { ok: false, detail: errMsg(e) };
+    } finally {
+      this.running = false;
+    }
+  }
+
   private async step<T>(where: string, fn: () => Promise<T>): Promise<T | null> {
     try {
       return await fn();

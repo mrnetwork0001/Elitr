@@ -48,7 +48,7 @@ export function startServer(agent: ExecutionAgent, port: number, host: string, c
       if (req.method === "GET" && path === "/events") return agent.d.hub.sse(req, res);
       if (req.method === "GET" && path === "/state") return send(res, 200, { ...(await state(agent)), ...extras.stateFields() });
       if (req.method === "GET" && path === REGISTRATION_WELL_KNOWN_PATH) return send(res, 200, registrationFromEnv("execution"));
-      if (req.method === "POST" && (path === "/cycle" || path === "/kill") && !authorized(req)) {
+      if (req.method === "POST" && (path === "/cycle" || path === "/kill" || path === "/trade") && !authorized(req)) {
         res.setHeader("WWW-Authenticate", 'Bearer realm="elitr-execution"');
         return send(res, 401, { error: "unauthorized: send Authorization: Bearer <CONTROL_TOKEN>" });
       }
@@ -56,6 +56,13 @@ export function startServer(agent: ExecutionAgent, port: number, host: string, c
         if (agent.running) return send(res, 409, { error: "a cycle is already running" });
         agent.runCycle("manual").catch(() => {});
         return send(res, 202, { started: true });
+      }
+      if (req.method === "POST" && path === "/trade") {
+        const body = await readJson(req);
+        const side = body?.side === "sell" ? "sell" : body?.side === "buy" ? "buy" : null;
+        if (!side || typeof body?.symbol !== "string") return send(res, 400, { error: 'body: {"symbol":"NVDAB","side":"buy"|"sell","usd"?:number}' });
+        const r = await agent.operatorTrade(body.symbol, side, typeof body.usd === "number" ? body.usd : undefined);
+        return send(res, r.ok ? 200 : 409, r);
       }
       if (req.method === "POST" && path === "/kill") {
         if (!agent.killSwitch) agent.engageKill("POST /kill");
@@ -70,6 +77,19 @@ export function startServer(agent: ExecutionAgent, port: number, host: string, c
   });
   server.listen(port, host, () => console.log(`[execution] listening on http://${host}:${port}`));
   return server;
+}
+
+async function readJson(req: IncomingMessage): Promise<any> {
+  let raw = "";
+  for await (const chunk of req) {
+    raw += chunk;
+    if (raw.length > 4096) return null;
+  }
+  try {
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
 }
 
 async function state(agent: ExecutionAgent) {
