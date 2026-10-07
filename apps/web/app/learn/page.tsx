@@ -3,9 +3,10 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { FlowDiagram } from "@/components/landing/FlowDiagram";
 import { IconCheck, IconShield } from "@/components/ui";
+import { LogoMark } from "@/components/LogoMark";
 
 export const metadata: Metadata = {
-  title: "Elitr: agent-to-agent trading desk",
+  title: "How Elitr works",
   description:
     "Three autonomous AI agents on BNB Chain: two analysts compete to sell signals over b402, a trader picks between them by track record, checks every idea against live prices and hard risk limits, then trades tokenized stocks on BSC.",
 };
@@ -150,12 +151,13 @@ function Section({ id, eyebrow, title, intro, children }: { id: string; eyebrow:
   );
 }
 
-export default function Landing() {
+export default function Learn() {
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-line bg-bg/85 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-3 sm:px-6">
-          <Link href="/" className="text-lg font-semibold tracking-tight">
+          <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+            <LogoMark className="h-[18px] w-auto text-accent" />
             Elitr<span className="text-accent">.</span>
           </Link>
           <nav className="hidden items-center gap-5 text-sm text-dim md:flex">
