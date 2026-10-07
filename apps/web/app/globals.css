@@ -1,27 +1,44 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --color-bg: #0a0b0d;
-  --color-panel: #111317;
-  --color-panel-2: #16191e;
-  --color-line: #23272e;
-  --color-line-strong: #333944;
-  --color-fg: #e8eaed;
-  --color-dim: #9aa1ab;
-  --color-faint: #636a75;
+  /* Binance palette */
+  --color-bg: #0b0e11;
+  --color-panel: #181a20;
+  --color-panel-2: #1e2329;
+  --color-line: #2b3139;
+  --color-line-strong: #474d57;
+  --color-fg: #eaecef;
+  --color-dim: #b7bdc6;
+  --color-faint: #848e9c;
   --color-accent: #f0b90b;
-  --color-pos: #2ebd85;
+  --color-pos: #0ecb81;
   --color-neg: #f6465d;
-  --color-warn: #e0a526;
+  --color-warn: #f0b90b;
   --color-info: #6ea8fe;
-  --color-flow: #b48cff; /* on-chain flow analyst */
+  --color-flow: #b48cff;
+
+  /* Sharp corners everywhere */
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
 }
 
 :root {
   color-scheme: dark;
+}
+
+/* Radius 0 everywhere, including rounded-full dots and native controls */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
 }
 
 html,

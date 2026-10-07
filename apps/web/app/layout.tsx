@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 
-const sans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
+const sans = Inter({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"], variable: "--font-inter" });
 const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export const metadata: Metadata = {
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0b0d",
+  themeColor: "#0b0e11",
   colorScheme: "dark",
 };
 
