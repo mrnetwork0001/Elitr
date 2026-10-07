@@ -4,21 +4,23 @@
   --font-sans: var(--font-inter), "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Binance palette */
-  --color-bg: #0b0e11;
-  --color-panel: #181a20;
-  --color-panel-2: #1e2329;
-  --color-line: #2b3139;
-  --color-line-strong: #474d57;
-  --color-fg: #eaecef;
-  --color-dim: #b7bdc6;
-  --color-faint: #848e9c;
-  --color-accent: #f0b90b;
-  --color-pos: #0ecb81;
-  --color-neg: #f6465d;
-  --color-warn: #f0b90b;
-  --color-info: #6ea8fe;
-  --color-flow: #b48cff;
+  /* Light Binance palette (matches the landing hero) */
+  --color-bg: #f6f6f4;
+  --color-panel: #ffffff;
+  --color-panel-2: #f3f3f1;
+  --color-line: #e7e7e4;
+  --color-line-strong: #d2d2ce;
+  --color-fg: #0a0a0a;
+  --color-dim: #4a5056;
+  --color-faint: #6b7378;
+  --color-accent: #f0b90b; /* Binance yellow — fills */
+  --color-gold: #b88a00; /* readable yellow for text on white */
+  --color-ink: #0b0e11; /* text on yellow */
+  --color-pos: #03a66d;
+  --color-neg: #cf304a;
+  --color-warn: #b88a00;
+  --color-info: #1f6feb;
+  --color-flow: #7c4ddb;
 
   /* Sharp corners everywhere */
   --radius-xs: 0;
@@ -31,7 +33,14 @@
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
+}
+
+/* Yellow text is unreadable on white: accent-coloured text uses the deep gold. */
+.text-accent,
+.hover\:text-accent:hover,
+.group:hover .group-hover\:text-accent {
+  color: var(--color-gold);
 }
 
 /* Radius 0 everywhere, including rounded-full dots and native controls */
@@ -128,9 +137,65 @@ body {
   animation: dash-flow 0.6s linear infinite;
 }
 
+/* Dashboard banner: slow drift over the landing image */
+@keyframes desk-drift {
+  from { transform: scale(1.04) translate3d(0, 0, 0); }
+  to { transform: scale(1.1) translate3d(-1.5%, -1%, 0); }
+}
+
+.desk-drift {
+  transform-origin: 58% 62%;
+  animation: desk-drift 40s ease-in-out infinite alternate;
+}
+
 dialog::backdrop {
   background: rgb(0 0 0 / 0.65);
   backdrop-filter: blur(2px);
+}
+
+/* ---- Dashboard shell ---- */
+/* Double ring (yellow over ink) stays visible on white, panel-2 and the ink nav item. */
+.dash-shell :focus-visible,
+.drawer :focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-ink);
+}
+
+@keyframes drawer-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+@keyframes drawer-out {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+@keyframes drawer-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes drawer-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.drawer[open] {
+  animation: drawer-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 24px 0 48px -24px rgb(11 14 17 / 0.35);
+}
+.drawer::backdrop {
+  background: rgb(11 14 17 / 0.42);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.drawer[open]::backdrop {
+  animation: drawer-fade-in 220ms ease-out;
+}
+.drawer.closing {
+  animation: drawer-out 170ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+.drawer.closing::backdrop {
+  animation: drawer-fade-out 170ms ease-in forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -139,7 +204,12 @@ dialog::backdrop {
   .node-pulse,
   .live-dot,
   .row-flash,
-  .wire-active {
+  .wire-active,
+  .desk-drift,
+  .drawer,
+  .drawer::backdrop,
+  .drawer.closing,
+  .drawer.closing::backdrop {
     animation: none !important;
   }
   .packet,
