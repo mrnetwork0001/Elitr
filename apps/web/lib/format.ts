@@ -176,6 +176,7 @@ export function pathOf(s: string): string {
 }
 
 const RULE_LABELS: Record<string, string> = {
+  gapPreScreen: "Gap pre-screen",
   killSwitch: "Kill switch",
   minConfidence: "Signal confidence",
   maxSignalAgeSec: "Signal age",

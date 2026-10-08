@@ -33,6 +33,17 @@ const round1 = (n: number) => Math.round(n * 10) / 10;
 const na = (input: RiskInput, rule: string) => `unavailable${input.missing?.[rule] ? `: ${input.missing[rule]}` : ""}`;
 
 /** Gap in bps by which on-chain trades BELOW the reference (positive = discount). */
+/**
+ * Free pre-screen before paying for a signal. A buy can only pass the minGapBps rule when the on-chain
+ * price already sits at least `minGapBps` below the Yahoo reference, so a signal is worth $0.01 only
+ * then, or when a position is open (a bearish call can trigger an exit). Unknown gap -> not worth it:
+ * the risk engine would fail closed on the missing price anyway.
+ */
+export function worthBuyingSignal(gap: number | null, heldWei: bigint, minGapBps: number): boolean {
+  if (heldWei > 0n) return true;
+  return gap !== null && Number.isFinite(gap) && gap >= minGapBps;
+}
+
 export function gapBps(reference: number, onchain: number): number {
   return ((reference - onchain) / reference) * 10_000;
 }

@@ -5,7 +5,7 @@
 ![b402](https://img.shields.io/badge/payments-b402%20%2F%20x402%20v2-222)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.12-339933)
 
-**An agent-to-agent market for tokenized-stock signals on BNB Chain.** Analyst agents sell trading signals for bStocks (NVDAB, TSLAB) behind an HTTP 402 paywall settled with **Binance b402**. An execution agent decides which analyst to pay with Thompson sampling, pays a cent in USDT per signal, checks the signal against Binance RWA Data, Market and Trading API prices and a set of hard risk limits, **dry-runs every transaction with the Binance Transaction API**, and then fills on PancakeSwap: as a paper fill, or live once you turn that on. Every signal is scored against the price after its horizon, so analysts earn a track record. That track record decides who gets paid next time, and it is posted on-chain as ERC-8004 reputation feedback. A Next.js dashboard streams the whole loop live over SSE.
+**An agent-to-agent market for tokenized-stock signals on BNB Chain.** Analyst agents sell trading signals for six bStocks (NVDAB, TSLAB, BABAB, CRCLB, SNDKB, METAB) behind an HTTP 402 paywall settled with **Binance b402**. An execution agent decides which analyst to pay with Thompson sampling, pays a cent in USDT per signal, checks the signal against Binance RWA Data, Market and Trading API prices and a set of hard risk limits, **dry-runs every transaction with the Binance Transaction API**, and then fills on PancakeSwap: as a paper fill, or live once you turn that on. Every signal is scored against the price after its horizon, so analysts earn a track record. That track record decides who gets paid next time, and it is posted on-chain as ERC-8004 reputation feedback. A Next.js dashboard streams the whole loop live over SSE.
 
 > Built for **BNB Hack: Tokenized Stocks**. BSC mainnet only. The repo defaults to paper mode (`LIVE_TRADING=0`); the hosted desk runs **live** with small limits.
 
@@ -84,7 +84,7 @@ flowchart TB
   subgraph BSC["BNB Smart Chain mainnet"]
     direction LR
     USDT["USDT + Permit2<br/>signal payments"]
-    PCS["PancakeSwap v3<br/>NVDAB, TSLAB vs USDT"]
+    PCS["PancakeSwap v3<br/>6 bStocks vs USDT"]
     ERC["ERC-8004 registries<br/>identity + reputation"]
     USDT ~~~ PCS ~~~ ERC
   end
@@ -169,7 +169,7 @@ sequenceDiagram
 | News analyst + flow analyst as b402 merchants (two payment options: USDT/Permit2, U/EIP-3009) | Live on mainnet |
 | Execution agent: b402 buyer, RWA/Market/Trading/Transaction/Wallet/Portfolio APIs, risk engine, Transaction API dry-runs | Live on mainnet |
 | Thompson-sampling analyst selection, signal scoring, trust / weight / pause | Live, building a track record every 15 min |
-| NVDAB + TSLAB, exits (take-profit / stop-loss / bearish), paper vs live ledger and P&L | Live (`LIVE_TRADING=1` on the hosted desk) |
+| Six bStocks (NVDAB, TSLAB, BABAB, CRCLB, SNDKB, METAB) with a free gap pre-screen before any signal is bought; exits (take-profit / stop-loss / bearish); paper vs live ledger and P&L | Live (`LIVE_TRADING=1` on the hosted desk) |
 | ERC-8004 identities (#365554, #365555, #365556) + on-chain reputation feedback after each scored signal | Live on mainnet |
 | Binance Agentic Wallet buying Elitr signals ([Elitr Skill](skills/elitr-signals/)) | Proven on mainnet (USDT and U routes) |
 | Weekend Gap board, Wallet API / Address Portfolio, "Today on the desk" summary | Shipped |
@@ -230,7 +230,7 @@ Base `https://web3.binance.com/build`. Every call is signed (`X-OC-APIKEY`, `X-O
 
 Other data: BSC JSON-RPC via viem (balances, pool liquidity, receipts), Yahoo Finance chart API (independent TradFi reference; the RWA `referencePrice` is derived from the on-chain price), and Yahoo Finance / Google News RSS (headlines).
 
-**Tokenized stocks.** Traded: **NVDAB**, **TSLAB** (bStocks; deep PancakeSwap v3 USDT pools). Tracked but not traded because DEX liquidity is negligible: NVDAon (Ondo), TSLAx (xStocks). Addresses are in [`packages/shared/src/assets.ts`](packages/shared/src/assets.ts) and were verified on-chain.
+**Tokenized stocks.** Traded: six bStocks with verified PancakeSwap v3 USDT pools above the $50k floor and a real underlying with a Yahoo quote: **NVDAB, TSLAB, BABAB, CRCLB, SNDKB, METAB**. Skipped: TSMB (thin volume), IBMB (~$900 pool), SPCXB (pre-IPO, no reference price), MUB (~$16k pool). Tracked but not traded: NVDAon (Ondo), TSLAx (xStocks). Before paying for a signal, the trader pre-screens each asset for free: a signal is bought only when the on-chain price is already at least `RISK_MIN_GAP_BPS` below the Yahoo reference (or a position is open), so the signal budget goes to actionable calls. Addresses are in [`packages/shared/src/assets.ts`](packages/shared/src/assets.ts) and were verified on-chain.
 
 ## Binance Agentic Wallet: Elitr Skill
 

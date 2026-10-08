@@ -56,7 +56,7 @@ HTTP: `GET /health`, `GET /state` (wallet, balances, positions, limits, config e
 | Package | Contents |
 | --- | --- |
 | `packages/binance` | `BinanceWeb3Client`: request signing (`X-OC-APIKEY`, ISO-8601 `X-OC-TIMESTAMP`, `X-OC-NONCE`, `X-OC-RECV-WINDOW`, HMAC `X-OC-SIGN` over timestamp + method + path-with-query + body), the envelope check (`code` 0 for Web3 APIs, `"000000000"` for b402, whose body is wrapped as `{"body": …}`), a typed `BinanceApiError`, and an `onResponse` hook for latency and status logging. Signing has a unit test. |
-| `packages/shared` | `ASSETS` (NVDAB, TSLAB traded; NVDAon, TSLAx tracked), risk config schema (zod), the `AgentEvent` union streamed to the dashboard, the `Signal` / `AnalystInfo` wire types, and `EventHub` (JSONL-persisted SSE hub). |
+| `packages/shared` | `ASSETS` (six bStocks traded: NVDAB, TSLAB, BABAB, CRCLB, SNDKB, METAB; NVDAon, TSLAx tracked), risk config schema (zod), the `AgentEvent` union streamed to the dashboard, the `Signal` / `AnalystInfo` wire types, and `EventHub` (JSONL-persisted SSE hub). |
 | `packages/reputation` | Signal scoring, Beta trust, weight, pause rule and Thompson-sampling selection with an injectable RNG. Persisted atomically. Unit-tested. |
 | `packages/identity` | ERC-8004 registration file builder, `elitr-identity` CLI (`register`), and the reputation feedback client. Canonical registries for BSC 56 / 97 by default. Unit-tested. |
 

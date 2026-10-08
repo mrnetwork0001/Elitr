@@ -39,7 +39,7 @@ export function FlowDiagram() {
       <Wire delay={0.2} label="HTTP 402 ⇄ b402" sub="trader picks one, pays, gets a signal" rev />
       <Node delay={0.28} keyNode marker="" role="Buyer · Agent B" title="Execution" lines={["Thompson-samples the analysts", "Scores every call they sell", "14 risk checks, then dry-run", "Exits on TP / SL / bearish"]} />
       <Wire delay={0.4} label="Binance Web3 API" sub="quote · simulate · broadcast" />
-      <Node delay={0.48} marker={l.squareOutline} role="BNB Smart Chain" title="NVDAB · TSLAB" lines={["bStocks tokenized NVIDIA & Tesla", "PancakeSwap v3 USDT pools", "Paper by default, live on demand"]} />
+      <Node delay={0.48} marker={l.squareOutline} role="BNB Smart Chain" title="6 bStocks" lines={["NVDAB, TSLAB, BABAB, CRCLB, SNDKB, METAB", "PancakeSwap v3 USDT pools", "Paper by default, live on demand"]} />
     </div>
   );
 }

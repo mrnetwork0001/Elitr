@@ -18,7 +18,7 @@ import { covers, fetchInfo, type AnalystEndpoint, type AnalystStatus } from "./a
 import { heldWei, positionView, summarize, type PnlSummary } from "./ledger.js";
 import { buySignal } from "./pay.js";
 import { bnbUsd, fetchOnchainPrice, fetchRwa, fetchYahoo, poolPrice, type RwaSnapshot, type YahooQuote } from "./prices.js";
-import { evaluateRisk, evaluateSellRisk, exitTrigger, type ExitReason } from "./risk.js";
+import { evaluateRisk, evaluateSellRisk, exitTrigger, gapBps, worthBuyingSignal, type ExitReason } from "./risk.js";
 import { dxLog, type StateStore } from "./state.js";
 import { errMsg, executeSwap, quoteSwap, type RouteChoice, type TxDeps } from "./trade.js";
 import { poolUsdtLiquidity, readBalances, type Balances } from "./wallet.js";
@@ -312,8 +312,27 @@ export class ExecutionAgent {
     const sym = asset.symbol;
     const missing: Record<string, string> = {};
 
-    // a. Choose an analyst and buy its signal.
-    const signal = await this.acquireSignal(asset, statuses, pools.get(sym) ?? null, missing);
+    // a. Free pre-screen, then (maybe) choose an analyst and buy its signal. Buys need the on-chain price
+    //    at least minGapBps below the Yahoo reference, so with six assets we only spend $0.01 where a buy
+    //    is possible this cycle, or where a position is open and a bearish call could trigger an exit.
+    const yahoo: YahooQuote | null = await this.step(`yahoo:${sym}`, () => fetchYahoo(asset.underlying));
+    if (yahoo) hub.emit({ type: "price.reference", symbol: sym, price: yahoo.price, source: "yahoo" });
+    else missing.minGapBps = "Yahoo reference price unavailable";
+    const markNow = this.marks.get(sym) ?? null;
+    const preGap = yahoo && markNow ? gapBps(yahoo.price, markNow.price) : null;
+    const heldNow = this.heldFor(asset, bal) ?? 0n;
+    let signal: Awaited<ReturnType<typeof this.acquireSignal>> = null;
+    if (worthBuyingSignal(preGap, heldNow, risk.minGapBps)) {
+      signal = await this.acquireSignal(asset, statuses, pools.get(sym) ?? null, missing);
+    } else {
+      const detail =
+        preGap === null
+          ? `reference or on-chain price unavailable, no position held: signal not bought this cycle`
+          : `on-chain ${markNow!.price.toFixed(2)} is ${Math.abs(preGap).toFixed(1)} bps ${preGap < 0 ? "above" : "below"} the Yahoo reference ${yahoo!.price.toFixed(2)} ` +
+            `(a buy needs >= ${risk.minGapBps} bps below), no position held: signal not bought this cycle`;
+      hub.emit({ type: "risk.blocked", symbol: sym, rule: "gapPreScreen", detail });
+      missing.signal = `pre-screen: ${detail}`;
+    }
 
     // b. Reference prices + market status.
     let rwa: RwaSnapshot | null = null;
@@ -329,9 +348,6 @@ export class ExecutionAgent {
       }
     }
     const marketClosed = rwa?.status && !rwa.status.openState ? rwa.status : null;
-    const yahoo: YahooQuote | null = await this.step(`yahoo:${sym}`, () => fetchYahoo(asset.underlying));
-    if (yahoo) hub.emit({ type: "price.reference", symbol: sym, price: yahoo.price, source: "yahoo" });
-    else missing.minGapBps = "Yahoo reference price unavailable";
 
     const mark = this.marks.get(sym) ?? null;
     if (!mark) missing.minGapBps ??= "no on-chain price (Market API and PCS v3 pool both failed)";

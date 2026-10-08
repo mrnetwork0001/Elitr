@@ -66,7 +66,7 @@ export const KIND_LABEL: Record<string, string> = {
 };
 
 /** Assets the dashboard offers as tabs; extended at runtime by GET /state `assets`. */
-export const DEFAULT_ASSETS = ["NVDAB", "TSLAB"];
+export const DEFAULT_ASSETS = ["NVDAB", "TSLAB", "BABAB", "CRCLB", "SNDKB", "METAB"];
 
 export const BSCSCAN_TX = (hash: string) => `https://bscscan.com/tx/${hash}`;
 export const BSCSCAN_ADDRESS = (addr: string) => `https://bscscan.com/address/${addr}`;

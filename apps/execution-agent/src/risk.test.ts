@@ -166,3 +166,12 @@ test("no position or no mark: price exits don't fire", () => {
   assert.equal(exitTrigger(pos({ qty: 0, markUsd: 50 }), cfg), null);
   assert.equal(exitTrigger(pos({ markUsd: null }), cfg), null);
 });
+
+import { worthBuyingSignal } from "./risk.js";
+test("worthBuyingSignal: pay only when a buy is possible or a position is open", () => {
+  assert.equal(worthBuyingSignal(80, 0n, 50), true); // on-chain 80 bps below reference
+  assert.equal(worthBuyingSignal(20, 0n, 50), false); // not far enough below
+  assert.equal(worthBuyingSignal(-40, 0n, 50), false); // above reference
+  assert.equal(worthBuyingSignal(null, 0n, 50), false); // unknown -> risk would fail closed anyway
+  assert.equal(worthBuyingSignal(-40, 1n, 50), true); // open position: a bearish call can exit it
+});

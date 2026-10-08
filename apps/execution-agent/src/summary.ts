@@ -10,6 +10,7 @@ type Ev<T extends AgentEvent["type"]> = Extract<AgentEvent, { type: T }>;
 
 /** Why a rule blocks a trade, phrased to follow "because". */
 export const RULE_PLAIN: Record<string, string> = {
+  gapPreScreen: "the token wasn't trading far enough below the real stock price for a buy to be possible, so no tip was bought",
   killSwitch: "the emergency stop (kill switch) is switched on",
   minConfidence: "the analyst was not confident enough",
   stance: "the analyst did not expect the price to rise",

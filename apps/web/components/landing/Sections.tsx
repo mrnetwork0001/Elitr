@@ -9,7 +9,7 @@ const STATS = [
   ["3", "autonomous agents"],
   ["14", "risk checks before every buy"],
   ["100%", "of transactions dry-run first"],
-  ["2", "tokenized stocks traded"],
+  ["6", "tokenized stocks traded"],
 ] as const;
 
 const PROBLEMS = [
@@ -69,9 +69,9 @@ const AGENTS: { role: string; title: string; body: string; marker: string; key?:
 ];
 
 const STEPS: { n: string; title: string; body: string; api: string }[] = [
-  { n: "01", title: "Pick an analyst", body: "Two analysts sell signals for each stock: one reads the news, one reads on-chain swap flow. The Execution agent draws a Thompson sample from each one's track record and buys from the highest draw. Analysts whose trust falls too low are paused.", api: "Analyst market" },
-  { n: "02", title: "Buy the signal", body: "It asks the chosen analyst for a signal, gets an HTTP 402 price tag, signs a USDT payment and retries. The analyst checks the payment with Binance's b402 facilitator, and only settles once it has actually produced the signal. No signal, no charge.", api: "b402 payments" },
-  { n: "03", title: "Get three prices", body: "The real stock price from Yahoo Finance, the Binance RWA Data reference price and market status, and the live on-chain token price - for NVDAB and TSLAB.", api: "RWA Data · Market API" },
+  { n: "01", title: "Price every stock, for free", body: "For each of the six bStocks: the real stock price from Yahoo Finance, the Binance RWA Data reference price and market status, and the live on-chain token price. Then a free pre-screen: a signal is only worth buying where the token already trades at least 0.5% below the real stock (or a position is open), so the $0.01 budget goes to actionable calls.", api: "RWA Data · Market API" },
+  { n: "02", title: "Pick an analyst", body: "Two analysts sell signals: one reads the news, one reads on-chain swap flow. The Execution agent draws a Thompson sample from each one's track record and buys from the highest draw. Analysts whose trust falls too low are paused; if all are paused, it buys one probe so a record can recover.", api: "Analyst market" },
+  { n: "03", title: "Buy the signal", body: "It asks the chosen analyst for a signal, gets an HTTP 402 price tag, signs a USDT payment and retries. The analyst checks the payment with Binance's b402 facilitator, and only settles once it has actually produced the signal. No signal, no charge.", api: "b402 payments" },
   { n: "04", title: "Check exits first", body: "For a held position, the agent sells on take-profit, stop-loss, or a bearish signal before it considers buying more.", api: "Portfolio" },
   { n: "05", title: "Quote the trade", body: "Asks the aggregator for the best route. Only regular swap routes are accepted, because only those can be simulated.", api: "Trading API" },
   { n: "06", title: "Run the risk checks", body: "14 rules on a buy (portfolio cap included), 6 on a sell. Every rule is logged with its observed value and limit. One failure and the agent holds.", api: "Risk engine" },
@@ -135,9 +135,14 @@ const GUARDS = [
   ["Kill switch", "One operator click stops all new trades until the agent is restarted. Visitors get a read-only dashboard."],
 ] as const;
 
-const LIQUIDITY: [string, string, string, "Traded" | "Tracked"][] = [
-  ["bStocks", "NVDAB", "≈ $4.2M", "Traded"],
-  ["bStocks", "TSLAB", "≈ $2.0M", "Traded"],
+const LIQUIDITY: [string, string, string, string][] = [
+  ["bStocks", "NVDAB", "≈ $8.0M", "Traded"],
+  ["bStocks", "BABAB", "≈ $2.5M", "Traded"],
+  ["bStocks", "TSLAB", "≈ $2.3M", "Traded"],
+  ["bStocks", "CRCLB", "≈ $925k", "Traded"],
+  ["bStocks", "SNDKB", "≈ $237k", "Traded"],
+  ["bStocks", "METAB", "≈ $214k", "Traded"],
+  ["bStocks", "TSMB", "≈ $132k", "Tracked"],
   ["Ondo", "NVDAon / TSLAon", "< $10k", "Tracked"],
   ["xStocks", "TSLAx", "≈ $23", "Tracked"],
 ];
@@ -201,7 +206,7 @@ const FAQ: [string, ReactNode][] = [
     "Binance's payment facilitator for x402, a standard that revives HTTP's 402 “Payment Required” status. A server names its price, the client signs a stablecoin payment, and the facilitator verifies and settles it on BSC, with gas sponsored.",
   ],
   [
-    "Why NVDAB and TSLAB, not Ondo or xStocks?",
+    "Why these six bStocks, not Ondo or xStocks?",
     "Liquidity. On BSC, only bStocks have real pool depth today. Ondo and xStocks tokens exist on BSC but their pools are too thin to trade safely, so Elitr tracks them without trading them.",
   ],
   [
@@ -295,7 +300,7 @@ export function Sections() {
         <p {...reveal("fade", 0.12, l.lead)}>
           Elitr is an agent-to-agent trading desk on BNB Chain. A news analyst and an on-chain flow analyst sell signals over b402 payments. The
           Execution agent chooses between them by track record, checks each idea against live prices and 14 hard risk rules, dry-runs every
-          transaction, and manages a small NVDAB + TSLAB portfolio with take-profit and stop-loss exits.
+          transaction, and manages a small six-stock bStocks portfolio (NVDAB, TSLAB, BABAB, CRCLB, SNDKB, METAB) with take-profit and stop-loss exits.
         </p>
         <FlowDiagram />
         <dl className={l.stats}>
@@ -555,7 +560,7 @@ export function Sections() {
         <Head
           idx="06"
           eyebrow="Assets"
-          title={{ lead: "Why Elitr trades ", accent: "NVDAB and TSLAB." }}
+          title={{ lead: "Why Elitr trades ", accent: "these six bStocks." }}
           intro="Tokenized stocks from bStocks, Ondo and xStocks are all deployed on BSC, but only bStocks have the pool depth to trade safely. We checked on-chain before choosing."
         />
         <div {...reveal("fade", 0, l.scrollX)}>
@@ -584,7 +589,7 @@ export function Sections() {
             </tbody>
           </table>
         </div>
-        <p className={l.note}>Snapshot of 4 Oct 2026 from DexScreener and on-chain pool balances. Liquidity changes constantly.</p>
+        <p className={l.note}>Snapshot of 8 Oct 2026 from DexScreener and on-chain pool balances (the trader requires at least $50k of USDT in the token's PancakeSwap v3 pool). Liquidity changes constantly.</p>
       </Section>
 
       {/* Stack */}
