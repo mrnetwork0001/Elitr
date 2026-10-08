@@ -2,7 +2,8 @@
 import { useRef, useState, type ReactNode } from "react";
 import type { AgentId, AnalystId } from "@elitr/shared";
 import { useDashboard } from "@/lib/dashboard";
-import { AGENTS } from "@/lib/config";
+import { AGENTS, BSCSCAN_NFT, ERC8004_REGISTRY, STUDIO_AGENT } from "@/lib/config";
+import { useStudioAgent } from "@/lib/useStudioAgent";
 import { ago, ruleLabel, until, usd } from "@/lib/format";
 import { ModeBadge, StatusDot } from "@/components/DashboardShell";
 import { Panel, IconBolt, IconKey } from "@/components/ui";
@@ -42,6 +43,7 @@ function ActionRow({ title, endpoint, body, meta, children }: { title: string; e
 
 export function ControlsView() {
   const d = useDashboard();
+  const studio = useStudioAgent();
   const killRef = useRef<HTMLDialogElement>(null);
   const [draft, setDraft] = useState("");
   const s = d.state;
@@ -244,6 +246,23 @@ export function ControlsView() {
                 </li>
               );
             })}
+            <li className="px-4 py-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex min-w-0 items-center gap-2.5">
+                  <StatusDot status={studio.status} />
+                  <span className="truncate text-[14px] font-medium text-fg">{STUDIO_AGENT.name}</span>
+                  <span className="border border-accent/50 bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.1em] text-ink uppercase">Agent Studio</span>
+                </span>
+                <span className={`text-[11px] tracking-[0.08em] uppercase ${studio.status === "offline" ? "font-semibold text-neg" : "text-dim"}`}>{studio.status}</span>
+              </div>
+              <div className="mt-1 font-mono text-[12px] break-all text-dim">{STUDIO_AGENT.card}</div>
+              <div className="mt-1 text-[12px] text-dim">
+                A2A{studio.skills.length ? ` (${studio.skills.join(", ")})` : ""} · x402 brief (free) ·{" "}
+                <a className="font-mono text-fg underline decoration-line-strong underline-offset-2 hover:decoration-fg" href={BSCSCAN_NFT(ERC8004_REGISTRY, STUDIO_AGENT.erc8004AgentId)} target="_blank" rel="noreferrer">
+                  ERC-8004 #{STUDIO_AGENT.erc8004AgentId}
+                </a>
+              </div>
+            </li>
           </ul>
         </Panel>
       </div>
