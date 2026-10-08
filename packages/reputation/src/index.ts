@@ -11,11 +11,15 @@
  *    roughly one PancakeSwap fee tier + noise, so a call has to clear trading friction to count).
  *      bullish  correct iff returnBps >  +band
  *      bearish  correct iff returnBps <  −band
- *      neutral  correct iff |returnBps| ≤ band
+ *      neutral  correct iff |returnBps| ≤ band   (shown for transparency, but an abstention — see §2)
  *    avgReturnBps = mean of returnBps signed by stance (bullish +r, bearish −r; neutral calls carry
  *    no direction and are excluded) — "how many bps did following this analyst earn, gross".
  *
- * 2. Trust = posterior mean of a Beta(1,1) (uniform) prior updated with hits / misses:
+ * 2. Only directional calls (bullish / bearish) count toward trust. A neutral call is an abstention:
+ *    the trader cannot act on it, and "price stays within ±band over 30–60 min" is close to a coin
+ *    flip on a 24/7 pool, so scoring it would mostly add noise. Neutral calls are still recorded and
+ *    marked, they just don't move samples / hits / trust.
+ *    Trust = posterior mean of a Beta(1,1) (uniform) prior updated with hits / misses:
  *      trust = (hits + 1) / (samples + 2)            (Laplace's rule of succession)
  *    It starts at 0.5 with zero data and only moves as evidence accumulates, so one lucky call
  *    cannot make an analyst look like an oracle.
@@ -36,6 +40,10 @@
  * 4. Pause: paused = samples ≥ minSamples ∧ trust < pauseBelow (default 0.45). A paused analyst is
  *    not bought from at all (saves the b402 fee) — its record is kept and it keeps being scored on
  *    signals already bought, so the pause is a verdict on evidence, not a ban.
+ *    Probation: if every online analyst is paused, nobody would ever be paid again, so nobody could
+ *    ever earn trust back. choose() then buys one probe from the most-trusted paused analyst
+ *    (ties → cheaper). Its weight is ~0 below the trust line, so the probe's confidence collapses to
+ *    neutral and cannot trigger a trade — it only buys the evidence needed to recover (or stay paused).
  *
  * 5. Choosing whom to pay — Thompson sampling. For each online, unpaused candidate draw
  *      θ ~ Beta(hits + 1, misses + 1)
@@ -71,6 +79,8 @@ export interface ScoredSignal extends SignalRecord {
   correct: boolean;
 }
 export interface Choice {
+  /** True when every analyst was paused and this is a probe purchase (see header §4). */
+  probation?: boolean;
   analystId: AnalystId | null;
   reasons: string[];
   candidates: AnalystCandidate[];
@@ -222,12 +232,11 @@ export class ReputationBook {
     let dirSum = 0;
     for (const e of this.signals.values()) {
       if (e.analystId !== analystId || !isScored(e)) continue;
+      if (e.stance === "neutral") continue; // abstention: recorded, not scored into trust (§2)
       samples++;
       if (e.correct) hits++;
-      if (e.stance !== "neutral") {
-        dirN++;
-        dirSum += e.stance === "bullish" ? e.returnBps : -e.returnBps;
-      }
+      dirN++;
+      dirSum += e.stance === "bullish" ? e.returnBps : -e.returnBps;
     }
     const trust = posteriorMean(hits, samples);
     const alpha = this.minSamples === 0 ? 1 : Math.min(1, samples / this.minSamples);
@@ -289,6 +298,18 @@ export class ReputationBook {
     }));
     const eligible = scored.filter((x) => x.adj !== undefined).sort((a, b) => b.adj! - a.adj!);
     if (!eligible.length) {
+      // Probation (§4): all online analysts paused → buy one probe from the most-trusted one.
+      const paused = scored
+        .filter((x) => x.c.online && x.st.paused)
+        .sort((a, b) => b.st.trust - a.st.trust || (a.c.priceUsd ?? 0) - (b.c.priceUsd ?? 0));
+      if (paused.length) {
+        const p = paused[0]!;
+        reasons.unshift(
+          `probation: every analyst is paused, so buying one probe from ${p.c.analystId} (trust ${pct(p.st.trust)} over ${p.st.samples} directional calls) ` +
+            `to let it earn trust back; below the trust line its weight is ~0, so this probe cannot trigger a trade`,
+        );
+        return { analystId: p.c.analystId, reasons, candidates: out, probation: true };
+      }
       reasons.unshift(candidates.length ? "no eligible analyst (all offline or paused)" : "no analysts configured");
       return { analystId: null, reasons, candidates: out };
     }

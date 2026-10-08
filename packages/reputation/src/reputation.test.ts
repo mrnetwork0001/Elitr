@@ -66,10 +66,11 @@ test("scoring rules: band edges for every stance", () => {
   const zs = book.score(z.signalId, 100.2, 5); // +20 bps, inside band
   assert.equal(zs.correct, true);
   assert.ok(Math.abs(zs.returnBps - 20) < 1e-9);
-  // avgReturnBps: bullish +50, bearish −(+50) = −50, neutral excluded → 0
+  // Neutral is marked (correct=true above) but is an abstention: only the two directional calls count.
+  // avgReturnBps: bullish +50, bearish −(+50) = −50 → 0
   const st = book.stats("analyst");
-  assert.equal(st.samples, 3);
-  assert.equal(st.hits, 2);
+  assert.equal(st.samples, 2);
+  assert.equal(st.hits, 1);
   assert.ok(Math.abs(st.avgReturnBps!) < 1e-9);
 });
 
@@ -214,10 +215,16 @@ test("choose() skips offline and paused analysts and explains why", () => {
   assert.ok(c.reasons.some((r) => /analyst paused: trust 21% over 12 signals/.test(r)), c.reasons.join(" | "));
   assert.equal(c.candidates.find((x) => x.analystId === "analyst")!.draw, undefined);
 
-  const none = book.choose([cands[0]!, { ...cands[1]!, online: false }]);
+  // Only the paused analyst is online → probation probe instead of buying nothing forever.
+  const probe = book.choose([cands[0]!, { ...cands[1]!, online: false }]);
+  assert.equal(probe.analystId, "analyst");
+  assert.equal(probe.probation, true);
+  assert.match(probe.reasons[0]!, /probation: every analyst is paused/);
+  assert.ok(probe.reasons.includes("analyst-flow offline"));
+  // Nobody online at all → nobody.
+  const none = book.choose([{ ...cands[0]!, online: false }, { ...cands[1]!, online: false }]);
   assert.equal(none.analystId, null);
   assert.match(none.reasons[0]!, /no eligible analyst/);
-  assert.ok(none.reasons.includes("analyst-flow offline"));
   assert.equal(book.choose([]).analystId, null);
 });
 
@@ -243,4 +250,30 @@ test("price adjustment breaks ties toward the cheaper analyst", () => {
   ];
   for (let i = 0; i < 2000; i++) wins[book.choose(priced).analystId as AnalystId]++;
   assert.ok(wins["analyst-flow"] > wins.analyst, JSON.stringify(wins));
+});
+
+test("probation picks the most-trusted paused analyst and its weight stays ~0", () => {
+  const book = new ReputationBook(file(), { rng: seeded(7) });
+  seed(book, "analyst", 2, 10); // trust 3/14 ≈ 0.21
+  seed(book, "analyst-flow", 4, 10); // trust 5/16 ≈ 0.31 → most trusted of the paused
+  assert.equal(book.stats("analyst").paused, true);
+  assert.equal(book.stats("analyst-flow").paused, true);
+  const c = book.choose(cands);
+  assert.equal(c.analystId, "analyst-flow");
+  assert.equal(c.probation, true);
+  assert.ok(book.weight("analyst-flow") < 0.01, "a paused analyst's conviction carries no weight");
+  assert.ok(Math.abs(book.effectiveScore("analyst-flow", 90) - 50) < 1, "a probe cannot push the confidence rule");
+});
+
+test("neutral calls never move trust", () => {
+  const book = new ReputationBook(file());
+  for (let i = 0; i < 12; i++) {
+    const z = sig("analyst", "neutral");
+    book.record(z);
+    book.score(z.signalId, 101, 5); // +100 bps: a "wrong" neutral
+  }
+  const st = book.stats("analyst");
+  assert.equal(st.samples, 0);
+  assert.equal(st.paused, false);
+  assert.equal(st.trust, 0.5);
 });
