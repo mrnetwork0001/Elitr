@@ -14,6 +14,7 @@ import type { BinanceWeb3Client } from "@elitr/binance";
 import { ASSETS, TRADED_ASSETS } from "@elitr/shared";
 import { Cached, errText, throttled } from "./apiThrottle.js";
 import { fetchYahoo } from "./prices.js";
+import { dxLog } from "./state.js";
 
 const CHAIN = "56";
 const P = {
@@ -33,6 +34,21 @@ const P = {
 export const MAX_COMPARABLE_BPS = 2000;
 export function comparableBps(bps: number | null): number | null {
   return bps === null || !Number.isFinite(bps) || Math.abs(bps) > MAX_COMPARABLE_BPS ? null : bps;
+}
+
+/** Sort key for the board: the largest *comparable* gap first; basis-mismatch artefacts sort as 0. */
+export function boardSortKey(t: Pick<BoardToken, "yahooSpreadBps" | "refSpreadBps">): number {
+  return Math.abs(t.yahooSpreadBps ?? t.refSpreadBps ?? 0);
+}
+
+/**
+ * `rwa/tokens?tabId=N` was observed (2026-10-08) to return the whole token list for every tab, so each token
+ * looked like a member of all 13 sectors. A tab whose members equal the full set carries no information.
+ */
+export function tabIgnored(tab: Set<string>, all: Set<string>): boolean {
+  if (!all.size || tab.size !== all.size) return false;
+  for (const a of tab) if (!all.has(a)) return false;
+  return true;
 }
 
 export const SECTORS: Record<number, string> = {
@@ -169,7 +185,9 @@ export interface BoardToken {
   tokenPrice: number | null;
   referencePrice: number | null;
   priceUpdatedAt: number | null;
-  refSpreadBps: number | null; // on-chain vs Binance referencePrice (+ = premium)
+  refSpreadBps: number | null; // on-chain vs Binance referencePrice (+ = premium); null when the share basis differs
+  refBasisMismatch: boolean; // |raw spread| > MAX_COMPARABLE_BPS (e.g. KLACon +90,261 bps): not a gap
+  refRawSpreadBps: number | null;
   yahooPrice: number | null;
   yahooTime: number | null;
   yahooSpreadBps: number | null; // on-chain vs Yahoo (+ = premium); null when the share basis differs
@@ -241,13 +259,15 @@ export async function fetchYahooBatch(tickers: string[]): Promise<{ prices: Map<
   return { prices, errors };
 }
 
+const PRICE_BATCH = 25; // rwa/price addresses per call (100 overflowed the URL: HTTP 414)
 const HEADLINE_UNDERLYING = 6; // rwa/underlying-market calls per refresh, at most
 const LIQUIDITY_TOKENS = 12; // top-liquidity calls per refresh, at most
 const YAHOO_MAX = 100; // tickers priced via Yahoo, at most (5 spark calls)
 
 export class RwaBoard {
   private readonly board: Cached<RwaBoardView>;
-  private readonly sectors: Cached<{ at: number; members: Map<number, Set<string>>; rows: RwaBoardView["sectors"] }>;
+  private readonly sectors: Cached<{ at: number; members: Map<number, Set<string>>; rows: RwaBoardView["sectors"]; ignored: number }>;
+  private allAddresses = new Set<string>(); // every BSC token on the board, lowercased - what an ignored tabId returns
   private readonly platforms: Cached<{ rows: Row[] | null; error?: string }>;
   private readonly underlying = new Map<string, { at: number; v: Record<string, number | string | null> | null }>();
   private readonly liquidity = new Map<string, { at: number; usd: number | null; pool: string | null }>();
@@ -280,17 +300,24 @@ export class RwaBoard {
   private async loadSectors() {
     const members = new Map<number, Set<string>>();
     const rows: RwaBoardView["sectors"] = [];
+    let ignored = 0;
     for (const id of Object.keys(SECTORS).map(Number)) {
       try {
         const list = (await this.call<Row[]>(P.tokens, { binanceChainId: CHAIN, tabId: id })) ?? [];
         const set = new Set(list.map((t) => String(t.tokenContractAddress ?? "").toLowerCase()).filter(Boolean));
+        if (tabIgnored(set, this.allAddresses)) {
+          ignored++;
+          rows.push({ tabId: id, label: SECTORS[id], count: null, error: `tabId ignored by the API (returned all ${set.size} tokens)` });
+          continue;
+        }
         members.set(id, set);
         rows.push({ tabId: id, label: SECTORS[id], count: set.size });
       } catch (e) {
         rows.push({ tabId: id, label: SECTORS[id], count: null, error: errText(e) });
       }
     }
-    return { at: Date.now(), members, rows };
+    if (ignored) dxLog("rwa-data", `rwa/tokens?tabId=N ignores tabId: ${ignored} of ${rows.length} sector tabs returned the full token list`, `GET ${P.tokens}?binanceChainId=56&tabId=1..13`);
+    return { at: Date.now(), members, rows, ignored };
   }
 
   private async underlyingFor(addr: string): Promise<Record<string, number | string | null> | null> {
@@ -354,9 +381,14 @@ export class RwaBoard {
       errors,
       notes,
     };
+    const finish = (v: RwaBoardView) => {
+      v.errors = [...new Set(errors)];
+      v.fetchedAt = Date.now();
+      return v;
+    };
     if (!this.client) {
       errors.push("Binance Web3 API client not configured (BINANCE_WEB3_API_KEY / BINANCE_WEB3_API_SECRET)");
-      return view;
+      return finish(view);
     }
 
     // 1. Token lists per issuer (sequential on the same path via the throttle).
@@ -403,7 +435,9 @@ export class RwaBoard {
           tokenPrice,
           referencePrice,
           priceUpdatedAt: null,
-          refSpreadBps: spreadBps(tokenPrice, referencePrice),
+          refSpreadBps: comparableBps(spreadBps(tokenPrice, referencePrice)),
+          refBasisMismatch: spreadBps(tokenPrice, referencePrice) !== null && comparableBps(spreadBps(tokenPrice, referencePrice)) === null,
+          refRawSpreadBps: spreadBps(tokenPrice, referencePrice),
           yahooPrice: null,
           yahooTime: null,
           yahooSpreadBps: null,
@@ -426,13 +460,13 @@ export class RwaBoard {
     // Nothing listed (typically: API unreachable) → stop here instead of timing out on 20 more calls.
     if (!tokens.length) {
       if (!errors.length) notes.push("rwa/tokens returned no BSC tokens for bstock or ondo.");
-      view.fetchedAt = Date.now();
-      return view;
+      return finish(view);
     }
+    this.allAddresses = new Set(tokens.map((t) => t.address.toLowerCase()));
 
-    // 2. Fresh prices in batches of 100 (rwa/tokens prices can lag; rwa/price carries tokenPriceUpdatedAt).
-    for (let i = 0; i < tokens.length; i += 100) {
-      const chunk = tokens.slice(i, i + 100);
+    // 2. Fresh prices in small batches (rwa/tokens prices can lag; rwa/price carries tokenPriceUpdatedAt).
+    for (let i = 0; i < tokens.length; i += PRICE_BATCH) {
+      const chunk = tokens.slice(i, i + PRICE_BATCH);
       try {
         const rows = (await this.call<Row[]>(P.price, { binanceChainId: CHAIN, tokenContractAddresses: chunk.map((t) => t.address).join(",") })) ?? [];
         const by = new Map(rows.map((r) => [String(r.tokenContractAddress ?? "").toLowerCase(), r]));
@@ -442,10 +476,12 @@ export class RwaBoard {
           t.tokenPrice = num(r.tokenPrice) ?? t.tokenPrice;
           t.referencePrice = num(r.referencePrice) ?? t.referencePrice;
           t.priceUpdatedAt = num(r.tokenPriceUpdatedAt);
-          t.refSpreadBps = spreadBps(t.tokenPrice, t.referencePrice);
+          t.refRawSpreadBps = spreadBps(t.tokenPrice, t.referencePrice);
+          t.refSpreadBps = comparableBps(t.refRawSpreadBps);
+          t.refBasisMismatch = t.refRawSpreadBps !== null && t.refSpreadBps === null;
         }
       } catch (e) {
-        errors.push(`rwa/price (${chunk.length} tokens): ${errText(e)} - showing rwa/tokens prices`);
+        errors.push(`rwa/price batch: ${errText(e)} - showing rwa/tokens prices`);
       }
     }
 
@@ -469,6 +505,7 @@ export class RwaBoard {
       view.sectors = sec.rows;
       view.sectorsFetchedAt = sec.at;
       for (const t of tokens) for (const [id, set] of sec.members) if (set.has(t.address.toLowerCase())) t.sectors.push(id);
+      if (sec.ignored) notes.push(`Sector tabs: the API returned the full token list for ${sec.ignored} of ${sec.rows.length} tabIds, so those sectors are not shown (tokens are not tagged with them).`);
     }
     view.yahoo.requested = yh.requested;
     if (yh.errors.length) view.yahoo.error = yh.errors.join("; ");
@@ -532,8 +569,7 @@ export class RwaBoard {
       notes.push("rwa/tokens returned no market-status object for any token.");
     }
 
-    view.tokens = tokens.sort((a, b) => Math.abs(b.yahooSpreadBps ?? b.refSpreadBps ?? 0) - Math.abs(a.yahooSpreadBps ?? a.refSpreadBps ?? 0));
-    view.fetchedAt = Date.now();
-    return view;
+    view.tokens = tokens.sort((a, b) => boardSortKey(b) - boardSortKey(a));
+    return finish(view);
   }
 }

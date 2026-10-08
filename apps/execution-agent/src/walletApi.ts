@@ -1,18 +1,22 @@
 // Agent wallet as Binance sees it: Wallet API balances + transaction history, Address Portfolio overview.
 // Read-only (address in, data out) - works without the private key via EXECUTION_WALLET_ADDRESS.
 //
-// Endpoints (binance-web3-llms-full.txt "Wallet API" and "Address Portfolio"):
-//   GET /api/v1/dex/balance/all-token-balances-by-address    (address, binanceChainId, excludeRiskToken)
-//   GET /api/v1/dex/post-transaction/transactions-by-address (address, binanceChainId, limit)
-//   GET /api/v1/dex/market/portfolio/overview                (address, binanceChainId)
-// The bundled docs list these endpoints with one-line descriptions only - no parameter or response
-// tables - so responses are parsed structurally and every failure is surfaced, never filled in.
+// Endpoints (binance-web3-llms-full.txt "Wallet API" and "Address Portfolio"; parameter names checked
+// against the live API on 2026-10-08, since the bundled docs carry one-line descriptions only):
+//   GET /api/v1/dex/balance/all-token-balances-by-address    (walletAddress, binanceChainId, excludeRiskToken)
+//       accepts `address` too; returned tokenAssets: [] for every wallet tried, which is surfaced as-is
+//   GET /api/v1/dex/post-transaction/transactions-by-address (walletAddress, binanceChainId, limit)
+//       still answers 40001 "Parameter error" with either spelling - the missing parameter is undocumented
+//   GET /api/v1/dex/market/portfolio/overview                (walletAddress, binanceChainId, timeFrame 1=1D 2=7D 3=1M 4=3M)
+//       `address` is rejected ("Parameter walletAddress is required")
+// Responses are parsed structurally and every failure is surfaced, never filled in.
 
 import type { BinanceWeb3Client } from "@elitr/binance";
 import { Cached, errText, throttled } from "./apiThrottle.js";
 import { dxLog, type PaymentRecord, type TradeRecord } from "./state.js";
 
 const CHAIN = "56";
+const OVERVIEW_TIME_FRAME = 4; // 3M: long enough to cover the desk's trades
 const P = {
   balances: "/api/v1/dex/balance/all-token-balances-by-address",
   txs: "/api/v1/dex/post-transaction/transactions-by-address",
@@ -213,9 +217,9 @@ export class WalletApiReader {
     const now = () => Date.now();
 
     const [bal, txs, ov] = await Promise.allSettled([
-      this.call<unknown>(P.balances, { address, binanceChainId: CHAIN, excludeRiskToken: true }),
-      this.call<unknown>(P.txs, { address, binanceChainId: CHAIN, limit: 20 }),
-      this.call<unknown>(P.overview, { address, binanceChainId: CHAIN }),
+      this.call<unknown>(P.balances, { walletAddress: address, binanceChainId: CHAIN, excludeRiskToken: true }),
+      this.call<unknown>(P.txs, { walletAddress: address, binanceChainId: CHAIN, limit: 20 }),
+      this.call<unknown>(P.overview, { walletAddress: address, binanceChainId: CHAIN, timeFrame: OVERVIEW_TIME_FRAME }),
     ]);
 
     if (bal.status === "fulfilled") {

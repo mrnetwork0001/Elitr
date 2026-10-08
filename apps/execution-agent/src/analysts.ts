@@ -47,6 +47,53 @@ export interface AnalystStatus {
   info?: AnalystInfo;
   error?: string;
   fetchedAt: number;
+  /** The analyst's own public base URL (its ERC-8004 registration file's `web` service), when it serves one. */
+  publicUrl?: string;
+}
+
+const REGISTRATION_PATH = "/.well-known/agent-registration.json";
+const registrationCache = new Map<string, { at: number; url?: string }>();
+
+/** True for URLs that must never appear in a public payload (loopback / unspecified hosts). */
+export function isInternalUrl(u: string): boolean {
+  try {
+    const h = new URL(u).hostname.toLowerCase().replace(/^\[|\]$/g, "");
+    return h === "localhost" || h === "::1" || h === "::" || h === "0.0.0.0" || /^127\.\d+\.\d+\.\d+$/.test(h) || h.endsWith(".localhost");
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Public URL to show for an analyst: its registration file's `web` endpoint, else ANALYST_PUBLIC_URL /
+ * FLOW_ANALYST_PUBLIC_URL from our env, else nothing. Internal (localhost) URLs are never returned.
+ */
+export function publicAnalystUrl(id: AnalystId, fromRegistration?: string, env: NodeJS.ProcessEnv = process.env): string | undefined {
+  const fromEnv = id === "analyst" ? env.ANALYST_PUBLIC_URL : env.FLOW_ANALYST_PUBLIC_URL || env.ANALYST_FLOW_PUBLIC_URL;
+  for (const c of [fromRegistration, fromEnv]) {
+    const u = c?.trim().replace(/\/+$/, "");
+    if (u && /^https?:\/\//i.test(u) && !isInternalUrl(u)) return u;
+  }
+  return undefined;
+}
+
+/** Best-effort, cached for an hour: the `web` service of the analyst's registration file. */
+async function registrationWebUrl(ep: AnalystEndpoint, timeoutMs: number): Promise<string | undefined> {
+  const hit = registrationCache.get(ep.url);
+  if (hit && Date.now() - hit.at < 60 * 60_000) return hit.url;
+  let url: string | undefined;
+  try {
+    const res = await fetch(`${ep.url}${REGISTRATION_PATH}`, { signal: AbortSignal.timeout(timeoutMs), headers: { Accept: "application/json" } });
+    if (res.ok) {
+      const reg = (await res.json()) as { services?: { name?: string; endpoint?: string }[] };
+      const web = reg?.services?.find((s) => s?.name === "web")?.endpoint;
+      if (typeof web === "string") url = web;
+    }
+  } catch {
+    /* no registration file: fall back to env */
+  }
+  registrationCache.set(ep.url, { at: Date.now(), url });
+  return url;
 }
 
 /** Free GET /info. Offline / malformed analysts come back with `online: false` and the reason. */
@@ -61,9 +108,11 @@ export async function fetchInfo(ep: AnalystEndpoint, timeoutMs = 5_000): Promise
     if (info.analystId !== ep.id) {
       return { endpoint: ep, online: false, error: `GET /info reports analystId ${JSON.stringify(info.analystId)}, configured as ${ep.id}`, fetchedAt };
     }
-    return { endpoint: ep, online: true, info, fetchedAt };
+    const publicUrl = await registrationWebUrl(ep, timeoutMs);
+    return { endpoint: ep, online: true, info, fetchedAt, ...(publicUrl ? { publicUrl } : {}) };
   } catch (e) {
-    return { endpoint: ep, online: false, error: `GET ${ep.url}/info failed: ${(e as Error).message}`, fetchedAt };
+    // No URL in the message: it is shown in /state, and the configured endpoint may be internal.
+    return { endpoint: ep, online: false, error: `GET /info failed: ${(e as Error).message}`, fetchedAt };
   }
 }
 

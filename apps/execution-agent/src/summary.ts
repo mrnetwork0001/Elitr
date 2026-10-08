@@ -256,18 +256,25 @@ export function buildSummary(inp: SummaryInput): TodaySummary {
   // Analyst track record
   const scored = of("signal.scored");
   if (scored.length) {
-    const per = new Map<string, { n: number; right: number }>();
+    // Only calls that moved trust are tallied (counted !== false); neutral / inconclusive ones are named apart.
+    const per = new Map<string, { n: number; right: number; skipped: number }>();
     for (const s of scored) {
-      const p = per.get(s.analystId) ?? { n: 0, right: 0 };
-      p.n++;
-      if (s.correct) p.right++;
+      const p = per.get(s.analystId) ?? { n: 0, right: 0, skipped: 0 };
+      if (s.counted === false) p.skipped++;
+      else {
+        p.n++;
+        if (s.correct) p.right++;
+      }
       per.set(s.analystId, p);
     }
     const lastStats = new Map<string, AnalystStats>();
     for (const r of of("reputation.updated")) lastStats.set(r.stats.analystId, r.stats);
     const txt = [...per].map(([id, p]) => {
       const st = lastStats.get(id);
-      return `the ${inp.analystName(id)} was right on ${p.right} of ${p.n}${st ? ` (trust now ${Math.round(st.trust * 100)}%)` : ""}`;
+      const trust = st ? ` (trust now ${Math.round(st.trust * 100)}%)` : "";
+      const skipped = p.skipped ? `${p.skipped} inconclusive` : "";
+      if (!p.n) return `the ${inp.analystName(id)} had ${plural(p.skipped, "inconclusive call")}${trust}`;
+      return `the ${inp.analystName(id)} was right on ${p.right} of ${p.n} counted ${p.n === 1 ? "call" : "calls"}${skipped ? `, ${skipped}` : ""}${trust}`;
     });
     sentences.push(`${plural(scored.length, "earlier tip")} ${scored.length === 1 ? "was" : "were"} checked against the real price: ${listJoin(txt)}.`);
     const tr = listJoin(txt);

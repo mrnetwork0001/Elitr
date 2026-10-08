@@ -87,7 +87,7 @@ test("buildSummary: counts, wording, links - all from events", () => {
   assert.match(s.paragraph, /bought 2 trading tips from AI analysts for \$0\.02 in total \(1 from the Flow analyst and 1 from the News analyst\)/);
   assert.match(s.paragraph, /held Nvidia \(NVDAB\) because the analyst did not expect the price to rise \(neutral\) and the token is trading 0\.60% below the live stock price/);
   assert.match(s.paragraph, /bought 0\.0131 TSLAB for \$5\.00/);
-  assert.match(s.paragraph, /Flow analyst was right on 1 of 1 \(trust now 60%\)/);
+  assert.match(s.paragraph, /Flow analyst was right on 1 of 1 counted call \(trust now 60%\)/);
   assert.match(s.paragraph, /\+\$0\.09/);
   const trades = s.facts.find((f) => f.id === "trades")!;
   assert.equal(trades.links?.[0].href, "https://bscscan.com/tx/0x" + "3".repeat(64));
@@ -148,4 +148,23 @@ test("resolveAddress prefers the signing account, falls back to EXECUTION_WALLET
   assert.equal(fb.source, "EXECUTION_WALLET_ADDRESS");
   assert.match(resolveAddress(undefined, {}).error!, /both unset/);
   assert.match(resolveAddress(undefined, { EXECUTION_WALLET_ADDRESS: "nope" }).error!, /not an address/);
+});
+
+test("buildSummary: the track record skips calls that did not move trust (counted:false)", () => {
+  const scored = (analystId: "analyst" | "analyst-flow", correct: boolean, counted?: boolean) =>
+    ev({ type: "signal.scored", analystId, signalId: "s", symbol: "NVDAB", stance: "bullish", entryPrice: 1, exitPrice: 1.01, returnBps: 100, correct, ...(counted === undefined ? {} : { counted }) });
+  const s = buildSummary({
+    now: NOW,
+    events: [scored("analyst", true, true), scored("analyst", false, true), scored("analyst", true, false), scored("analyst", true, false), scored("analyst-flow", true, false)],
+    mode: "paper",
+    killSwitch: false,
+    pnl: null,
+    positions: [],
+    analystName: (id) => (id === "analyst" ? "News analyst" : "Flow analyst"),
+    underlyingOf: () => null,
+  });
+  assert.match(s.paragraph, /5 earlier tips were checked/);
+  assert.match(s.paragraph, /News analyst was right on 1 of 2 counted calls, 2 inconclusive/);
+  assert.match(s.paragraph, /Flow analyst had 1 inconclusive call/);
+  assert.doesNotMatch(s.paragraph, /right on 3 of 4/);
 });

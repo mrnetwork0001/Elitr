@@ -78,10 +78,28 @@ test("yahooTicker maps class shares", () => {
   assert.equal(yahooTicker("NVDA"), "NVDA");
 });
 
-import { comparableBps } from "./rwaBoard.js";
+import { boardSortKey, comparableBps, tabIgnored } from "./rwaBoard.js";
 test("spreads beyond ±2000 bps are treated as a share-basis mismatch, not a gap", () => {
   assert.equal(comparableBps(992875.2), null); // NFLXon after Netflix's 10-for-1 split
   assert.equal(comparableBps(-9890.7), null); // SOXSon (reverse-split leveraged ETF)
   assert.equal(comparableBps(-193.1), -193.1);
   assert.equal(comparableBps(null), null);
+});
+
+test("a sector tab that returns the full token list is recognised as ignored", () => {
+  const all = new Set(["0xa", "0xb", "0xc"]);
+  assert.equal(tabIgnored(new Set(["0xa", "0xb", "0xc"]), all), true);
+  assert.equal(tabIgnored(new Set(["0xc", "0xa", "0xb"]), all), true);
+  assert.equal(tabIgnored(new Set(["0xa", "0xb"]), all), false); // a real subset
+  assert.equal(tabIgnored(new Set(["0xa", "0xb", "0xd"]), all), false); // same size, different members
+  assert.equal(tabIgnored(new Set(), new Set()), false); // nothing known yet: cannot judge
+  assert.equal(tabIgnored(new Set(["0xa"]), new Set(["0xa"])), true);
+});
+
+test("board sort uses guarded spreads so basis-mismatch artefacts never lead", () => {
+  const klac = { yahooSpreadBps: null, refSpreadBps: comparableBps(90261) }; // KLACon: share-basis artefact → null
+  const nvda = { yahooSpreadBps: -35, refSpreadBps: -12 };
+  const tsla = { yahooSpreadBps: null, refSpreadBps: 80 };
+  assert.equal(boardSortKey(klac), 0);
+  assert.deepEqual([klac, nvda, tsla].sort((a, b) => boardSortKey(b) - boardSortKey(a)), [tsla, nvda, klac]);
 });
