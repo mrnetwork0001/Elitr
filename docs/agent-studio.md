@@ -6,6 +6,11 @@ the trader scores the analyst's call and posts the result to the **ERC-8004 Repu
 `giveFeedback()`. That feedback sits on-chain where anyone can read it, filter it by reviewer, and compose
 with it. Studio's own seller agents use the same canonical registries.
 
+> **Status (8 Oct 2026):**
+> - **Identities and ratings:** the three Elitr agents are registered on BSC mainnet (#365554 news analyst, #365555 flow analyst, #365556 trader), and on-chain ratings are live.
+> - **Studio agent:** "Elitr Desk Brief" is registered as **#367734** and self-hosted at https://desk.elitr.xyz. See [`studio/README.md`](../studio/README.md).
+> - **This runbook:** the manual steps below have all been completed.
+
 Steps marked **[HUMAN]** need a person: a login, a funded key, a broadcast, or a judgement call.
 Every other step is read-only or simulate-only.
 

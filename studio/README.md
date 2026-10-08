@@ -2,6 +2,23 @@
 
 `studio/ElitrDesk/` is a **BNB Agent Studio** seller agent called **Elitr Desk Brief**. It sells a short, factual brief about the live Elitr trading desk over **x402** for $0.01 in testnet U, paid through B402. It also has an **A2A** face with a free preview. It has its own wallet and its own ERC-8004 identity. It runs on Studio's managed runtime, and each brief it sells pays its wallet.
 
+## Live deployment (current)
+
+| | |
+| --- | --- |
+| Agent card (A2A) | https://desk.elitr.xyz/.well-known/agent-card.json |
+| Brief (x402, FREE) | `GET https://desk.elitr.xyz/x402?prompt=brief` |
+| ERC-8004 | **#367734** on BSC mainnet (IdentityRegistry `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432`), tx [`0xd95b1b47…e22b`](https://bscscan.com/tx/0xd95b1b475f44dd6537b3df63c380d7d0d4f948d001434cd8ed3856b96a5ae22b) |
+| Wallet | `0xFD9fBD6719a0b521314a67fF36EF26634bf71642` (fresh mainnet evm-local keystore; the earlier testnet throwaway `0x5310…72E5` is retired) |
+| Hosting | self-hosted on the Elitr server (AWS Lightsail, Frankfurt): systemd unit `elitr-desk` runs `bag dev --logs --host 127.0.0.1 --port 9000` with `BNBAGENT_PUBLIC_URL=https://desk.elitr.xyz`; Caddy terminates HTTPS |
+| Config | `studio.toml`: `[network].default = "bsc-mainnet"`, `[deploy].destination = "self"`, `[payments.seller].price_usd = "0"`, assets `["U"]` |
+
+**Why not the 48 h managed trial?** It's testnet-only, and its clock starts at the first deploy, so it would expire before judging (12–23 Oct), and the rules require the deployed link to stay reachable. NodeOps was offline after a security incident, and AWS AgentCore needs a quota plus OAuth-gated endpoints. Self-hosting keeps the agent up through judging, on mainnet.
+
+**Why FREE x402?** Paid x402 on any Studio target needs B402 merchant credentials, sandbox or production. The application form was closed when we applied, and Studio's own b402 guide says not to claim mainnet paid readiness until settlement polling lands. Self-funding over b402 is demonstrated on mainnet by Elitr's analysts instead (see the root README's on-chain proof).
+
+The sections below describe the original managed-trial plan and are kept for reference.
+
 It was scaffolded with `bag init ElitrDesk --rails b402 --destination platform --protocols A2A,X402 --payment-protocol x402 --seller-price-usd 0.01 --llm-provider pieverse-llm --model auto/free --network bsc-testnet --wallet-kind evm-local` (`@bnbagent/studio-cli@0.0.14`).
 
 ## How it relates to Elitr

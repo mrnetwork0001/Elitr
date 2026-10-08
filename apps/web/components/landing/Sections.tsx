@@ -86,6 +86,7 @@ const PROOF: [string, string, string][] = [
   ["Agent rates agent (ERC-8004)", "Trader posts the news analyst's accuracy to the reputation registry", "0xf09e9f6edd8d64d0fd4f4a75f463ba2106093b16b2f986ad774c7b584aa887d6"],
   ["Live trade", "2 USDT → 0.008433 NVDAB, simulated with the Transaction API, then broadcast", "0x0ce91120a0e7f14792a20565aa99f4a1819afafc0d1f1e9ee51ee3e36aa03807"],
   ["Binance Agentic Wallet buys a signal", "Paid in U via EIP-3009, no approval needed, 3.5 s from signature to signal", "0xd2535021423ae6d30b4bbc6fde8f2b58fc0bc22dba7831c7d97c7eed78ca2e4e"],
+  ["BNB Agent Studio agent registers", "Elitr Desk Brief #367734, self-hosted on mainnet at desk.elitr.xyz (gas sponsored by MegaFuel)", "0xd95b1b475f44dd6537b3df63c380d7d0d4f948d001434cd8ed3856b96a5ae22b"],
 ];
 
 const B402_STEPS = [
@@ -151,6 +152,7 @@ const STACK = [
   ["Claude via 0G Compute", "News scoring with citations"],
   ["PancakeSwap v3", "Swap flow and pool prices, read on-chain"],
   ["ERC-8004", "Agent identity and on-chain reputation"],
+  ["BNB Agent Studio", "Desk-brief agent (#367734) with A2A + x402 at desk.elitr.xyz"],
   ["Docker + CI", "One-command stack, tested on every push"],
   ["Next.js dashboard", "Live event stream from all three agents"],
 ] as const;
@@ -208,7 +210,7 @@ const FAQ: [string, ReactNode][] = [
   ],
   [
     "What is ERC-8004?",
-    "A standard for on-chain agent identity and reputation. Each Elitr agent gets an ERC-8004 identity on BSC, and the trader posts every analyst's accuracy to the reputation registry, so any other agent can read an analyst's record before buying from it. Elitr's three agents are registered on BSC mainnet (#365554 news analyst, #365555 flow analyst, #365556 trader), and the trader has been posting ratings since 7 Oct 2026.",
+    "A standard for on-chain agent identity and reputation. Each Elitr agent gets an ERC-8004 identity on BSC, and the trader posts every analyst's accuracy to the reputation registry, so any other agent can read an analyst's record before buying from it. Elitr's agents are registered on BSC mainnet (#365554 news analyst, #365555 flow analyst, #365556 trader, plus #367734, the BNB Agent Studio desk-brief agent), and the trader has been posting ratings since 7 Oct 2026.",
   ],
   [
     "Can I check the agents myself?",
@@ -486,8 +488,8 @@ export function Sections() {
           <p>
             <strong>Agents rating agents, on-chain.</strong> Each agent gets an ERC-8004 identity on BSC, and after every scored call the trader posts the
             analyst&apos;s accuracy to the ERC-8004 reputation registry, where any other agent can check it before paying. Elitr&apos;s agents are
-            registered on BSC mainnet as <strong>#365554</strong> (news analyst), <strong>#365555</strong> (flow analyst) and <strong>#365556</strong>{" "}
-            (trader), and the trader posts a rating after every scored call. Every identity and rating links to BscScan from the dashboard.
+            registered on BSC mainnet as <strong>#365554</strong> (news analyst), <strong>#365555</strong> (flow analyst), <strong>#365556</strong>{" "}
+            (trader) and <strong>#367734</strong> (the Agent Studio desk-brief agent), and the trader posts a rating after every scored call. Every identity and rating links to BscScan from the dashboard.
           </p>
         </div>
       </Section>

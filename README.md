@@ -18,6 +18,7 @@
 | News analyst (b402 seller) | https://analyst.elitr.xyz/info · paid `GET /signal?symbol=NVDAB` |
 | Flow analyst (b402 seller) | https://flow.elitr.xyz/info · paid `GET /signal?symbol=TSLAB` |
 | Execution agent (trader) | https://agent.elitr.xyz/health · `/state` · `/summary/today` · `/rwa/board` |
+| BNB Agent Studio agent "Elitr Desk Brief" | https://desk.elitr.xyz/.well-known/agent-card.json (A2A) · `GET /x402?prompt=brief` |
 | ERC-8004 registration files | `/.well-known/agent-registration.json` on each agent host |
 
 Hosted on an AWS Lightsail instance in Frankfurt (eu-central-1, an allowed region for the Binance Web3 API), behind Caddy with automatic HTTPS, each service a systemd unit that restarts on failure. See [Deployment](#deployment).
@@ -31,6 +32,8 @@ Every row is a real transaction made by the running system.
 | ERC-8004 identity: News analyst **#365554** | [0x81f46ff7…8237](https://bscscan.com/tx/0x81f46ff719e2a7c244ccb39622ae05fd9960883bd19000e0c731c60a8c168237) |
 | ERC-8004 identity: Flow analyst **#365555** | [0x902e8d14…db16](https://bscscan.com/tx/0x902e8d14dd118d069151834019f09fc92ceadc0f094fa78ffeb7d35cfcd9db16) |
 | ERC-8004 identity: Execution agent **#365556** | [0xeb36036e…cd03](https://bscscan.com/tx/0xeb36036e4d62fad5a6919205de0cecbeb402a03afc6f282d1d0a8432fe5fcd03) |
+| ERC-8004 identity: BNB Agent Studio agent "Elitr Desk Brief" **#367734** (registered with `bag erc8004 register`, gas sponsored by MegaFuel) | [0xd95b1b47…e22b](https://bscscan.com/tx/0xd95b1b475f44dd6537b3df63c380d7d0d4f948d001434cd8ed3856b96a5ae22b) |
+| Probation in action: both analysts paused overnight, trader buys a probe so one can earn trust back | [0x69281625…22db](https://bscscan.com/tx/0x69281625f60af537971918cb8f2a11bb5b7e207db2c9b7ee51e0b9a1d41d22db) |
 | First agent-to-agent b402 payment (trader → flow analyst, 0.01 USDT) | [0xe2a30c08…c49f](https://bscscan.com/tx/0xe2a30c0801799c2b1c128fdc4e332c8485ce3249eacedd52470e2b1971a6c49f) |
 | First on-chain agent rating (trader → news analyst, ERC-8004 `giveFeedback`) | [0xf09e9f6e…87d6](https://bscscan.com/tx/0xf09e9f6edd8d64d0fd4f4a75f463ba2106093b16b2f986ad774c7b584aa887d6) |
 | First live trade: 2 USDT → 0.008433 NVDAB @ $237.15 (Trading API → Transaction API simulate → broadcast) | [0x0ce91120…3807](https://bscscan.com/tx/0x0ce91120a0e7f14792a20565aa99f4a1819afafc0d1f1e9ee51ee3e36aa03807) |
@@ -39,7 +42,7 @@ Every row is a real transaction made by the running system.
 | One-time trading approvals (Permit2 for b402; router for USDT, NVDAB, TSLAB) | [0x6996a008…ee66](https://bscscan.com/tx/0x6996a0086d528ce9b4f14fbd8b1378b4e4f31a57ad63f0f0b0ca11d82d44ee66) · [0x56210274…718c](https://bscscan.com/tx/0x56210274fab2121ccc2e74e9df7cb8a3dc9b6350e4ec153669073094eb7b718c) · [0x65de22f1…4314](https://bscscan.com/tx/0x65de22f18f696c0707b95531e35cf92fdd04b5f068712f8acf5bd47e582b4314) · [0x81aebdcf…c9c3](https://bscscan.com/tx/0x81aebdcfa1affb6212e00f887c37495870c628f539ce285fc38e47de644ec9c3) |
 | A failed swap we learned from: the Trading API's suggested gas (450k) was below the simulated 457k and the swap reverted out of gas; gas is now max(suggested, simulated) × 1.25 | [0xc52edf5c…bfa6](https://bscscan.com/tx/0xc52edf5c5eacec5e43fc608cb32f5e25a7126454aa7b149f8ed3b06b8e28bfa6) |
 
-Wallets: agent (trader) `0xc742AdA2872a042dD36D2E706907b4036968960C` · analyst payee `0x66A4c73e7C02858B49F15fBC24589A76B97C0F5a` · analyst identity owner `0xCd0a2370F2dC12c1802707B7d9aB3fec891E3c02` · Agentic Wallet demo buyer `0xD15590ba7DfDD11D47a5a13b83E6cf5CC74f6207`.
+Wallets: agent (trader) `0xc742AdA2872a042dD36D2E706907b4036968960C` · analyst payee `0x66A4c73e7C02858B49F15fBC24589A76B97C0F5a` · analyst identity owner `0xCd0a2370F2dC12c1802707B7d9aB3fec891E3c02` · Agentic Wallet demo buyer `0xD15590ba7DfDD11D47a5a13b83E6cf5CC74f6207` · Studio agent `0xFD9fBD6719a0b521314a67fF36EF26634bf71642`.
 
 | Landing | Dashboard |
 | --- | --- |
@@ -171,7 +174,8 @@ sequenceDiagram
 | Binance Agentic Wallet buying Elitr signals ([Elitr Skill](skills/elitr-signals/)) | Proven on mainnet (USDT and U routes) |
 | Weekend Gap board, Wallet API / Address Portfolio, "Today on the desk" summary | Shipped |
 | Hosted deployment (https://elitr.xyz), HTTPS, operator auth | Live |
-| BNB Agent Studio seller agent ([`studio/`](studio/)) | Built; managed 48 h testnet deploy scheduled before the demo recording |
+| BNB Agent Studio seller agent "Elitr Desk Brief" ([`studio/`](studio/)), ERC-8004 #367734 | Live on mainnet at https://desk.elitr.xyz (self-hosted; free x402 + A2A) |
+| Reputation safeguards: probation when every analyst is paused; neutral and flat-market calls don't move trust | Live |
 
 ## Risk controls
 
@@ -240,7 +244,18 @@ Proven on mainnet with both payment routes (see [On-chain proof](#on-chain-proof
 
 ## BNB Agent Studio: Elitr Desk Brief
 
-[`studio/ElitrDesk/`](studio/ElitrDesk/) is a `bag init` seller agent ("Elitr Desk Brief"). It runs on Agent Studio's managed runtime with its own ERC-8004 identity and A2A + x402 faces, and sells a brief of the live Elitr desk: summary, analysts' track records, positions and P&L, and weekend-gap spreads. It pays its own way per request, the "self-funding via x402" model. Details and deploy steps: [`studio/README.md`](studio/README.md).
+[`studio/ElitrDesk/`](studio/ElitrDesk/) is a `bag init` seller agent, "Elitr Desk Brief", built on the Agent Studio runtime. It has its own wallet and its own **ERC-8004 identity #367734 on BSC mainnet**, registered with `bag erc8004 register`. It exposes A2A (`/.well-known/agent-card.json`, skills `brief_preview` and `desk_brief`) and x402 (`/x402?prompt=brief`). The brief covers the live Elitr desk: summary, analysts' track records and ERC-8004 ids, positions and P&L, and weekend-gap spreads. It is built only from Elitr's public endpoints, and a request is never charged if those can't be reached.
+
+**Why self-hosted on mainnet:**
+- Studio's managed runtime is a 48 h testnet trial that would expire before judging (12–23 Oct).
+- NodeOps, one self-deploy target, was offline after a security incident.
+- AWS AgentCore requires a quota and OAuth-gated endpoints.
+
+So it runs on the Elitr server as a systemd service behind https://desk.elitr.xyz, and stays up through judging.
+
+**Why the x402 brief is free:** paid x402 needs B402 production merchant credentials. The application form was closed, and Studio's own docs flag paid mainnet x402 as not yet production-ready. Self-funding over b402 is demonstrated on mainnet by Elitr's analysts, which have 20+ real settlements.
+
+Details: [`studio/README.md`](studio/README.md).
 
 ## Quickstart
 
