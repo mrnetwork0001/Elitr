@@ -7,7 +7,8 @@ description: |
   "ask Elitr", "should I buy NVDAB", "should I buy TSLAB", "what does Elitr think about NVDA/TSLA",
   "tokenized stock signal", "bStock signal", "copy the Elitr desk", "follow the Elitr desk",
   "which Elitr analyst is best", "list Elitr analysts", or asks for a paid sentiment / order-flow
-  signal on NVDAB or TSLAB.
+  signal on one of the six bStocks Elitr covers (NVDAB, TSLAB, BABAB, CRCLB, SNDKB, METAB) or on
+  NVDAon / TSLAx (news analyst, signal-only).
   Discovery is free; every signal costs a small stablecoin payment (e.g. 0.01) and every payment and
   trade needs explicit user confirmation.
 version: 0.1.0
@@ -32,7 +33,7 @@ skill lets any AI agent that has the **Binance Agentic Wallet** skill:
 
 1. **discover** Elitr analysts and compare price, horizon and track record (free),
 2. **buy a signal** with the user's own Agentic Wallet via `baw x402-payment preview` / `sign`, after the user confirms the price,
-3. **optionally act on it**: buy the bStock (NVDAB / TSLAB) in the same wallet with `baw market-order`, only after explicit confirmation and within a budget the user states.
+3. **optionally act on it**: buy the bStock (one of NVDAB, TSLAB, BABAB, CRCLB, SNDKB, METAB) in the same wallet with `baw market-order`, only after explicit confirmation and within a budget the user states.
 
 It never holds keys. All signing happens inside the Agentic Wallet (MPC, logged in via the Binance App).
 
@@ -61,10 +62,12 @@ node <skill-dir>/scripts/discover.mjs --json
 ```
 
 (Or `curl -s <base>/info` per base.) Present a table: analyst, method (news sentiment vs on-chain
-flow), price + token, horizon, symbols, payable (`b402Configured`), ERC-8004 identity. If an
-`ELITR_STATS_URL` is configured and responds, add each analyst's hit rate; otherwise say track record
-is not available yet - never invent one. Recommend nothing; let the user pick (or buy from both and
-compare - that is "copy the desk").
+flow), price + token, horizon, symbols, payable (`b402Configured`), ERC-8004 identity. Track record
+is live: `curl -s https://agent.elitr.xyz/state` (or `$ELITR_STATS_URL`) returns `analysts[]` with
+each analyst's `samples`, `hits`, `hitRate`, `trust`, `weight` and `paused`, as scored by Elitr's own
+trader (`discover.mjs` does not fetch it). Show those numbers with their source; if the call fails,
+say the track record could not be fetched - never invent one. Recommend nothing; let the user pick (or buy from both and compare - that is
+"copy the desk").
 
 ## 2. Buy a signal (paid - confirm first)
 
@@ -73,6 +76,9 @@ Full command detail and edge cases: [references/payment-flow.md](references/paym
 1. **Request without payment** → expect `402`:
    `node <skill-dir>/scripts/decode-402.mjs "<base>/signal?symbol=NVDAB"`
    It prints price, token, payee (`payTo`), transfer method, and the ready `baw` preview command.
+   Elitr's 402 carries **two accepts**: USDT via `permit2-exact` (one-time sponsored Permit2
+   approve) and U via `eip3009` (no approve). Either works; pick by token, never by index, because
+   `preview` can reorder the options between calls.
    Anything other than 402 → see **Errors** below; do not pay.
 2. **Preview** with the Agentic Wallet (read-only, no signature yet):
    `baw x402-payment preview --paymentRequirements '<base64 PAYMENT-REQUIRED>' --json`
@@ -98,8 +104,8 @@ Only if the user asks to trade. Full flow: [references/trade-flow.md](references
 
 - Ask for (or confirm) a **budget in USDT** and never exceed it. Suggest keeping it small.
 - Agentic Wallet trades **bStock (`…B`) and Ondo (`…on`)** tokenized stocks. Elitr's traded assets
-  are the bStocks **NVDAB** and **TSLAB**. Resolve the contract from the bStock list
-  (`type=3`) and check it equals the address in trade-flow.md; never guess an address.
+  are the six bStocks **NVDAB, TSLAB, BABAB, CRCLB, SNDKB, METAB**. Resolve the contract from the
+  bStock list (`type=3`) and check it equals the address in trade-flow.md; never guess an address.
 - Do the agentic-wallet swap pre-check (token audit), then `baw market-order quote`, show the quote
   with the risk notice, get a clear "yes", then `baw market-order swap`, then poll
   `baw market-order list --orderId <id> --json` to `FINISHED`/`FAILED` before reporting.
@@ -134,7 +140,8 @@ without a fresh confirmation for each trade.
 | Wallet not signed in | `baw wallet status` → `UNCONNECTED`; any baw call → `{"success":false,"error":{"code":10003000,"name":"NOT_LOGGED_IN"}}` (preview included) | Run the agentic-wallet sign-in flow. You can still show the decoded 402 price from `decode-402.mjs`. |
 | Insufficient balance | preview option `ACTION_REQUIRED` / `INSUFFICIENT_BALANCE` | Show balance vs price; offer a top-up swap (separate confirmation). |
 | x402 daily limit hit | preview reason `BLOCKED_DAILY_LIMIT_REACHED` | Limit is changed only in the Binance App (Agentic Wallet → Settings). |
-| Unsupported method / token | preview reason `UNSUPPORTED_METHOD` / `UNSUPPORTED_NETWORK` | The analyst's payment config is not payable from Agentic Wallet; tell the user and stop. |
+| Unsupported method / token | preview reason `UNSUPPORTED_METHOD` on one option | Pick the other accept from the same preview (U via `eip3009` if USDT `permit2-exact` is refused, or vice versa) and confirm that one with the user. Both have been paid from the Agentic Wallet; only if both are refused, tell the user and stop. |
+| Unsupported network | preview reason `UNSUPPORTED_NETWORK` | Should not happen (Elitr is always `eip155:56`); relay verbatim and stop. |
 | Signature expired | analyst `402 payment invalid…` after a delay | Restart from `preview` (asks for consent again). |
 
 Always relay `baw` errors exactly as returned (agentic-wallet skill rule) and never speculate.

@@ -157,9 +157,9 @@ sequenceDiagram
 
 | Criterion (weight) | What Elitr does |
 | --- | --- |
-| **Technical implementation (30%)** | Signed client for 7 Binance Web3 API modules (RWA Data, Market, Trading, Transaction, Wallet, Address Portfolio, b402) in `packages/binance`, running live on BSC mainnet with real b402 settlements, a live trade, and ERC-8004 identities and feedback (see [On-chain proof](#on-chain-proof-bsc-mainnet)). Full b402 merchant (x402 v2 `402` / `PAYMENT-SIGNATURE` / `PAYMENT-RESPONSE`, single-use authorizations, settle only after the signal is produced) and buyer (`@x402/fetch` + `@bnb-chain/b402`, Permit2 approval handling). Every approve and swap is simulated through the Transaction API before broadcast. Risk engine fails closed on missing data, and it has unit tests. State persists atomically. CI runs on Node 22 and 24, and Docker images are provided. |
+| **Technical implementation (30%)** | Signed client in `packages/binance` for five Binance Web3 API modules (RWA Data, Market, Trading, Transaction, b402), plus a raw signed call used for the Wallet and Address Portfolio APIs, running live on BSC mainnet with real b402 settlements, a live trade, and ERC-8004 identities and feedback (see [On-chain proof](#on-chain-proof-bsc-mainnet)). Full b402 merchant (x402 v2 `402` / `PAYMENT-SIGNATURE` / `PAYMENT-RESPONSE`, single-use authorizations, settle only after the signal is produced) and buyer (`@x402/fetch` + `@bnb-chain/b402`, Permit2 approval handling). Every approve and swap is simulated through the Transaction API before broadcast. Risk engine fails closed on missing data, and it has unit tests. State persists atomically. CI runs on Node 22 and 24, and Docker images are provided. |
 | **Creativity & originality (25%)** | Agents *buy information from each other*: a market of competing analysts with real micropayments. The buyer learns which seller to trust (Beta-Bernoulli posterior + Thompson sampling, price-aware) and publishes the result as portable ERC-8004 on-chain reputation. Two very different sellers compete: an LLM news reader and a deterministic on-chain flow reader. Any **Binance Agentic Wallet** can buy the same signals through the [Elitr Skill](skills/elitr-signals/). A **Weekend Gap board** makes the brief's opening story (frozen Friday reference vs 24/7 tokens) visible across every bStocks and Ondo token. |
-| **Developer Experience Report (25%)** | [`DEVELOPER_EXPERIENCE.md`](DEVELOPER_EXPERIENCE.md) is written by the team. It is backed by [`docs/dx-raw-log.md`](docs/dx-raw-log.md), a timestamped evidence log (the execution agent also appends to it when it hits API friction), sorted by report question in [`docs/dx-evidence.md`](docs/dx-evidence.md). |
+| **Developer Experience Report (25%)** | [`DEVELOPER_EXPERIENCE.md`](DEVELOPER_EXPERIENCE.md) is written by the team in their own words (the hackathon rejects generated reports). It is backed by [`docs/dx-raw-log.md`](docs/dx-raw-log.md), a timestamped evidence log (the execution agent also appends to it when it hits API friction), sorted by report question in [`docs/dx-evidence.md`](docs/dx-evidence.md). |
 | **Product quality & UX (20%)** | The dashboard shows the payment between agents, the signal and its sources, both reference prices, every risk check with observed vs limit values, the simulation result, fills, positions and P&L, live. There is a kill switch. A plain-English **"Today on the desk"** summary with a glossary is written for people new to crypto. Defaults are safe: simulate-only, small limits. |
 
 ### Status
@@ -168,7 +168,7 @@ sequenceDiagram
 | --- | --- |
 | News analyst + flow analyst as b402 merchants (two payment options: USDT/Permit2, U/EIP-3009) | Live on mainnet |
 | Execution agent: b402 buyer, RWA/Market/Trading/Transaction/Wallet/Portfolio APIs, risk engine, Transaction API dry-runs | Live on mainnet |
-| Thompson-sampling analyst selection, signal scoring, trust / weight / pause | Live, building a track record every 15 min |
+| Thompson-sampling analyst selection, signal scoring, trust / weight / pause | Live, building a track record every 30 min (`LOOP_INTERVAL_SEC`) |
 | Six bStocks (NVDAB, TSLAB, BABAB, CRCLB, SNDKB, METAB) with a free gap pre-screen before any signal is bought; exits (take-profit / stop-loss / bearish); paper vs live ledger and P&L | Live (`LIVE_TRADING=1` on the hosted desk) |
 | ERC-8004 identities (#365554, #365555, #365556) + on-chain reputation feedback after each scored signal | Live on mainnet |
 | Binance Agentic Wallet buying Elitr signals ([Elitr Skill](skills/elitr-signals/)) | Proven on mainnet (USDT and U routes) |
@@ -183,12 +183,12 @@ Defaults come from [`packages/shared/src/risk.ts`](packages/shared/src/risk.ts).
 
 | Rule | Env var | Default | Meaning |
 | --- | --- | --- | --- |
-| Kill switch | `KILL_SWITCH` | off | Env flag, or `POST /kill` at runtime (one-way until restart). |
+| Kill switch | `KILL_SWITCH` | off | Env flag, or `POST /kill` at runtime. Persisted to `<EXECUTION_DATA_DIR>/kill-switch`, so it survives restarts; one-way until `POST /kill/reset` (same bearer token) or the file is removed. The env flag cannot be reset at runtime. |
 | Max trade | `RISK_MAX_TRADE_USD` | $5 | Notional per trade. |
 | Max position | `RISK_MAX_POSITION_USD` | $25 | Per asset, after the trade. |
 | Max portfolio | `RISK_MAX_PORTFOLIO_USD` | $50 | All positions combined. |
 | Max daily spend | `RISK_MAX_DAILY_SPEND_USD` | $25 | USDT spent on buys per UTC day. |
-| Max daily data spend | `RISK_MAX_DAILY_DATA_USD` | $2 | b402 spend on signals per UTC day. |
+| Max daily data spend | `RISK_MAX_DAILY_DATA_USD` | $1 | b402 spend on signals per UTC day. |
 | Max slippage | `RISK_MAX_SLIPPAGE_BPS` | 100 bps | Route price impact; also pinned as swap slippage. Hard cap 500. |
 | Min liquidity | `RISK_MIN_LIQUIDITY_USD` | $50,000 | USDT in the primary PancakeSwap v3 pool. |
 | Min confidence | `RISK_MIN_CONFIDENCE` | 65 | Signal score (after the reputation weight), 1-100. |
@@ -295,7 +295,7 @@ Production runs on one AWS Lightsail instance (Ubuntu 24.04, 2 GB, Frankfurt):
 | Services | systemd units `elitr-analyst` (4001 + 4003), `elitr-execution` (4002), `elitr-web` (3000), all bound to `127.0.0.1`, `Restart=always` |
 | HTTPS | Caddy with automatic Let's Encrypt certificates for `elitr.xyz`, `www` (redirects), `analyst.`, `flow.`, `agent.`; SSE streams proxied unbuffered |
 | Secrets | `~/elitr/.env` (mode 600), never committed; the analyst-owner key is not on the server |
-| Operator controls | `POST /cycle`, `/kill`, `/trade` need `Authorization: Bearer $CONTROL_TOKEN`; browsers may only call the agents from `https://elitr.xyz` (CORS) |
+| Operator controls | `POST /cycle`, `/kill`, `/kill/reset`, `/trade` need `Authorization: Bearer $CONTROL_TOKEN`; browsers may only call the agents from `https://elitr.xyz` (CORS) |
 | State | `~/elitr/data/` (events, ledger, reputation) |
 
 `POST /trade` (operator only) runs one small buy or a full-position sell through the same quote → simulate → broadcast path as an autonomous cycle, capped at `RISK_MAX_TRADE_USD`. It proves live execution on demand.
@@ -321,11 +321,12 @@ All apps read one `.env` at the repo root. The full annotated list is in [`.env.
 | `FLOW_ANALYST_PORT`, `FLOW_ANALYST_PAY_TO`, `FLOW_ANALYST_PRICE_WEI`, `FLOW_ANALYST_PUBLIC_URL` | analyst | Flow analyst port (4003, `0` disables), its merchant payTo / price / public URL (fall back to the news analyst's). |
 | `FLOW_RPC_URL`, `FLOW_LOOKBACK_SEC`, `FLOW_MIN_SWAPS`, `FLOW_LARGE_TRADE_USD`, `FLOW_HORIZON_SEC`, `FLOW_LOGS_CHUNK_BLOCKS` | analyst | On-chain flow window and thresholds. |
 | `EXECUTION_PORT`, `EXECUTION_HOST` | execution | Bind address (default `127.0.0.1:4002`). |
-| `CONTROL_TOKEN` | execution | Bearer token for `POST /cycle` and `/kill`. Required when the host is not loopback. |
+| `CONTROL_TOKEN` | execution | Bearer token for `POST /cycle`, `/kill`, `/kill/reset` and `/trade`. Required when the host is not loopback, and always when `LIVE_TRADING=1`. |
 | `ANALYSTS`, `ANALYST_URL` | execution | Analysts to buy from (`id=url,...`), legacy single URL. |
 | `EXECUTION_PRIVATE_KEY` | execution | Dedicated hot wallet. Fund with small amounts only. |
 | `BSC_RPC_URL` | execution | BSC JSON-RPC. |
 | `EXECUTION_TRADE_USD`, `EXECUTION_MIN_BNB_GAS`, `EXECUTION_MEV_PROTECTION` | execution | Trade size, gas floor, MEV-protected broadcast. |
+| `EXECUTION_MAX_FEE_BNB` | execution | Worst-case fee (gas limit × gas price) a single signed transaction may cost (default 0.01). Anything above, a gas limit over 3M or a gas price over 3× the network's is refused unsigned. |
 | `B402_TRUSTED_SPENDERS` | execution | Override the curated b402 Permit2 spenders. |
 | `LOOP_INTERVAL_SEC` | execution | Seconds between cycles (`0` = on-demand only). |
 | `EXECUTION_DATA_DIR` | execution | Override the state directory (default `<repo>/data`). |
@@ -342,8 +343,9 @@ All apps read one `.env` at the repo root. The full annotated list is in [`.env.
 
 - **Simulate-only by default.** Quotes, prices, simulations and b402 payments are real, but no swap is signed or broadcast until `LIVE_TRADING=1`. The Permit2 approval for b402 is also simulated and *not sent* in that mode.
 - **Every transaction is dry-run** through the Transaction API first. A failed simulation stops the trade.
-- **Use a dedicated hot wallet** (`EXECUTION_PRIVATE_KEY`) with a few dollars of USDT and BNB. Approvals are bounded to the trade amount (swap) or a small budget (Permit2). They are never unlimited.
-- **Control endpoints** (`POST /cycle`, `/kill`) bind to loopback by default. Exposing them needs `CONTROL_TOKEN`. `/kill` is one-way until restart.
+- **Use a dedicated hot wallet** (`EXECUTION_PRIVATE_KEY`) with a few dollars of USDT and BNB. Approvals are bounded: USDT to the swap router is 30 days of the daily buy budget, USDT to Permit2 is 30 days of the signal budget, and each stock token is 2× the max position. They are never unlimited.
+- **Control endpoints** (`POST /cycle`, `/kill`, `/kill/reset`, `/trade`) bind to loopback by default. Exposing them, or running with `LIVE_TRADING=1`, needs `CONTROL_TOKEN`. `/kill` persists to disk and stays engaged across restarts until `POST /kill/reset`.
+- **Fail-closed sends.** Every signed transaction is checked against a gas and fee budget first, the swap destination must be the quoted spender or a known PancakeSwap router, and a swap that was broadcast but not booked (crash mid-trade) is reconciled from its receipt on the next start or cycle.
 - **Secrets** live only in `.env` (git-ignored, docker-ignored, never baked into images).
 - **Regions.** The Binance Web3 API refuses requests from [restricted regions](https://web3.binance.com/en/dev-docs/web3-api-prohibited-regions) (including the US, Canada, the Netherlands, the UK and Japan). Host the agents somewhere allowed. See [`docs/deploy.md`](docs/deploy.md).
 - **Issuer controls.** bStocks and Ondo tokens are upgradeable proxies with a compliance hook, so the issuer can block transfers. Not financial advice. Agents are judged on build quality, not P&L.
@@ -363,7 +365,7 @@ packages/
 skills/
   elitr-signals/     Binance Wallet Skill: Agentic Wallet discovers, pays for and acts on Elitr signals
 studio/
-  ElitrDesk/         BNB Agent Studio seller agent ("Elitr Desk Brief"), managed testnet runtime
+  ElitrDesk/         BNB Agent Studio seller agent ("Elitr Desk Brief"), self-hosted on BSC mainnet at desk.elitr.xyz
 docker/              agent.Dockerfile (both agents), web.Dockerfile
 docs/                deploy guide, DX evidence log, API reference snapshots
 data/                runtime state + event logs (git-ignored, Docker volume)
@@ -372,7 +374,7 @@ data/                runtime state + event logs (git-ignored, Docker volume)
 ## More docs
 
 - [`ARCHITECTURE.md`](ARCHITECTURE.md): how it works, module by module.
-- [`DEVELOPER_EXPERIENCE.md`](DEVELOPER_EXPERIENCE.md): developer experience report (written by the team).
+- [`DEVELOPER_EXPERIENCE.md`](DEVELOPER_EXPERIENCE.md): developer experience report (written by the team in their own words).
 - [`docs/dx-raw-log.md`](docs/dx-raw-log.md): timestamped raw evidence behind the DX report.
 - [`docs/dx-evidence.md`](docs/dx-evidence.md): that evidence sorted by DX report question.
 - [`docs/agentic-wallet.md`](docs/agentic-wallet.md): Elitr Skill for Binance Agentic Wallet, install + paid-run runbook.

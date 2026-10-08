@@ -8,8 +8,9 @@ with it. Studio's own seller agents use the same canonical registries.
 
 > **Status (8 Oct 2026):**
 > - **Identities and ratings:** the three Elitr agents are registered on BSC mainnet (#365554 news analyst, #365555 flow analyst, #365556 trader), and on-chain ratings are live.
-> - **Studio agent:** "Elitr Desk Brief" is registered as **#367734** and self-hosted at https://desk.elitr.xyz. See [`studio/README.md`](../studio/README.md).
-> - **This runbook:** the manual steps below have all been completed.
+> - **Studio agent:** "Elitr Desk Brief" is a `bag init` seller registered on **BSC mainnet as #367734** (owner `0xFD9fBD6719a0b521314a67fF36EF26634bf71642`, registration tx `0xd95b1b47…e22b`, gas sponsored) and **self-hosted** on the Elitr server as the `elitr-desk` systemd unit behind https://desk.elitr.xyz (A2A card at `/.well-known/agent-card.json`). Its x402 brief (`/x402?prompt=brief`) is **free** (`price_usd = "0"`) because paid x402 needs B402 merchant credentials whose application form was locked. See [`studio/README.md`](../studio/README.md).
+> - **The 48 h managed testnet trial was not used:** it would have expired before judging (12-23 Oct). NodeOps was down and AWS AgentCore needs a quota plus OAuth. Section 4.3 below is the original plan, kept for reference.
+> - **This runbook:** the manual steps in sections 1-3 have all been completed.
 
 Steps marked **[HUMAN]** need a person: a login, a funded key, a broadcast, or a judgement call.
 Every other step is read-only or simulate-only.
@@ -41,8 +42,8 @@ Every other step is read-only or simulate-only.
   with viem. Studio allows one agent per wallet: `bag erc8004 register` refuses if the wallet already owns one.
   Our own CLI has no such limit, but we still use separate owner keys (see 1.2).
 - The trial ends after 48 h, but the rules say the deployed link must stay reachable through judging (12–23 Oct).
-  **The managed trial therefore can't be the deployed link.** Use it to demo the Studio runtime (record it for
-  the video), and host the real services yourself.
+  **The managed trial therefore can't be the deployed link.** We did not use it. The Studio agent runs
+  self-hosted (`bag dev` behind Caddy) on the same server as the three Elitr services.
 
 ---
 
@@ -87,7 +88,7 @@ prints the registration JSON, the predicted agentId and a gas estimate from `sim
 2.1 Set the public base URLs in `.env`. They go into the registration file and should be the URLs judges can reach:
 ```
 ANALYST_PUBLIC_URL=https://<analyst host>
-ANALYST_FLOW_PUBLIC_URL=https://<flow analyst host>
+FLOW_ANALYST_PUBLIC_URL=https://<flow analyst host>
 EXECUTION_PUBLIC_URL=https://<execution host>
 ERC8004_CHAIN_ID=56
 # ERC8004_RPC_URL=...   (defaults to BSC_RPC_URL on 56)
@@ -160,6 +161,10 @@ When `ERC8004_POST_FEEDBACK` is unset, `postFeedback` returns `{ skipped }` and 
 
 ## 4. Agent Studio itself (optional, for the award narrative)
 
+What was actually done: the seller lives in `studio/ElitrDesk/` (inside this repo), runs on BSC mainnet, is
+registered as ERC-8004 #367734 and is self-hosted at https://desk.elitr.xyz with a free x402 brief. The plan
+below (4.1-4.3) predates that and is kept for reference; 4.3's managed-trial deploy was not run.
+
 Run these in a **separate directory outside this repo**. Approve each command one at a time, and don't grant `bag:*`.
 
 4.1 **[HUMAN]** Install the CLI (requires Node >= 22, pnpm 10 via corepack, and Bun >= 1.3 to deploy):
@@ -190,10 +195,10 @@ Points to keep in mind:
 - After the trial expires, the link is gone. Don't submit it as the deployed link.
 - Funding: claim tBNB and U from https://t.me/bnbchain_official_bot (up to 0.3 tBNB/day).
 
-4.4 Honest fallback, and the default plan: host the three Elitr services ourselves (any VPS or container host)
-and keep identity and reputation on **BSC mainnet** through `packages/identity`. The README should state clearly
-that Studio's managed runtime only runs Studio-generated projects. Elitr uses the same ERC-8004 registries and
-the same b402 (x402 V2) payment rail, and in this setup Studio is optional.
+4.4 What we did: host the three Elitr services ourselves (AWS Lightsail, Frankfurt, Caddy + systemd) and keep
+identity and reputation on **BSC mainnet** through `packages/identity`. Studio's managed runtime only runs
+Studio-generated projects, so the Studio seller is a separate, downstream agent on the same server. Elitr uses
+the same ERC-8004 registries and the same b402 (x402 V2) payment rail.
 
 ---
 
@@ -212,7 +217,7 @@ the same b402 (x402 V2) payment rail, and in this setup Studio is optional.
 | `EXECUTION_PRIVATE_KEY` | to post | Trader key; signs `giveFeedback` and mints `execution` |
 | `ANALYST_OWNER_PRIVATE_KEY` | CLI only | Mints `analyst` (and `analyst-flow`). Must differ from the trader key |
 | `ANALYST_FLOW_OWNER_PRIVATE_KEY` | no | Separate owner for `analyst-flow` |
-| `ANALYST_PUBLIC_URL` / `ANALYST_FLOW_PUBLIC_URL` / `EXECUTION_PUBLIC_URL` | CLI | Base URLs written into the registration files |
+| `ANALYST_PUBLIC_URL` / `FLOW_ANALYST_PUBLIC_URL` / `EXECUTION_PUBLIC_URL` | CLI | Base URLs written into the registration files (`ANALYST_FLOW_PUBLIC_URL` is still read as a fallback) |
 
 `identityFromEnv()` returns `null` unless `ERC8004_POST_FEEDBACK`, `ERC8004_CHAIN_ID` or one of the
 `ERC8004_AGENT_ID_*` variables is set.

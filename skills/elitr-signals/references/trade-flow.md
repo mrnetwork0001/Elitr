@@ -1,4 +1,4 @@
-# Acting on a signal: buying NVDAB / TSLAB with the Agentic Wallet
+# Acting on a signal: buying a bStock with the Agentic Wallet
 
 Source of truth: `binance-agentic-wallet` skill - `SKILL.md` (Build the Command, Common Token
 Addresses, US stock resolution), `references/market-order.md`, `references/security.md`. Background:
@@ -22,12 +22,21 @@ curl -sS --max-time 25 -H 'Accept-Encoding: identity' -H 'User-Agent: binance-we
 ```
 
 `type=3` = bStock (`…B`), `type=1` = Ondo (`…on`), `type=2` = xStocks-style (`…x`). Find the entry
-with `symbol` = `NVDAB` / `TSLAB`, `chainId` = `56`. It must equal:
+with `symbol` = the bStock the user named, `chainId` = `56`. It must equal one of the six Elitr
+trades:
 
-| Symbol | Contract (BSC) |
-|---|---|
-| NVDAB | `0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436` |
-| TSLAB | `0x5b1910eAaD6450E50f816082Aa078C41F10C292f` |
+| Symbol | Underlying | Contract (BSC) |
+|---|---|---|
+| NVDAB | NVIDIA | `0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436` |
+| TSLAB | Tesla | `0x5b1910eAaD6450E50f816082Aa078C41F10C292f` |
+| BABAB | Alibaba | `0x4eF9d3062c7F6ebA4AAE4990c5036598C6eff4ec` |
+| CRCLB | Circle | `0x80f3D493EBCe97e343c53D29a137942416B4ffC0` |
+| SNDKB | Sandisk | `0x3eE4dF61bd4F867E349BEaE8bFE07bc31b4850fb` |
+| METAB | Meta | `0x7425889FE94F9d693E8daefE88BCCed6AcFEf4c0` |
+
+NVDAB and TSLAB have the deepest pools (several $M on PancakeSwap v3). The other four have
+roughly $0.2M-$2.5M of DexScreener liquidity and can sit idle for an hour while the US session is
+closed, so expect wider slippage and quote failures outside market hours.
 
 If it does not match or is missing, stop and tell the user. Never substitute the Ondo version
 (`NVDAon`) for a bStock, or vice versa, without asking. The `binance-tokenized-securities-info`
@@ -46,10 +55,10 @@ baw market-order quote --binanceChainId 56 --fromTokenQty <budget> \
   --fromToken 0x55d398326f99059fF775485246999027B3197955 --toToken <bStock address> --json
 ```
 
-Show: spend (USDT + address), expected NVDAB/TSLAB amount, slippage, the signal that motivated it,
+Show: spend (USDT + address), expected bStock amount, slippage, the signal that motivated it,
 and the risk notice from SKILL.md. Disclose defaults if not set: slippage `auto`, MEV protection
-`true`; `gasLevel` defaults to `HIGH` in `baw` 1.9.0 `--help` (the skill reference says `MEDIUM`) -
-pass `--gasLevel MEDIUM` explicitly if the user cares. Only on a clear "yes":
+`true`, `gasLevel` `MEDIUM` (the default in `baw` 1.10.0, matching the skill reference; 1.9.0's
+`--help` said `HIGH`) - pass `--gasLevel` explicitly if the user cares. Only on a clear "yes":
 
 ```bash
 baw market-order swap --binanceChainId 56 --fromTokenQty <budget> \

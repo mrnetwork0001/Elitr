@@ -73,16 +73,16 @@ const BRIEF_PREVIEW: AgentSkill = {
 function deskBriefSkill(sellPath: string): AgentSkill {
   return {
     id: "desk_brief",
-    name: "Elitr Desk Brief (paid, x402)",
+    name: "Elitr Desk Brief (free, x402)",
     description:
-      `PAID over x402 at ${sellPath}?prompt=brief (B402, BSC testnet, price from ` +
-      "studio.toml). A concise factual brief of the live Elitr desk: mode, " +
+      `FREE over x402 at ${sellPath}?prompt=brief (price_usd "0" in studio.toml, ` +
+      "BSC mainnet, no payment challenge). A concise factual brief of the live Elitr desk: mode, " +
       "today's plain-English summary, both analysts' hit rate / trust / ERC-8004 " +
       "ids, open positions + P&L, and the top tokenized-stock weekend-gap spreads " +
       "(on-chain vs reference) with US market status. Every fact is copied from " +
       "Elitr's public endpoints and returned with its sources; if Elitr is " +
       "unreachable the route answers 503 before any payment is requested. " +
-      'Over A2A, {"skill": "desk_brief"} returns the payment offer.',
+      'Over A2A, {"skill": "desk_brief"} returns the x402 offer (URL, price 0, network).',
     tags: ["elitr", "x402", "b402", "tokenized-stocks", "erc8004", "brief"],
     examples: ['{"skill": "desk_brief"}'],
     inputModes: ["application/json"],
@@ -95,9 +95,9 @@ export const AGENT_DESCRIPTION =
   "Autonomous seller agent that resells a concise, factual brief of the live " +
   "Elitr agent-to-agent trading desk (https://elitr.xyz) over x402: news + " +
   "on-chain-flow analysts sell signals over b402 to a trader that trades " +
-  "bStocks (NVDAB/TSLAB) on BSC and rates them on ERC-8004 (BSC mainnet " +
+  "six bStocks on BSC and rates them on ERC-8004 (BSC mainnet " +
   "agents #365554 news analyst, #365555 flow analyst, #365556 trader). " +
-  "Free preview over A2A; full brief over x402.";
+  "Free preview over A2A; full brief over x402 (also free, price_usd 0).";
 
 /** Card name from studio.toml `[project].name` (best-effort). */
 function agentName(): string {

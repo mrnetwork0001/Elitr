@@ -9,7 +9,8 @@ that has the Binance Agentic Wallet skill (Claude Code, Codex, OpenClaw, …) ca
    Agentic Wallet (`baw x402-payment preview` → `sign`). It then replays the request with
    `PAYMENT-SIGNATURE` and explains the signal in plain English.
 3. **Optionally act on it**: with explicit confirmation and inside a budget the user sets, buy the
-   bStock (NVDAB / TSLAB) in that same wallet (`baw market-order quote` → `swap`).
+   bStock (one of the six Elitr trades: NVDAB, TSLAB, BABAB, CRCLB, SNDKB, METAB) in that same
+   wallet (`baw market-order quote` → `swap`).
 
 ## Why it matters
 
@@ -36,7 +37,7 @@ Wallet. The Agentic Wallet can be created during the first sign-in.
 npx skills add binance/binance-skills-hub/skills/binance-web3/binance-agentic-wallet
 
 # 2. Make sure baw meets the skill's requiredCliVersion. Skill v1.12.0 requires 1.10.0.
-baw cli-check --required-version 1.10.0 --json   # this machine has 1.9.0, so needUpdateCli: true
+baw cli-check --required-version 1.10.0 --json   # 1.9.0 was installed at first (needUpdateCli: true); the runs below used 1.10.0
 npm install -g @binance/agentic-wallet@1.10.0
 
 # 3. Optional but recommended: the token audit used by the agentic-wallet swap pre-check
@@ -46,8 +47,8 @@ npx skills add binance/binance-skills-hub/skills/binance-web3/query-token-audit
 npx skills add ./skills/elitr-signals
 #    after the repo is public: npx skills add <github-owner>/<repo>/skills/elitr-signals
 
-# 5. Point it at the analysts. The default is the public placeholders https://analyst.elitr.xyz and https://flow.elitr.xyz
-export ELITR_ANALYSTS="http://localhost:4001,http://localhost:4003"   # local dev
+# 5. Point it at the analysts. The defaults are the live hosts https://analyst.elitr.xyz and https://flow.elitr.xyz
+export ELITR_ANALYSTS="http://localhost:4001,http://localhost:4003"   # local dev only
 ```
 
 `npx skills add /Users/…/Elitr/skills/elitr-signals --list` was used to check that the installer
@@ -63,10 +64,11 @@ Before recording:
   `curl -m 15 -X POST https://web3.binance.com/build/api/v2/b402/supported` should connect (an
   unsigned call returns an error, which is fine). Binance also blocks some regions; see
   [deploy.md](deploy.md).
-- **Payment config.** Read [Payment config](#payment-config-decide-before-recording). The safest
-  option for the recording is to set both analysts to **U + `eip3009`**.
+- **Payment config.** Both analysts' 402 carries two accepts, USDT via `permit2-exact` and U via
+  `eip3009`, and both routes are proven with the Agentic Wallet. See
+  [Payment config](#payment-config-two-accepts-both-proven). Pick the option by token, not by index.
 - **Fund the Agentic Wallet on BSC.** Run `baw wallet address --json` to get its address. Send it
-  about $3 of the price token (USDT now, or U if you switch) and about $0.50 of BNB for swap gas.
+  about $3 of USDT or U (whichever option you will pick) and about $0.50 of BNB for swap gas.
   x402 payments are gasless. Swaps are not.
 - **Start everything:** analysts on :4001 and :4003, then the dashboard (`apps/web`), so the
   Timeline is connected to both analysts' `/events`.
@@ -91,15 +93,15 @@ On camera:
    symbols.
 4. **Buy one signal ($0.01).** Ask *"Get me the Elitr flow analyst's signal on NVDAB."* The skill:
    1. Calls `/signal` and gets `402`.
-   2. Runs `baw x402-payment preview` and shows the amount, token, payee
+   2. Runs `baw x402-payment preview` and shows both options (USDT, U) with amount, payee
       `0x66A4c73e7C02858B49F15fBC24589A76B97C0F5a`, and your balance.
-   3. Waits for you to say **"yes"**.
-   4. Runs `baw x402-payment sign`. If the price token is USDT, the first payment also sends a
-      Permit2 approve (`approveTxHash`, gas sponsored on BSC).
+   3. Waits for you to say **"yes"** to one option.
+   4. Runs `baw x402-payment sign`. If you picked USDT, the first payment also sends a Permit2
+      approve (`approveTxHash`, gas sponsored on BSC). U needs no approve.
    5. Replays the request right away with `PAYMENT-SIGNATURE`.
    6. Prints the signal: stance, score out of 100, horizon, rationale, sources, and the settlement
       tx link.
-5. **Optional: buy about $2 of NVDAB.** Say *"Buy 2 USDT of NVDAB."* The skill:
+5. **Optional: buy about $2 of NVDAB** (or any of the six bStocks). Say *"Buy 2 USDT of NVDAB."* The skill:
    1. Resolves NVDAB from the `type=3` bStock list and checks it equals
       `0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436`.
    2. Runs the token audit.
@@ -116,8 +118,8 @@ On camera:
 
 **Elitr dashboard (Timeline, analyst lane):**
 - `payment.required` is logged on the first call.
-- `Verified 0.01 USDT from 0xABCD…1234` (`payment.verified`) appears, where the payer is the
-  **Agentic Wallet address**, not the execution agent's wallet.
+- `Verified 0.01 USDT from 0xABCD…1234` (or `0.01 U …`, `payment.verified`) appears, where the payer
+  is the **Agentic Wallet address**, not the execution agent's wallet.
 - `signal.produced` follows with the score.
 
 **BscScan, signal payment** (`https://bscscan.com/tx/<PAYMENT-RESPONSE.transaction>`):
@@ -133,44 +135,39 @@ On camera:
 **BscScan, NVDAB buy:** a swap transaction sent from the Agentic Wallet address. USDT goes out and
 NVDAB `0x02Fc…7436` comes in. Gas is paid in BNB.
 
-## Payment config: decide before recording
+## Payment config: two accepts, both proven
 
-**What the analysts emit today:** `/info` on both analysts reports `priceAsset` USDT, and the default
-`ANALYST_PAYMENT_METHOD` is `permit2-exact`. The 402 therefore offers only `exact` +
-`extra.assetTransferMethod: "permit2-exact"` + USDT.
+**What the analysts emit:** the 402 from both analysts carries **two** entries in `accepts[]`, both
+`scheme: exact` on `eip155:56` for 0.01:
 
-**What the Agentic Wallet documents:**
-- The x402 reference (`binance-agentic-wallet/references/x402-payment.md`, `UNSUPPORTED_METHOD`)
-  lists the supported `assetTransferMethod` values as `eip3009`, `permit2` and `spl-transfer`.
-- b402 calls the same Permit2 method `permit2-exact` (b402 "Supported Payment Methods" page).
-- `baw` sends the payload to a server-side preview endpoint
-  (`/bapi/defi/v1/public/wallet-direct/agent-wallet/x402-payment/preview`), so we cannot check
-  locally whether it accepts `permit2-exact`.
-- There is indirect evidence that Permit2 USDT works. The (now expired) bStock campaign guide in
-  the same skill says Agent Studio's b402 endpoint accepts USDT/USDC via Permit2 with a one-time
-  allowance, and recommends U / USD1 via EIP-3009, which need no approval.
+| Accept | Token | `extra.assetTransferMethod` | Approval |
+| --- | --- | --- | --- |
+| USDT `0x55d398326f99059fF775485246999027B3197955` | Tether USD | `permit2-exact`, `spenderAddress` `0x3038f7ac3b4D1a3fe886BdCB5cD01e9f6BDd8633` (b402 Permit2 proxy) | one-time approve from the wallet to canonical Permit2, gas sponsored |
+| U `0xcE24439F2D9C6a2289F741120FE202248B666666` | United Stables | `eip3009` | none (`transferWithAuthorization`) |
 
-**Recommendation:** for the recorded run, set both analysts to U via EIP-3009. Both b402 and the
-Agentic Wallet document this method by the same name, and it needs no approve transaction:
+**Both routes were run end to end with baw 1.10.0 on 2026-10-07 (BSC mainnet):**
 
-```
-ANALYST_PAYMENT_ASSET=0xcE24439F2D9C6a2289F741120FE202248B666666   # U (18 decimals)
-ANALYST_PAYMENT_METHOD=eip3009
-ANALYST_PAYMENT_TOKEN_NAME=<on-chain name() of U>   # only needed if /supported lists >1 eip3009 kind; otherwise read on-chain
-ANALYST_PRICE_WEI=10000000000000000                  # 0.01 U, unchanged
-```
+- **USDT / `permit2-exact`.** `preview` showed the USDT option as `assetTransferMethod: "permit2"`,
+  `READY_TO_SIGN`, `needApproveFirst: true`. The Agentic Wallet maps b402's `permit2-exact` to its
+  own `permit2` internally; the naming difference between the two docs does not break anything in
+  practice. `sign` returned `approveTxHash` for the sponsored Permit2 approve, and the replay
+  settled. Approve
+  [`0x62c332337eb1eb24fd2589dfe9c5afea30c9024d12ec5624cd7744724f1cc822`](https://bscscan.com/tx/0x62c332337eb1eb24fd2589dfe9c5afea30c9024d12ec5624cd7744724f1cc822),
+  settle
+  [`0x559b481ee017167040751bac274f5daf62d0bc97c75bac295ef03a9b338659b9`](https://bscscan.com/tx/0x559b481ee017167040751bac274f5daf62d0bc97c75bac295ef03a9b338659b9).
+- **U / `eip3009`.** No approval. `sign` → settled signal in 3.5 s. Settle
+  [`0xd2535021423ae6d30b4bbc6fde8f2b58fc0bc22dba7831c7d97c7eed78ca2e4e`](https://bscscan.com/tx/0xd2535021423ae6d30b4bbc6fde8f2b58fc0bc22dba7831c7d97c7eed78ca2e4e).
 
-USD1 (`0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d`) works the same way. Side effects of switching
-(not changed here):
-- `apps/analyst-agent/src/b402.ts` `USD_STABLES_18` does not include U, so `/info.priceUsd`
-  becomes `null` for U. USD1 is in that list.
-- The execution agent already prefers `eip3009` and knows U and USD1. It needs a U/USD1 balance to
-  keep buying.
-- The Agentic Wallet then needs U instead of USDT.
+**Pick by token, not by index.** After the wallet was topped up with U, `preview` reordered the
+options (U became index 1, USDT index 2). `selectedIndex` is not stable across previews of the
+same 402, so a script must choose the option by `tokenAddress`.
 
-Alternatively, keep USDT and run one `preview` first. If it returns `READY_TO_SIGN` or
-`INSUFFICIENT_BALANCE`, `permit2-exact` is accepted. If it returns `UNSUPPORTED_METHOD`, switch to
-U. A longer-term option is for the analysts to offer both requirements in `accepts[]`.
+If a preview ever returns `UNSUPPORTED_METHOD` for one option, use the other accept. There is no
+need to change the analysts' configuration: `ANALYST_PAYMENT_ASSET` / `ANALYST_PAYMENT_METHOD` set
+the primary accept (USDT, `permit2-exact`) and `ANALYST_PAYMENT_ALT_ASSET` /
+`ANALYST_PAYMENT_ALT_METHOD` the second (U, `eip3009`); see `apps/analyst-agent/src/b402.ts`. USD1
+(`0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d`) is also `eip3009` on b402 and would work the same
+way as U.
 
 **Signature lifetime:**
 - The analyst runs verify, then produces the signal, then settles. The news analyst's signal step
@@ -181,23 +178,28 @@ U. A longer-term option is for the analysts to offer both requirements in `accep
 - For the recording, warm the cache first. For example, let the execution agent buy the same
   symbol a moment earlier, or use the flow analyst, which is deterministic and fast.
 
-## Gaps and friction found (facts with sources, for the DX report's "AI stack" section)
+## Gaps and friction found
 
-1. **The installed CLI is older than the skill requires.** `baw --version` returns `1.9.0`. The
+Facts with sources, for the DX report's "AI stack" section.
+
+1. **The installed CLI was older than the skill requires.** `baw --version` returned `1.9.0`. The
    skill `binance-agentic-wallet` v1.12.0 frontmatter has `requiredCliVersion: '1.10.0'`, and
-   `baw cli-check --required-version 1.10.0 --json` returns `needUpdateCli: true`. npm latest is
+   `baw cli-check --required-version 1.10.0 --json` returned `needUpdateCli: true`. npm latest is
    `1.10.0`. The install docs say Skills "will detect [a missing baw] and install it automatically
-   on first use". Upgrading is left to the skill's preflight step.
+   on first use". Upgrading is left to the skill's preflight step. We upgraded to 1.10.0 before the
+   paid runs.
 2. **Nested `--help` prints the top-level help.** In baw 1.9.0, `baw x402-payment preview --help`,
    `baw market-order swap --help` and `baw wallet status --help` all print the root usage. The
    working form is `baw x402-payment help preview`.
-3. **The default `--gasLevel` differs between the CLI and the docs.** `baw market-order help swap`
-   says `(default: "HIGH")`. Skill `references/market-order.md` says default `MEDIUM`.
-   `limit-order buy` help also says `HIGH`.
-4. **Permit2 method naming differs between the Agentic Wallet and b402.** Agentic Wallet x402
+3. **The default `--gasLevel` changed between CLI versions.** `baw market-order help swap` in 1.9.0
+   said `(default: "HIGH")` (and `limit-order buy` help also said `HIGH`), while the skill's
+   `references/market-order.md` says `MEDIUM`. In 1.10.0 the swap default is `MEDIUM`, matching
+   the skill docs.
+4. **Permit2 method naming differs between the Agentic Wallet and b402 docs.** Agentic Wallet x402
    reference: supported methods are `eip3009`, `permit2`, `spl-transfer`. b402 Supported Payment
-   Methods: `eip3009`, `permit2-exact`, `permit2-upto`. Neither document maps one to the other.
-   Preview is resolved server-side, so the only way to find out is a signed-in preview.
+   Methods: `eip3009`, `permit2-exact`, `permit2-upto`. Neither document maps one to the other, and
+   preview is resolved server-side. In practice it works: the 1.10.0 preview of our 402 shows the
+   `permit2-exact` accept as `permit2` and signs it (approve `0x62c3…c822`, settle `0x559b…59b9`).
 5. **The x402 preview example contradicts b402.** In `references/x402-payment.md`, the example
    output lists a BSC USDT option with `"assetTransferMethod": "eip3009"`. The b402 asset table
    says USDT has EIP-3009 = **No**; only U and USD1 have it.
@@ -239,14 +241,17 @@ U. A longer-term option is for the analysts to offer both requirements in `accep
     - On BSC the Permit2 approve is gas-sponsored.
     - x402 spending has its own daily limit (`x402DailyLimit`), separate from trading.
     - The bStock list API (`…/rwa/stock/detail/list/ai?type=3`) returned NVDAB and TSLAB with the
-      same contracts as our `packages/shared/src/assets.ts`.
+      same contracts as our `packages/shared/src/assets.ts` (checked 2026-10-07; the four bStocks
+      added on 2026-10-08 were verified on-chain against the PancakeSwap v3 factory instead).
+    - Both of Elitr's accepts (USDT `permit2-exact`, U `eip3009`) are payable from one preview; the
+      user can pick either token.
 
 ## Files
 
 - `skills/elitr-signals/SKILL.md`: triggers, flow, confirmations, error table
 - `skills/elitr-signals/references/elitr-api.md`: endpoints, schemas, error codes, symbols
 - `skills/elitr-signals/references/payment-flow.md`: `baw x402-payment` usage for Elitr
-- `skills/elitr-signals/references/trade-flow.md`: NVDAB / TSLAB purchase via `baw market-order`
+- `skills/elitr-signals/references/trade-flow.md`: bStock purchase (any of the six) via `baw market-order`
 - `skills/elitr-signals/scripts/discover.mjs`: free discovery and comparison table
 - `skills/elitr-signals/scripts/decode-402.mjs`: unpaid request, decoded price, ready `baw` preview command
 - `skills/elitr-signals/scripts/replay.mjs`: replays with `PAYMENT-SIGNATURE`, decodes `PAYMENT-RESPONSE`, prints the signal

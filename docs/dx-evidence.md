@@ -1,6 +1,6 @@
 # DX evidence pack
 
-These are raw facts sorted under the seven questions of the Developer Experience Report form (https://forms.gle/EUQ39xf54GHjC2ys5). **They are notes, not answers.** The hackathon rejects AI-generated reports, so write each section in your own words, from your own experience, using these as reminders and evidence. Sources and timestamps are in [dx-raw-log.md](dx-raw-log.md) and [agentic-wallet.md](agentic-wallet.md#gaps-and-friction-found-facts-with-sources-for-the-dx-reports-ai-stack-section).
+These are raw facts sorted under the seven questions of the Developer Experience Report form (https://forms.gle/EUQ39xf54GHjC2ys5). **They are notes, not answers.** The hackathon rejects AI-generated reports, so write each section in your own words, from your own experience, using these as reminders and evidence. Sources and timestamps are in [dx-raw-log.md](dx-raw-log.md) and [agentic-wallet.md](agentic-wallet.md#gaps-and-friction-found).
 
 ---
 
@@ -73,17 +73,24 @@ These are raw facts sorted under the seven questions of the Developer Experience
 The full list with sources is in [agentic-wallet.md](agentic-wallet.md).
 - **The installed `baw` (1.9.0) was older than the skill requires (1.10.0).** Upgrading also needed `--allow-scripts=@github/keytar` for Keychain session storage.
 - **Nested `--help` prints the root help** (1.9.0).
-- **The default `--gasLevel`** is HIGH in the CLI but MEDIUM in the skill docs.
-- **The Permit2 method has two names:** `permit2` (Agentic Wallet) versus `permit2-exact` (b402). We added U via `eip3009` as a second option so both sides agree.
+- **The default `--gasLevel` changed between CLI versions:** 1.9.0 `--help` said HIGH while the skill docs said MEDIUM; in 1.10.0 the swap default is MEDIUM, matching the docs.
+- **The Permit2 method has two names:** `permit2` (Agentic Wallet) versus `permit2-exact` (b402), and neither doc maps them. In practice baw 1.10.0 preview shows our `permit2-exact` accept as `permit2` and signs it (approve `0x62c3…c822`, settle `0x559b…59b9`). We also offer U via `eip3009` as a second accept; that route settled in 3.5 s (`0xd253…4e4e`).
+- **`selectedIndex` is not stable:** the preview reordered the two options after the wallet received U, so a script must pick by token, not index.
+- **`baw market-order list --orderId` printed "No orders found"** seconds after a completed swap (order 26100700001947839168, balance already updated).
 - **The x402 preview example** shows USDT with `eip3009`, which b402 says USDT doesn't support.
 - **The x402 signature lifetime (about 30 s)** is only mentioned in an expired campaign file.
 - **There is no x402 page** in the Agentic Wallet docs.
 - **The tokenized-securities prerequisite skill only knows Ondo** (bStocks needs `type=3`). xStocks trading is undocumented.
 - **Login:** QR + pairing code + Secure Auto Sign took about 1 minute. Defaults: daily limit $1,000, x402 limit $20, session about 2 days. Write your own impressions.
-- **Agent Studio:** fill in after you try it. Facts so far:
-  - `@bnbagent/studio-cli` 0.0.14
+- **Agent Studio** (`@bnbagent/studio-cli` 0.0.14; write your own impressions, these are the facts from 8 Oct):
   - it deploys its own generated project, not an existing service
-  - the trial runs 48 h on testnet only, from the first deploy
+  - the managed `--destination platform` trial is 48 h, BSC testnet only, and its clock starts at the first deploy and cannot be reset, so it cannot stay reachable through judging (12-23 Oct); we did not use it
+  - NodeOps (a self-deploy target) was down after a security incident; AWS AgentCore needs an AgentCore quota (new accounts often start at 0) and gives OAuth-gated, never anonymous, endpoints
+  - we self-hosted `bag dev --logs` behind Caddy on our own server (desk.elitr.xyz)
+  - paid x402 on every Studio target needs B402 (OnchainPay) merchant credentials: sandbox and production applied for separately, RSA-1024 key, egress-IP allowlist (relay IPs only obtainable by curling the platform API with the session token); the application form was locked; Studio's own b402 guide says "Do not claim current mainnet readiness until polling is implemented". These differ from the Binance Web3 API b402 facilitator credentials, which work with a normal API key. So the brief is FREE (`price_usd = "0"`)
+  - `bag erc8004 register --network bsc-mainnet` refused below about 0.002 BNB while `bag doctor` warns at 0.02 BNB; the registration (713,813 gas) was then sponsored by the MegaFuel relay and cost 0 BNB; the command waited about 5 min and reported "broadcast but not confirmed yet", leaving `pending_*` keys in studio.toml, although the tx had confirmed (block 126414950) and `bag erc8004 show` already returned agent id 367734; the insufficient-funds hint suggests getting tBNB on mainnet
+  - `bag config set` refuses to switch `[network].default` to bsc-mainnet while `[payments.seller].assets` holds TEST_* ids, and refuses mainnet assets first as cross-network; both have to be edited together in the file. On mainnet only "U" was accepted as a seller asset ("USDC" / "USDT" rejected)
+  - the scaffolded agent card uses only `AGENTCORE_RUNTIME_URL` for `card.url`, so a self-hosted agent advertises `http://localhost:9000` until patched to read `BNBAGENT_PUBLIC_URL`
 
 ## 5. Tokenized-stock specifics
 
@@ -105,6 +112,11 @@ The full list with sources is in [agentic-wallet.md](agentic-wallet.md).
   - Ondo routes through RFQ, which the Transaction API can't simulate
 - **There is no testnet deployment** of NVDAB/TSLAB/TSLAon/TSLAx, so end-to-end testing needs mainnet.
 - **Compliance:** bStocks and Ondo tokens are beacon proxies with a `compliance()` hook (blocklist and upgrade possible). This isn't documented for developers.
+- **Six-stock basket (8 Oct):** NVDAB, TSLAB, BABAB, CRCLB, SNDKB, METAB are traded; TSMB (thinnest, about $15k/day), IBMB (about $900 pool), SPCXB (pre-IPO, no reference price) and MUB (about $16k pool) were skipped. The four additions were verified on-chain (PancakeSwap v3 factory `getPool`, USDT side of the pool, DexScreener cross-check); the RWA `type=3` list was only checked for NVDAB/TSLAB.
+- **Free pre-screen before paying for a signal:** every cycle prices all six for free (Yahoo, RWA reference, on-chain) and only buys a signal where the token trades at least 0.5% below the reference or a position is open. Spreads at the first six-stock cycle: BABAB +22 bps, CRCLB -40, METAB +2, SNDKB -78, TSLAB -55 (bps vs Yahoo).
+- **Idle mid-cap pools:** in that first cycle the flow analyst refused a SNDKB signal with "0 SNDKB swaps in the last 60 min" (payment not settled) although SNDKB has about $237k DexScreener liquidity and about $214k/day volume. Mid-cap bStocks pools can sit idle for an hour while the US session is closed, so on-chain flow signals are only meaningful in active hours.
+- **Approval targets move with price:** our approve script re-sent USDT/NVDAB/TSLAB approvals because allowances had drifted a few cents below the recomputed targets (USDT 748 < 750 after the $2 live buy; per-token targets are 2 × max position in token units). Harmless (about $0.01 gas, 7 approvals, e.g. `0xf5230862…7faa`), fixed by accepting an allowance within 10% of target.
+- **Live fills so far:** one, operator-triggered via `POST /trade` (2 USDT → NVDAB, `0x0ce91120…3807`), through the same quote → simulate → broadcast path the loop uses. No autonomous live fill yet.
 
 ## 6. Redesign suggestions
 

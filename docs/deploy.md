@@ -1,13 +1,21 @@
 # Deploying Elitr
 
-Recommended topology:
+## Production: AWS Lightsail + Caddy + systemd
 
-| Part | Where | Why |
-| --- | --- | --- |
-| Dashboard (`apps/web`) | **Vercel** | Static and SSR Next.js. The browser talks to the agents directly. The dashboard never calls Binance. |
-| Agents (`analyst` on 4001 + 4003, `execution` on 4002) | **Railway**, **Fly.io**, or **a VPS with docker compose** | Long-running processes with a loop, SSE streams and a persistent `data/` directory. Serverless will not work. |
+Elitr runs on one AWS Lightsail instance (Ubuntu 24.04, 2 GB) in **Frankfurt**, an allowed region for the Binance Web3 API. Code is built on the server with pnpm. There is no Docker in production.
 
-Both agent images are built from [`docker/agent.Dockerfile`](../docker/agent.Dockerfile) with `--build-arg APP=analyst-agent|execution-agent`. The build context is the repo root.
+| Piece | How |
+| --- | --- |
+| systemd units | `elitr-analyst` (news 4001 + flow 4003, one process), `elitr-execution` (4002), `elitr-web` (3000), `elitr-desk` (9000, the Agent Studio seller "Elitr Desk Brief", `bag dev` behind Caddy) and `caddy`. All agent ports bind to `127.0.0.1`, `Restart=always`. |
+| Caddyfile hosts | `elitr.xyz` (dashboard; `www` redirects), `analyst.elitr.xyz` → 4001, `flow.elitr.xyz` → 4003, `agent.elitr.xyz` → 4002, `desk.elitr.xyz` → 9000. Automatic Let's Encrypt certificates; SSE proxied unbuffered. |
+| Watchdog | `elitr-watchdog.timer` runs [`deploy/watchdog.sh`](../deploy/watchdog.sh) every 5 minutes (`deploy/elitr-watchdog.service`): restarts an inactive unit or one that fails its local health check twice in a row, restarts `elitr-execution` when the last cycle is older than 2.5 × `LOOP_INTERVAL_SEC`, logs the public HTTPS hosts and the trader's USDT / BNB runway, and writes one health line per UTC day to `data/watchdog.log`. |
+| Backup | a nightly systemd timer backs up `~/elitr/data/` (events, ledger, reputation, state). |
+| Loop | `LOOP_INTERVAL_SEC=1800`: one cycle every 30 minutes, for each of the six traded bStocks. |
+| Secrets | `~/elitr/.env` (mode 600), never committed. `CONTROL_TOKEN` is set, so `POST /cycle`, `/kill` and `/trade` need `Authorization: Bearer $CONTROL_TOKEN`. |
+
+The rest of this page covers **alternatives** (Vercel for the dashboard, Railway / Fly.io / a VPS with docker compose for the agents). They are not what runs today, but the region warning in section 0 applies to every option.
+
+For the alternatives, the dashboard (`apps/web`) is static and SSR Next.js whose browser talks to the agents directly and never calls Binance, so it can live on Vercel. The agents (`analyst` on 4001 + 4003, `execution` on 4002) are long-running processes with a loop, SSE streams and a persistent `data/` directory; serverless will not work. Both agent images are built from [`docker/agent.Dockerfile`](../docker/agent.Dockerfile) with `--build-arg APP=analyst-agent|execution-agent`. The build context is the repo root.
 
 ## 0. Before anything: pick an allowed region
 
@@ -37,7 +45,7 @@ All values are documented in [`.env.example`](../.env.example). Put them in the 
 | `ANTHROPIC_BASE_URL` + `ANTHROPIC_AUTH_TOKEN` (0G Router) or `ANTHROPIC_API_KEY`, `ANALYST_MODEL` | ✓ | | |
 | `EXECUTION_PRIVATE_KEY` (dedicated hot wallet, small balance) | | ✓ | |
 | `EXECUTION_HOST=0.0.0.0` | | ✓ | |
-| `CONTROL_TOKEN` (`openssl rand -hex 32`). **Required** when not on loopback; the agent refuses to start without it | | ✓ | |
+| `CONTROL_TOKEN` (`openssl rand -hex 32`). **Required** when not on loopback; the agent refuses to start without it. When set, `POST /cycle`, `/kill` and `/trade` need it as a bearer | | ✓ | |
 | `ANALYSTS=analyst=https://…,analyst-flow=https://…`, `ANALYST_URL` | | ✓ | |
 | `BSC_RPC_URL`, `LOOP_INTERVAL_SEC`, `LIVE_TRADING`, `RISK_*`, `KILL_SWITCH` | | ✓ | |
 | `DASHBOARD_ORIGIN=https://<your-dashboard>.vercel.app` (CORS) | ✓ | ✓ | |
@@ -143,7 +151,7 @@ The analyst is the same with `APP = "analyst-agent"`, `HEALTH_PORT = "4001"` and
 
 ## 3c. VPS with docker compose
 
-The simplest option that matches local exactly:
+The simplest alternative that matches local exactly (production uses systemd units without Docker, see the top of this page):
 
 ```bash
 # on a VPS in an allowed region (Docker + compose plugin installed)
