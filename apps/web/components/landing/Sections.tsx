@@ -6,7 +6,7 @@ import { FlowDiagram } from "./FlowDiagram";
 import { Accent, Arrow, DashboardButton, Mark, cx, reveal } from "./parts";
 
 const STATS = [
-  ["3", "autonomous agents"],
+  ["4", "on-chain agents"],
   ["14", "risk checks before every buy"],
   ["100%", "of transactions dry-run first"],
   ["6", "tokenized stocks traded"],
@@ -42,7 +42,7 @@ const SOLUTIONS = [
   },
   {
     title: "Safety by default",
-    body: "Hard limits, a portfolio cap, take-profit and stop-loss exits, a kill switch, swap-only routes and a mandatory dry-run. Paper trading is the default.",
+    body: "Hard limits, a portfolio cap, take-profit and stop-loss exits, a kill switch, swap-only routes and a mandatory dry-run. Elitr ships in paper mode; the hosted desk at elitr.xyz runs live with small limits.",
   },
 ];
 
@@ -64,7 +64,7 @@ const AGENTS: { role: string; title: string; body: string; marker: string; key?:
     title: "The Execution agent",
     marker: "",
     key: true,
-    body: "Holds the capital. Chooses which analyst to pay, scores every call it buys, compares real and on-chain prices, runs every risk rule, simulates each swap with Binance's Transaction API, and only then fills - on paper by default.",
+    body: "Holds the capital. Chooses which analyst to pay, scores every call it buys, compares real and on-chain prices, runs every risk rule, simulates each swap with Binance's Transaction API, and only then fills. Ships in paper mode; the hosted desk at elitr.xyz runs live with small limits.",
   },
 ];
 
@@ -81,10 +81,12 @@ const STEPS: { n: string; title: string; body: string; api: string }[] = [
 
 const TX = "https://bscscan.com/tx/";
 const PROOF: [string, string, string][] = [
-  ["ERC-8004 identities", "News analyst #365554 · Flow analyst #365555 · Trader #365556", "0x81f46ff719e2a7c244ccb39622ae05fd9960883bd19000e0c731c60a8c168237"],
+  ["ERC-8004 identity: news analyst", "Registered as agent #365554 on the BSC identity registry", "0x81f46ff719e2a7c244ccb39622ae05fd9960883bd19000e0c731c60a8c168237"],
+  ["ERC-8004 identity: flow analyst", "Registered as agent #365555", "0x902e8d14dd118d069151834019f09fc92ceadc0f094fa78ffeb7d35cfcd9db16"],
+  ["ERC-8004 identity: trader", "Registered as agent #365556", "0xeb36036e4d62fad5a6919205de0cecbeb402a03afc6f282d1d0a8432fe5fcd03"],
   ["Agent pays agent (b402)", "Trader → flow analyst, 0.01 USDT for a signal, settled by Binance's facilitator", "0xe2a30c0801799c2b1c128fdc4e332c8485ce3249eacedd52470e2b1971a6c49f"],
   ["Agent rates agent (ERC-8004)", "Trader posts the news analyst's accuracy to the reputation registry", "0xf09e9f6edd8d64d0fd4f4a75f463ba2106093b16b2f986ad774c7b584aa887d6"],
-  ["Live trade", "2 USDT → 0.008433 NVDAB, simulated with the Transaction API, then broadcast", "0x0ce91120a0e7f14792a20565aa99f4a1819afafc0d1f1e9ee51ee3e36aa03807"],
+  ["Live trade", "Operator-triggered test buy: 2 USDT → 0.008433 NVDAB, simulated with the Transaction API, then broadcast", "0x0ce91120a0e7f14792a20565aa99f4a1819afafc0d1f1e9ee51ee3e36aa03807"],
   ["Binance Agentic Wallet buys a signal", "Paid in U via EIP-3009, no approval needed, 3.5 s from signature to signal", "0xd2535021423ae6d30b4bbc6fde8f2b58fc0bc22dba7831c7d97c7eed78ca2e4e"],
   ["BNB Agent Studio agent registers", "Elitr Desk Brief #367734, self-hosted on mainnet at desk.elitr.xyz (gas sponsored by MegaFuel)", "0xd95b1b475f44dd6537b3df63c380d7d0d4f948d001434cd8ed3856b96a5ae22b"],
 ];
@@ -127,7 +129,7 @@ const EXITS: [string, string][] = [
 ];
 
 const GUARDS = [
-  ["Paper by default", "Quotes and dry-runs are real and fills are booked at quoted amounts, but nothing is broadcast until live trading is explicitly switched on."],
+  ["Paper mode by default", "Quotes and dry-runs are real and fills are booked at quoted amounts, but nothing is broadcast until live trading is explicitly switched on. Elitr ships in paper mode; the hosted desk at elitr.xyz runs live with small limits."],
   ["Portfolio cap and exits", "A cap on all positions combined, plus automatic take-profit and stop-loss sells, so a winning or losing position never just sits there."],
   ["Dry-run every transaction", "Approvals and swaps go through Binance's Transaction API first. If the simulation fails, the trade doesn't happen."],
   ["Swap routes only", "Off-chain RFQ orders can't be simulated, so Elitr refuses them, even when they quote better."],
@@ -140,7 +142,7 @@ const LIQUIDITY: [string, string, string, string][] = [
   ["bStocks", "BABAB", "≈ $2.5M", "Traded"],
   ["bStocks", "TSLAB", "≈ $2.3M", "Traded"],
   ["bStocks", "CRCLB", "≈ $925k", "Traded"],
-  ["bStocks", "SNDKB", "≈ $237k", "Traded"],
+  ["bStocks", "SNDKB", "≈ $327k", "Traded"],
   ["bStocks", "METAB", "≈ $214k", "Traded"],
   ["bStocks", "TSMB", "≈ $132k", "Tracked"],
   ["Ondo", "NVDAon / TSLAon", "< $10k", "Tracked"],
@@ -159,17 +161,17 @@ const STACK = [
   ["ERC-8004", "Agent identity and on-chain reputation"],
   ["BNB Agent Studio", "Desk-brief agent (#367734) with A2A + x402 at desk.elitr.xyz"],
   ["Docker + CI", "One-command stack, tested on every push"],
-  ["Next.js dashboard", "Live event stream from all three agents"],
+  ["Next.js dashboard", "Live event stream from the two analysts and the trader"],
 ] as const;
 
 const PANELS = [
-  ["Top bar", "Connection status of all three agents, the PAPER / LIVE badge, the kill switch, and operator controls (read-only for visitors)."],
+  ["Top bar", "Connection status of the two analysts and the trader, the PAPER / LIVE badge, the kill switch, and operator controls (read-only for visitors)."],
   ["Agent-to-agent flow", "Every b402 payment from the trader to each analyst, with the BscScan settlement link and today's spend."],
   ["Analyst market", "Each analyst's price, hit rate, trust and weight, who was picked for each stock and why, and every scored call."],
   ["Portfolio & P&L", "Net P&L after signal costs and gas, positions per stock with take-profit and stop-loss levels. Paper fills are always labelled."],
   ["Signal · Prices · Risk", "Per stock: the latest signal and which analyst sold it, reference vs on-chain prices, and every risk rule from the last check."],
   ["Execution log", "Each attempt as a pipeline: simulated → broadcast → filled, buy or sell, with the exit reason and PAPER or LIVE."],
-  ["Timeline", "Every event from all three agents, filterable, with raw JSON for anyone who wants to verify."],
+  ["Timeline", "Every event from the two analysts and the trader, filterable, with raw JSON for anyone who wants to verify."],
 ] as const;
 
 const BADGES = [
@@ -183,11 +185,11 @@ const BADGES = [
 const FAQ: [string, ReactNode][] = [
   [
     "Does Elitr trade real money?",
-    "Only when its operator switches it on. By default it runs in paper mode: every price, quote and dry-run is real, but nothing is broadcast. Live mode trades small amounts on BSC mainnet, capped by the risk limits.",
+    "Only when its operator switches it on. Elitr ships in paper mode: every price, quote and dry-run is real, but nothing is broadcast. The hosted desk at elitr.xyz runs live with small limits: small amounts on BSC mainnet, capped by the risk rules.",
   ],
   [
     "What is paper mode?",
-    "The default. The agent does everything for real up to the last step: it buys real signals, fetches real prices and quotes, and simulates the exact swap with Binance's Transaction API. If the simulation passes, the fill is booked at the quoted amounts, but nothing is broadcast. The dashboard marks every paper fill and paper P&L as PAPER - it is never presented as real money.",
+    "The mode Elitr ships in. The agent does everything for real up to the last step: it buys real signals, fetches real prices and quotes, and simulates the exact swap with Binance's Transaction API. If the simulation passes, the fill is booked at the quoted amounts, but nothing is broadcast. The dashboard marks every paper fill and paper P&L as PAPER - it is never presented as real money.",
   ],
   [
     "Why pay your own analyst?",
@@ -321,7 +323,7 @@ export function Sections() {
           idx="LIVE"
           eyebrow="On-chain proof"
           title={{ lead: "Not a mock-up. ", muted: "Real agents, ", accent: "real transactions." }}
-          intro="Elitr runs live on BSC mainnet. Every row below is a transaction the system made itself - open any of them on BscScan."
+          intro="Elitr runs live on BSC mainnet. Every row below is a real transaction made by the system or its operator through the same quote, simulate and broadcast path; the live trade was operator-triggered. Open any of them on BscScan."
         />
         <div {...reveal("fade", 0, l.scrollX)}>
           <table className={cx(l.table, l.proofTable)}>
@@ -390,7 +392,7 @@ export function Sections() {
           ))}
         </div>
 
-        <div className={l.subhead}>The three agents</div>
+        <div className={l.subhead}>The two analysts and the trader</div>
         <div className={cx(l.cells, l.cols3)}>
           {AGENTS.map((a, i) => (
             <article key={a.title} {...reveal("wipe", stagger(i), cx(l.cell, a.key && l.agentKey))}>
@@ -410,7 +412,7 @@ export function Sections() {
         <Head
           idx="03"
           eyebrow="How it works"
-          title={{ lead: "One cycle, eight steps, for each stock, ", accent: "every 15 minutes." }}
+          title={{ lead: "One cycle, eight steps, for each stock, ", accent: "every 30 minutes." }}
           intro="Each step emits an event you can watch live on the dashboard. Nothing is simulated for display: if data is missing, the agent says so and holds."
         />
         <ol className={cx(l.cells, l.cols4)}>
@@ -615,7 +617,7 @@ export function Sections() {
           idx="08"
           eyebrow="New here?"
           title={{ lead: "How to read ", accent: "the dashboard." }}
-          intro="The dashboard is a live window into all three agents. Everything on it comes from real events: if an agent is offline or a cycle hasn't run, the panel says so."
+          intro="The dashboard is a live window into the two analysts and the trader. Everything on it comes from real events: if an agent is offline or a cycle hasn't run, the panel says so."
         />
         <div className={cx(l.cells, l.cols2, l.panels)}>
           {PANELS.map(([t, b], i) => (
@@ -661,7 +663,7 @@ export function Sections() {
             </div>
             <p className={l.runNote}>
               Needs a Binance Web3 API key with b402 enabled, a Claude key (0G Compute or Anthropic), and a fresh BSC wallet with a little USDT and BNB.
-              Run the one-time approval script so swaps can be simulated. Starts in paper mode.
+              Run the one-time approval script so swaps can be simulated. Starts in paper mode; the hosted desk at elitr.xyz runs live with small limits.
             </p>
           </div>
         </div>

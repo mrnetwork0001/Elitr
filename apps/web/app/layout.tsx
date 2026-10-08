@@ -7,7 +7,7 @@ const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export const metadata: Metadata = {
   title: "Elitr - agent-to-agent trading desk",
-  description: "Live view of the Elitr analyst and execution agents: b402 pay-per-signal, risk checks and tokenized-stock execution on BSC.",
+  description: "Live view of Elitr's two analyst agents and the execution agent that pays them over b402: every signal, risk check and tokenized-stock trade on BSC mainnet, as it happens.",
 };
 
 export const viewport: Viewport = {

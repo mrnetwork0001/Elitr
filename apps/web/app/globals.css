@@ -14,10 +14,12 @@
   --color-dim: #4a5056;
   --color-faint: #6b7378;
   --color-accent: #f0b90b; /* Binance yellow - fills */
-  --color-gold: #b88a00; /* readable yellow for text on white */
+  --color-gold: #7f6100; /* yellow as text: 5.8:1 on white, 5.2:1 on panel-2; #b88a00 only reached 3.2:1 */
   --color-ink: #0b0e11; /* text on yellow */
-  --color-pos: #03a66d;
+  --color-pos: #03a66d; /* green fills, bars, dots */
+  --color-pos-deep: #047857; /* green as text on white (5.5:1) */
   --color-neg: #cf304a;
+  --color-neg-deep: #a8213a; /* red fill that carries white text (7:1) - LIVE badges */
   --color-warn: #b88a00;
   --color-info: #1f6feb;
   --color-flow: #7c4ddb;
@@ -40,6 +42,14 @@
 .text-accent,
 .hover\:text-accent:hover,
 .group:hover .group-hover\:text-accent {
+  color: var(--color-gold);
+}
+
+/* The bright green and amber stay for fills and dots; as text on white they only reach ~3.1:1, so text utilities use the deep shades. */
+.text-pos {
+  color: var(--color-pos-deep);
+}
+.text-warn {
   color: var(--color-gold);
 }
 

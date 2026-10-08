@@ -23,6 +23,9 @@ export interface BoardToken {
   referencePrice: number | null;
   priceUpdatedAt: number | null;
   refSpreadBps: number | null;
+  /** Newer agents null refSpreadBps and set this when the reference is on a different share basis; older agents send neither. */
+  refBasisMismatch?: boolean | null;
+  refRawSpreadBps?: number | null;
   yahooPrice: number | null;
   yahooTime: number | null;
   yahooSpreadBps: number | null;
@@ -109,6 +112,25 @@ export function walletApiFields(raw: unknown): WalletApiFields | "unsupported" |
   const o = raw as Record<string, unknown>;
   if (!("walletApi" in o) && !("walletApiStatus" in o)) return "unsupported";
   return o as unknown as WalletApiFields;
+}
+
+/** Beyond this a spread is a share-basis mismatch (split / multiplier), not a tradable gap. Mirrors the agent's MAX_COMPARABLE_BPS. */
+export const MAX_COMPARABLE_BPS = 2000;
+
+/** True when the agent flagged the column, or when an older agent left an un-guarded spread past the basis limit. */
+export function basisMismatch(flag: boolean | null | undefined, ...spreads: (number | null | undefined)[]): boolean {
+  if (flag) return true;
+  return spreads.some((s) => s != null && Number.isFinite(s) && Math.abs(s) > MAX_COMPARABLE_BPS);
+}
+
+/** Sort-safe spread: null for mismatches so they never lead the board. */
+export function comparableSpread(flag: boolean | null | undefined, spread: number | null | undefined): number | null {
+  return basisMismatch(flag, spread) || spread == null ? null : spread;
+}
+
+/** Sector tabs are only a filter when at least one tab is a strict subset; a count of null, or every count equal to the token total, means the API returned no usable membership. */
+export function sectorsUsable(sectors: RwaBoard["sectors"], tokenTotal: number): boolean {
+  return sectors.length > 0 && sectors.some((s) => s.count != null && s.count !== tokenTotal);
 }
 
 // ---- formatting ----

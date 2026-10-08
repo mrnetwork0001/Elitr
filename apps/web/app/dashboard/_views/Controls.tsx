@@ -142,7 +142,7 @@ export function ControlsView() {
               : s?.controlAuth === false
                 ? "This agent does not require an operator token (controlAuth off): anyone who can reach it can run cycles or engage the kill switch."
                 : "Whether this agent requires an operator token is unknown until it reports its state."}{" "}
-            The token is stored only in this browser.
+            The token is kept for this tab's session only.
           </p>
           {d.token ? (
             <p className={`mt-3 text-[13px] font-medium ${d.tokenRejected ? "text-neg" : "text-fg"}`}>

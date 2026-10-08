@@ -42,7 +42,7 @@ function Rows({ rows }: { rows: { k: string; v: ReactNode }[] }) {
   );
 }
 
-const ACTION_TONE: Record<string, string> = { buy: "bg-pos text-white", sell: "bg-neg text-white", hold: "border border-line-strong text-dim" };
+const ACTION_TONE: Record<string, string> = { buy: "bg-pos text-ink", sell: "bg-neg text-white", hold: "border border-line-strong text-dim" };
 
 export function OverviewView() {
   const d = useDashboard();

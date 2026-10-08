@@ -210,6 +210,21 @@ export function ruleLabel(rule: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
+/** Cycle length from `/state` (nextCycleAt - lastCycleAt) when both are present and sane; else the fallback. */
+export function cycleLengthMs(state: { lastCycleAt?: number | null; nextCycleAt?: number | null } | null | undefined, fallbackMs: number): number {
+  const a = state?.lastCycleAt;
+  const b = state?.nextCycleAt;
+  if (a && b && b > a && b - a < 24 * 3_600_000) return b - a;
+  return fallbackMs;
+}
+
+/** Freshness label relative to the cycle: "" while current, "from last cycle" up to two cycles, "stale" beyond. */
+export function signalFreshness(ageMs: number, cycleMs: number): { label: "" | "from last cycle" | "stale"; stale: boolean } {
+  if (!(ageMs > cycleMs)) return { label: "", stale: false };
+  if (ageMs <= 2 * cycleMs) return { label: "from last cycle", stale: false };
+  return { label: "stale", stale: true };
+}
+
 /** Signed USD for P&L: +$1.23 / -$0.45. */
 export function signedUsd(n: number | null | undefined): string {
   if (n === null || n === undefined || !Number.isFinite(n)) return "-";

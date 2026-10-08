@@ -5,7 +5,7 @@ import { useDashboard } from "@/lib/dashboard";
 import { useAgentJson, type JsonStatus } from "@/lib/useAgentJson";
 import { BSCSCAN_ADDRESS } from "@/lib/config";
 import { ago, price } from "@/lib/format";
-import { bpsTxt, compactUsd, etTime, MARKET_LABEL, span, spreadTone, type BoardToken, type RwaBoard } from "@/lib/gaps";
+import { basisMismatch, bpsTxt, compactUsd, comparableSpread, etTime, MARKET_LABEL, sectorsUsable, span, spreadTone, type BoardToken, type RwaBoard } from "@/lib/gaps";
 import { Empty } from "@/components/ui";
 import { IconArrowRight } from "@/components/NavIcons";
 
@@ -19,7 +19,9 @@ function MarketStrip({ board, now }: { board: RwaBoard | null; now: number }) {
     const parts: string[] = [];
     if (!m.openState && m.lastCloseTime) parts.push(`since ${etTime(m.lastCloseTime)}`);
     if (!m.openState && m.nextOpenTime) parts.push(`reopens ${etTime(m.nextOpenTime)}${now ? ` (in ${span(m.nextOpenTime - now)})` : ""}`);
-    if (m.openState && m.nextCloseTime) parts.push(`closes ${etTime(m.nextCloseTime)}${now ? ` (in ${span(m.nextCloseTime - now)})` : ""}`);
+    // Pre/post-market counts as open; what matters then is when the regular session starts, not when the extended one ends.
+    if (m.openState && m.marketStatus !== "regular" && m.nextOpenTime) parts.push(`regular session opens ${etTime(m.nextOpenTime)}${now ? ` (in ${span(m.nextOpenTime - now)})` : ""}`);
+    else if (m.openState && m.nextCloseTime) parts.push(`closes ${etTime(m.nextCloseTime)}${now ? ` (in ${span(m.nextCloseTime - now)})` : ""}`);
     main = (
       <>
         <span className={`font-bold ${m.openState ? "text-pos" : "text-neg"}`}>{label}</span>
@@ -77,10 +79,18 @@ const COLS: { key: SortKey; label: string; num?: boolean; title?: string }[] = [
   { key: "nextOpen", label: "Next open", num: true },
 ];
 
+const refMismatch = (t: BoardToken) => basisMismatch(t.refBasisMismatch, t.refSpreadBps, t.refRawSpreadBps);
+const yahooMismatch = (t: BoardToken) => basisMismatch(t.yahooBasisMismatch, t.yahooSpreadBps);
+
 function sortVal(t: BoardToken, k: SortKey): number | string | null {
   switch (k) {
     case "gap":
-      return Math.abs(t.yahooSpreadBps ?? t.refSpreadBps ?? NaN);
+      // Basis mismatches (+90,000 bps "spreads" from a split or share multiplier) are not gaps: they never lead the board.
+      return Math.abs(comparableSpread(t.yahooBasisMismatch, t.yahooSpreadBps) ?? comparableSpread(t.refBasisMismatch, t.refSpreadBps) ?? NaN);
+    case "refSpreadBps":
+      return refMismatch(t) ? null : t.refSpreadBps;
+    case "yahooSpreadBps":
+      return yahooMismatch(t) ? null : t.yahooSpreadBps;
     case "symbol":
       return t.symbol.toLowerCase();
     case "issuer":
@@ -96,12 +106,12 @@ function sortVal(t: BoardToken, k: SortKey): number | string | null {
   }
 }
 
-function SpreadCell({ v, cand, mismatch, raw }: { v: number | null; cand?: boolean; mismatch?: boolean; raw?: number | null }) {
+function SpreadCell({ v, cand, mismatch, raw, against = "Yahoo quote" }: { v: number | null; cand?: boolean; mismatch?: boolean; raw?: number | null; against?: string }) {
   if (mismatch)
     return (
       <span
         className="text-[11px] font-medium tracking-[0.06em] text-faint uppercase"
-        title={`Not comparable: a ${raw != null ? `${Math.round(raw).toLocaleString()} bps` : "very large"} difference means the token and the Yahoo quote are on a different share basis (stock split or share multiplier), not a tradable gap.`}
+        title={`Not comparable: a ${raw != null ? `${Math.round(raw).toLocaleString()} bps` : "very large"} difference means the token and the ${against} are on a different share basis (stock split or share multiplier), not a tradable gap.`}
       >
         n/c · share basis
       </span>
@@ -110,7 +120,7 @@ function SpreadCell({ v, cand, mismatch, raw }: { v: number | null; cand?: boole
     <span className={`num font-medium ${spreadTone(v)}`}>
       {bpsTxt(v)}
       {cand ? (
-        <span title="On-chain is far enough below Yahoo to pass the trader's minGapBps rule" className="ml-1.5 inline-flex h-4 items-center bg-pos px-1 text-[9px] font-bold tracking-[0.1em] text-white uppercase">
+        <span title="On-chain is far enough below Yahoo to pass the trader's minGapBps rule" className="ml-1.5 inline-flex h-4 items-center bg-pos px-1 text-[9px] font-bold tracking-[0.1em] text-ink uppercase">
           gap
         </span>
       ) : null}
@@ -173,12 +183,12 @@ function BoardTable({ tokens, minGap, now }: { tokens: BoardToken[]; minGap: num
                 </td>
                 <td className="num px-3 py-2 text-right">{price(t.tokenPrice)}</td>
                 <td className="num px-3 py-2 text-right text-dim">{price(t.referencePrice)}</td>
-                <td className="px-3 py-2 text-right">
-                  <SpreadCell v={t.refSpreadBps} />
+                <td className="px-3 py-2 text-right whitespace-nowrap">
+                  <SpreadCell v={t.refSpreadBps} mismatch={refMismatch(t)} raw={t.refRawSpreadBps ?? t.refSpreadBps} against="Binance reference" />
                 </td>
                 <td className="num px-3 py-2 text-right text-dim">{t.yahooPrice != null ? price(t.yahooPrice) : <span className="text-faint">-</span>}</td>
                 <td className="px-3 py-2 text-right whitespace-nowrap">
-                  <SpreadCell v={t.yahooSpreadBps} cand={cand} mismatch={t.yahooBasisMismatch} raw={t.yahooRawSpreadBps} />
+                  <SpreadCell v={t.yahooSpreadBps} cand={cand} mismatch={yahooMismatch(t)} raw={t.yahooRawSpreadBps ?? t.yahooSpreadBps} />
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">
                   {m ? (
@@ -282,7 +292,13 @@ export function GapsView() {
   const [sector, setSector] = useState<number | null>(null);
   const [issuer, setIssuer] = useState<"all" | "bstock" | "ondo">("all");
 
-  const tokens = useMemo(() => (board?.tokens ?? []).filter((t) => (sector == null || t.sectors.includes(sector)) && (issuer === "all" || t.platformId === issuer)), [board, sector, issuer]);
+  // Sector tabs only filter when the API gave real membership; otherwise every chip would equal "all" and the row is noise.
+  const sectorTabs = board ? sectorsUsable(board.sectors, board.tokens.length) : false;
+  const sectorFilter = sectorTabs ? sector : null;
+  const tokens = useMemo(
+    () => (board?.tokens ?? []).filter((t) => (sectorFilter == null || t.sectors.includes(sectorFilter)) && (issuer === "all" || t.platformId === issuer)),
+    [board, sectorFilter, issuer],
+  );
   const minGap = board?.minGapBps ?? null;
   const stale = board && status !== "ok";
 
@@ -304,18 +320,21 @@ export function GapsView() {
         {board && board.tokens.length ? (
           <>
             <div className="flex flex-col gap-2 border-b border-line px-4 py-3">
-              <div className="flex gap-1.5 overflow-x-auto pb-0.5" role="group" aria-label="Sector">
-                <Chip active={sector == null} onClick={() => setSector(null)}>
-                  All sectors
-                </Chip>
-                {board.sectors.map((s) => (
-                  <Chip key={s.tabId} active={sector === s.tabId} onClick={() => setSector(sector === s.tabId ? null : s.tabId)} title={s.error ? `tabId ${s.tabId}: ${s.error}` : `RWA Data API tabId ${s.tabId}`}>
-                    {s.label}
-                    <span className="num text-[11px] opacity-70">{s.count ?? "!"}</span>
+              {sectorTabs ? (
+                <div className="flex gap-1.5 overflow-x-auto pb-0.5" role="group" aria-label="Sector">
+                  <Chip active={sector == null} onClick={() => setSector(null)}>
+                    All sectors
                   </Chip>
-                ))}
-                {!board.sectors.length ? <span className="self-center text-[12px] text-faint">sector tabs not loaded</span> : null}
-              </div>
+                  {board.sectors.map((s) => (
+                    <Chip key={s.tabId} active={sector === s.tabId} onClick={() => setSector(sector === s.tabId ? null : s.tabId)} title={s.error ? `tabId ${s.tabId}: ${s.error}` : `RWA Data API tabId ${s.tabId}`}>
+                      {s.label}
+                      <span className="num text-[11px] opacity-70">{s.count ?? "!"}</span>
+                    </Chip>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[12px] text-faint">Sector tabs not available from the RWA Data API</p>
+              )}
               <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Issuer">
                 {(["all", "bstock", "ondo"] as const).map((i) => (
                   <Chip key={i} active={issuer === i} onClick={() => setIssuer(i)}>

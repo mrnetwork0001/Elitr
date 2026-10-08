@@ -10,7 +10,7 @@
   --brand: #f0b90b;
   --brand-hover: #fcd535;
   --brand-ink: #0b0e11;
-  --brand-deep: #c99400;
+  --brand-deep: #7f6100; /* gold as text on white, 5.8:1 (#c99400 was 2.7:1) */
   --brand-wash: #fef6d8;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --pad-x: clamp(20px, 3.52vw, 64px);
@@ -159,7 +159,7 @@
   color: var(--muted);
 }
 
-/* Two-pass paint-on accent (same as hero). Visible gold without JS. */
+/* Two-pass paint-on accent (same as hero). Visible gold without JS. The layers carry empty alt text so screen readers hear the word once. */
 .accent {
   position: relative;
   display: inline-block;
@@ -179,6 +179,7 @@
 :global(.lp-js) .accent::before,
 :global(.lp-js) .accent::after {
   content: attr(data-text);
+  content: attr(data-text) / "";
   position: absolute;
   inset: 0;
   white-space: nowrap;
@@ -1079,13 +1080,13 @@
 }
 
 .pillLive {
-  background: #f6465d;
+  background: #a8213a; /* white text on #f6465d was 3.1:1; this is 7:1 */
   color: #ffffff;
 }
 
 .pillPass {
   background: rgba(14, 203, 129, 0.14);
-  color: #068a56;
+  color: #047857; /* 4.9:1 on the tint; #068a56 was 3.9:1 */
 }
 
 .pillBlocked {

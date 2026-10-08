@@ -1,8 +1,9 @@
 "use client";
 import type { AgentEvent, Stance } from "@elitr/shared";
 import { forSymbol, latest, ofType } from "@/lib/derive";
-import { SIGNAL_STALE_MS, agentMeta } from "@/lib/config";
-import { ago, hostOf, isUrl, pathOf, price } from "@/lib/format";
+import { SIGNAL_CYCLE_MS_FALLBACK, agentMeta } from "@/lib/config";
+import { useDashboard } from "@/lib/dashboard";
+import { ago, cycleLengthMs, hostOf, isUrl, pathOf, price, signalFreshness } from "@/lib/format";
 import { Badge, Empty, ExtLink, Panel } from "./ui";
 
 function stance_(score: number): { label: string; tone: "pos" | "neg" | "neutral" } {
@@ -68,6 +69,7 @@ export function SignalCard({
   now: number;
   nameOf: (id: string) => string;
 }) {
+  const dash = useDashboard();
   const scoped = forSymbol(events, symbol);
   const produced = ofType(scoped, "signal.produced");
   const received = ofType(scoped, "signal.received");
@@ -102,7 +104,9 @@ export function SignalCard({
   const stance = recv?.stance ?? prod?.stance;
   const producer = recv?.analystId ?? prod!.agent;
   const age = now ? now - ts : 0;
-  const stale = now > 0 && age > SIGNAL_STALE_MS;
+  // Freshness is relative to the real cycle length: a signal from the previous cycle is normal, not stale.
+  const fresh = signalFreshness(now > 0 ? age : 0, cycleLengthMs(dash.state, SIGNAL_CYCLE_MS_FALLBACK));
+  const stale = fresh.stale;
   const st = stanceBadge(stance, score);
   const meta = agentMeta(producer);
 
@@ -115,7 +119,7 @@ export function SignalCard({
           <span className="font-mono text-fg">{symbol}</span>
           <span suppressHydrationWarning className={`num ${stale ? "font-medium text-warn" : "text-dim"}`} title={new Date(ts).toLocaleString()}>
             {now ? ago(ts, now) : ""}
-            {stale ? " · stale" : ""}
+            {fresh.label ? ` · ${fresh.label}` : ""}
           </span>
         </>
       }

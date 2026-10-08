@@ -7,7 +7,8 @@
   --brand: #f0b90b; /* Binance yellow */
   --brand-hover: #fcd535;
   --brand-ink: #0b0e11; /* text on yellow */
-  --brand-deep: #c99400; /* readable gold on white */
+  --brand-deep: #7f6100; /* gold as text on white, 5.8:1 (#c99400 was 2.7:1) */
+  --brand-deep-fill: #c99400; /* the brighter gold, for fills only */
   --headline-muted: #6b7378;
   --glass: rgba(0, 0, 0, 0.13);
   --glass-blur: 18px;
@@ -373,7 +374,7 @@
 }
 
 .burger:hover span {
-  background: var(--brand-deep);
+  background: var(--brand-deep-fill);
 }
 
 .burger:hover span:nth-child(1),
@@ -463,7 +464,9 @@
   font-weight: 600;
 }
 
-/* Two-pass paint-on: pale yellow, then deep Binance gold, with a 72px soft leading edge. */
+/* Two-pass paint-on: pale yellow, then deep Binance gold, with a 72px soft leading edge.
+   The layers are purely visual: the "/ ''" alt text keeps them out of the accessibility tree
+   (Chrome, Safari, Firefox 128+); the bare declaration before it is the fallback for older engines. */
 .accent {
   position: relative;
   display: inline-block;
@@ -473,6 +476,7 @@
 .accent::before,
 .accent::after {
   content: attr(data-text);
+  content: attr(data-text) / "";
   position: absolute;
   inset: 0;
   white-space: nowrap;

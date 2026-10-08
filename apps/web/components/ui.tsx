@@ -24,7 +24,7 @@ export function Panel({
         <h2 id={id ? `${id}-title` : undefined} className="text-[11px] font-medium tracking-[0.12em] text-dim uppercase">
           {title}
         </h2>
-        {right ? <div className="flex min-w-0 items-center gap-2 text-xs text-dim">{right}</div> : null}
+        {right ? <div className="flex min-w-0 shrink items-center gap-2 text-xs text-dim">{right}</div> : null}
       </header>
       <div className={`flex-1 p-4 ${bodyClassName}`}>{children}</div>
     </section>
@@ -103,7 +103,7 @@ export function Badge({ tone, children, className = "", title }: { tone: "pos" |
 export function ModeTag({ mode, className = "" }: { mode: "paper" | "live" | null | undefined; className?: string }) {
   if (mode === "live")
     return (
-      <span title="Broadcast on BSC mainnet - real funds" className={`inline-flex shrink-0 items-center rounded bg-neg px-1.5 py-0.5 text-[10px] font-bold tracking-[0.12em] text-white uppercase ${className}`}>
+      <span title="Broadcast on BSC mainnet - real funds" className={`inline-flex shrink-0 items-center rounded bg-neg-deep px-1.5 py-0.5 text-[10px] font-bold tracking-[0.12em] text-white uppercase ${className}`}>
         Live
       </span>
     );
@@ -119,11 +119,11 @@ export function ModeTag({ mode, className = "" }: { mode: "paper" | "live" | nul
   return null;
 }
 
-/** Segmented asset selector. */
+/** Segmented asset selector. Scrolls sideways instead of widening the page when there are more tabs than room (7 tabs at 390px). */
 export function AssetTabs({ assets, value, onChange, label = "Asset", allowAll = false }: { assets: string[]; value: string; onChange: (v: string) => void; label?: string; allowAll?: boolean }) {
   const opts = allowAll ? ["all", ...assets] : assets;
   return (
-    <div role="tablist" aria-label={label} className="inline-flex shrink-0 rounded-md border border-line bg-bg/40 p-0.5">
+    <div role="tablist" aria-label={label} className="flex max-w-full min-w-0 overflow-x-auto rounded-md border border-line bg-bg/40 p-0.5 [scrollbar-width:none]">
       {opts.map((a) => (
         <button
           key={a}
@@ -131,7 +131,7 @@ export function AssetTabs({ assets, value, onChange, label = "Asset", allowAll =
           role="tab"
           aria-selected={value === a}
           onClick={() => onChange(a)}
-          className={`h-6 rounded px-2 font-mono text-[11px] transition-colors ${value === a ? "bg-panel-2 text-fg shadow-[inset_0_0_0_1px_var(--color-line-strong)]" : "text-faint hover:text-fg"}`}
+          className={`h-6 shrink-0 rounded px-2 font-mono text-[11px] transition-colors ${value === a ? "bg-panel-2 text-fg shadow-[inset_0_0_0_1px_var(--color-line-strong)]" : "text-faint hover:text-fg"}`}
         >
           {a === "all" ? "All" : a}
         </button>

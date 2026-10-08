@@ -89,7 +89,7 @@ export function ModeBadge({ size = "md" }: { size?: "sm" | "md" }) {
     );
   if (mode === "live")
     return (
-      <span className={`inline-flex shrink-0 items-center gap-1.5 bg-neg font-bold tracking-[0.16em] text-white uppercase ${h}`} title="LIVE - the execution agent broadcasts real transactions on BSC mainnet">
+      <span className={`inline-flex shrink-0 items-center gap-1.5 bg-neg-deep font-bold tracking-[0.16em] text-white uppercase ${h}`} title="LIVE - the execution agent broadcasts real transactions on BSC mainnet">
         <span className="live-dot size-1.5 bg-white" aria-hidden="true" />
         Live
       </span>
@@ -353,19 +353,22 @@ function SidebarContent({
           toggle
         )}
       </div>
-      <nav aria-label="Dashboard" className="flex-1 overflow-y-auto px-3 py-5">
-        <p className="mb-2 px-4 text-[10px] font-semibold tracking-[0.18em] text-faint uppercase" aria-hidden="true">
-          Desk
-        </p>
-        <NavList items={NAV.filter((n) => n.group === "desk")} pathname={pathname} onNavigate={onNavigate} />
-        <p className="mt-6 mb-2 px-4 text-[10px] font-semibold tracking-[0.18em] text-faint uppercase" aria-hidden="true">
-          Operate
-        </p>
-        <NavList items={NAV.filter((n) => n.group === "operate")} pathname={pathname} onNavigate={onNavigate} />
-      </nav>
-      <div className="shrink-0 px-3 pb-4">
-        <StatusCard />
-        <p className="mt-3 px-1 text-[11px] leading-relaxed text-faint">Everything here is live agent data - nothing is simulated for display.</p>
+      {/* Nav and status card scroll as one column, so on a short viewport (mobile drawer) the last links are never hidden behind a pinned card. */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <nav aria-label="Dashboard" className="flex-1 px-3 py-5">
+          <p className="mb-2 px-4 text-[10px] font-semibold tracking-[0.18em] text-faint uppercase" aria-hidden="true">
+            Desk
+          </p>
+          <NavList items={NAV.filter((n) => n.group === "desk")} pathname={pathname} onNavigate={onNavigate} />
+          <p className="mt-6 mb-2 px-4 text-[10px] font-semibold tracking-[0.18em] text-faint uppercase" aria-hidden="true">
+            Operate
+          </p>
+          <NavList items={NAV.filter((n) => n.group === "operate")} pathname={pathname} onNavigate={onNavigate} />
+        </nav>
+        <div className="shrink-0 px-3 pb-4">
+          <StatusCard />
+          <p className="mt-3 px-1 text-[11px] leading-relaxed text-faint">Everything here is live agent data - nothing is simulated for display.</p>
+        </div>
       </div>
     </div>
   );

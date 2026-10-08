@@ -9,6 +9,16 @@ const nextConfig: NextConfig = {
   // Don't let `next dev` write AGENTS.md / CLAUDE.md into the app; the repo root AGENTS.md is canonical.
   agentRules: false,
   devIndicators: false,
+  poweredByHeader: false,
+  async headers() {
+    return [
+      {
+        // The landing/banner photographs never change in place (a new image gets a new name), so let browsers keep them for a day.
+        source: "/:file(hero[a-z-]*\\.jpg)",
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -73,5 +73,11 @@ export const BSCSCAN_ADDRESS = (addr: string) => `https://bscscan.com/address/${
 /** ERC-721 instance page (ERC-8004 identities are NFTs in the identity registry). */
 export const BSCSCAN_NFT = (registry: string, tokenId: string) => `https://bscscan.com/nft/${registry}/${tokenId}`;
 
-/** A signal older than this is shown as stale. */
-export const SIGNAL_STALE_MS = 5 * 60_000;
+/**
+ * Signal freshness is relative to the trading cycle, not the clock: a signal bought at the start of a 30-minute
+ * cycle is the current one until the next cycle. Prefer the live length (`/state` nextCycleAt - lastCycleAt,
+ * see `cycleLengthMs` in lib/format.ts); this is the fallback.
+ */
+export const SIGNAL_CYCLE_MS_FALLBACK = 35 * 60_000;
+/** Older than two cycles is stale. Between one and two cycles it is simply "from last cycle". */
+export const SIGNAL_STALE_MS = 2 * SIGNAL_CYCLE_MS_FALLBACK;
