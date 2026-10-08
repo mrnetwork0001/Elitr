@@ -91,8 +91,10 @@ async function run(j: Job): Promise<void> {
   const have = await erc20Allowance(pc, j.token.address, account.address, ap.spender);
   const amt = `${formatUnits(j.amount, j.token.decimals)} ${j.token.symbol}`;
   console.log(`  ${tag}: vendor ${vendor}, spender ${ap.spender}, current allowance ${formatUnits(have, j.token.decimals)}`);
-  if (have >= j.amount) {
-    console.log(`    already ≥ ${amt} - nothing to do`);
+  // Allowances drift (a buy spends USDT; token targets move with price), so accept >= 90% of target
+  // instead of re-approving over a few cents.
+  if (have >= (j.amount * 9n) / 10n) {
+    console.log(`    already ≥ 90% of ${amt} (${formatUnits(have, j.token.decimals)}) - nothing to do`);
     return;
   }
   console.log(`    plan: ${j.token.address}.approve(${ap.spender}, ${amt})`);
@@ -121,8 +123,8 @@ async function permit2(): Promise<void> {
   const amt = `${formatUnits(amount, USDT_BSC.decimals)} USDT`;
   const have = await erc20Allowance(pc, USDT_BSC.address as Address, account.address, B402_PERMIT2_ADDRESS as Address);
   console.log(`  USDT (b402 signal payments): spender Permit2 ${B402_PERMIT2_ADDRESS}, current allowance ${formatUnits(have, USDT_BSC.decimals)}`);
-  if (have >= amount) {
-    console.log(`    already ≥ ${amt} - nothing to do`);
+  if (have >= (amount * 9n) / 10n) {
+    console.log(`    already ≥ 90% of ${amt} (${formatUnits(have, USDT_BSC.decimals)}) - nothing to do`);
     return;
   }
   const data = approveCalldata(B402_PERMIT2_ADDRESS as Address, amount);
