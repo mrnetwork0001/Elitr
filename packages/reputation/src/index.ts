@@ -12,10 +12,13 @@
  *      bullish  correct iff returnBps >  +band
  *      bearish  correct iff returnBps <  −band
  *      neutral  correct iff |returnBps| ≤ band   (shown for transparency, but an abstention — see §2)
+ *    A directional call whose move stays inside ±band is INCONCLUSIVE: the market didn't move enough to
+ *    say whether the call was right (e.g. a pool with no trades while the US market is closed), so it is
+ *    neither a hit nor a miss.
  *    avgReturnBps = mean of returnBps signed by stance (bullish +r, bearish −r; neutral calls carry
  *    no direction and are excluded) — "how many bps did following this analyst earn, gross".
  *
- * 2. Only directional calls (bullish / bearish) count toward trust. A neutral call is an abstention:
+ * 2. Only conclusive directional calls (bullish / bearish beyond ±band) count toward trust. A neutral call is an abstention:
  *    the trader cannot act on it, and "price stays within ±band over 30–60 min" is close to a coin
  *    flip on a 24/7 pool, so scoring it would mostly add noise. Neutral calls are still recorded and
  *    marked, they just don't move samples / hits / trust.
@@ -76,6 +79,8 @@ export interface ScoredSignal extends SignalRecord {
   exitPrice: number;
   scoredAt: number;
   returnBps: number;
+  /** Whether this call moved trust: directional and conclusive (see header §1–2). */
+  counted?: boolean;
   correct: boolean;
 }
 export interface Choice {
@@ -115,6 +120,16 @@ const fmt = (x: number) => x.toFixed(2);
 
 export function returnBps(entryPrice: number, exitPrice: number): number {
   return (exitPrice / entryPrice - 1) * 10_000;
+}
+
+/** Directional call whose move stayed inside ±band: no evidence either way. */
+export function isInconclusive(stance: Stance, rBps: number, bandBps: number): boolean {
+  return stance !== "neutral" && Math.abs(rBps) <= bandBps;
+}
+
+/** Whether a scored call counts toward trust. */
+export function counts(stance: Stance, rBps: number, bandBps: number): boolean {
+  return stance !== "neutral" && !isInconclusive(stance, rBps, bandBps);
 }
 
 export function isCorrect(stance: Stance, rBps: number, bandBps: number): boolean {
@@ -219,7 +234,7 @@ export class ReputationBook {
     if (isScored(e)) return { ...e };
     if (!(Number.isFinite(exitPrice) && exitPrice > 0)) throw new Error(`invalid exitPrice for ${signalId}: ${exitPrice}`);
     const r = returnBps(e.entryPrice, exitPrice);
-    const scored: ScoredSignal = { ...e, exitPrice, scoredAt: now, returnBps: r, correct: isCorrect(e.stance, r, this.band) };
+    const scored: ScoredSignal = { ...e, exitPrice, scoredAt: now, returnBps: r, correct: isCorrect(e.stance, r, this.band), counted: counts(e.stance, r, this.band) };
     this.signals.set(signalId, scored);
     this.save();
     return { ...scored };
@@ -232,7 +247,7 @@ export class ReputationBook {
     let dirSum = 0;
     for (const e of this.signals.values()) {
       if (e.analystId !== analystId || !isScored(e)) continue;
-      if (e.stance === "neutral") continue; // abstention: recorded, not scored into trust (§2)
+      if (!counts(e.stance, e.returnBps, this.band)) continue; // neutral or inconclusive: recorded, not scored into trust (§1–2)
       samples++;
       if (e.correct) hits++;
       dirN++;

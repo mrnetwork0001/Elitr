@@ -277,3 +277,20 @@ test("neutral calls never move trust", () => {
   assert.equal(st.paused, false);
   assert.equal(st.trust, 0.5);
 });
+
+test("directional calls inside the noise band are inconclusive and don't move trust", () => {
+  const book = new ReputationBook(file());
+  const flat = sig("analyst", "bullish");
+  const small = sig("analyst", "bearish");
+  const hit = sig("analyst", "bullish");
+  [flat, small, hit].forEach((s) => book.record(s));
+  const f = book.score(flat.signalId, 100.01, 5); // +1 bps, pool barely traded
+  const m = book.score(small.signalId, 99.877, 5); // −12.3 bps: right direction, below the band
+  const h = book.score(hit.signalId, 100.5, 5); // +50 bps
+  assert.equal(f.counted, false);
+  assert.equal(m.counted, false);
+  assert.equal(h.counted, true);
+  const st = book.stats("analyst");
+  assert.equal(st.samples, 1);
+  assert.equal(st.hits, 1);
+});

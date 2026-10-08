@@ -679,10 +679,12 @@ export class ExecutionAgent {
         exitPrice: scored.exitPrice,
         returnBps: scored.returnBps,
         correct: scored.correct,
+        counted: scored.counted,
       });
       const stats = book.stats(scored.analystId);
       hub.emit({ type: "reputation.updated", stats });
-      await this.postFeedback(scored.analystId, scored.signalId, stats.trust, { symbol: scored.symbol, returnBps: scored.returnBps, correct: scored.correct });
+      // Only calls that moved trust are worth an on-chain rating (each costs gas).
+      if (scored.counted !== false) await this.postFeedback(scored.analystId, scored.signalId, stats.trust, { symbol: scored.symbol, returnBps: scored.returnBps, correct: scored.correct });
     }
   }
 

@@ -93,6 +93,7 @@ export type AgentEvent = Base &
         exitPrice: number;
         returnBps: number;
         correct: boolean;
+        counted?: boolean; // false = neutral (abstention) or inconclusive (move inside the noise band): didn't move trust
       }
     | { type: "reputation.updated"; stats: AnalystStats }
     | { type: "reputation.posted"; analystId: AnalystId; erc8004AgentId: string; value: number; tag: string; txHash?: string; error?: string }

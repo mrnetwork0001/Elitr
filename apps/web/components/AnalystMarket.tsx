@@ -340,9 +340,18 @@ export function AnalystMarket({
                       </td>
                       <td className={`num px-2 py-1.5 text-right font-mono whitespace-nowrap ${s.returnBps > 0 ? "text-pos" : s.returnBps < 0 ? "text-neg" : "text-dim"}`}>{bps(s.returnBps)}</td>
                       <td className="px-3 py-1.5 text-center">
-                        <span className={`inline-grid size-4 place-items-center rounded-full text-[10px] ${s.correct ? "bg-pos/15 text-pos" : "bg-neg/20 text-neg"}`} aria-label={s.correct ? "correct" : "wrong"}>
-                          {s.correct ? <IconCheck /> : <IconX />}
-                        </span>
+                        {s.counted === false ? (
+                          <span
+                            className="text-[10px] font-medium tracking-[0.06em] text-faint uppercase"
+                            title={s.stance === "neutral" ? "Neutral call: an abstention, doesn't move trust" : "Price stayed inside the ±25 bps noise band: inconclusive, doesn't move trust"}
+                          >
+                            {s.stance === "neutral" ? "abstain" : "flat"}
+                          </span>
+                        ) : (
+                          <span className={`inline-grid size-4 place-items-center rounded-full text-[10px] ${s.correct ? "bg-pos/15 text-pos" : "bg-neg/20 text-neg"}`} aria-label={s.correct ? "correct" : "wrong"}>
+                            {s.correct ? <IconCheck /> : <IconX />}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
