@@ -1,0 +1,8 @@
+[Unit]
+Description=Elitr watchdog (health, stall and runway checks)
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+ExecStart=/home/ubuntu/elitr/deploy/watchdog.sh
