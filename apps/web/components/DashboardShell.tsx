@@ -39,12 +39,12 @@ interface NavItem {
 }
 
 export const NAV: NavItem[] = [
-  { href: "/dashboard", label: "Overview", group: "desk", icon: IconOverview, description: "The desk at a glance — P&L, data spend, analyst picks, decisions and risk." },
+  { href: "/dashboard", label: "Overview", group: "desk", icon: IconOverview, description: "The desk at a glance - P&L, data spend, analyst picks, decisions and risk." },
   { href: "/dashboard/analysts", label: "Analysts", group: "desk", icon: IconAnalysts, description: "Who the trader pays for signals, chosen by Thompson sampling over scored calls." },
   { href: "/dashboard/markets", label: "Markets", group: "desk", icon: IconMarkets, description: "Signal, reference vs on-chain price and risk checks for one tokenized stock." },
   { href: "/dashboard/gaps", label: "Gap board", group: "desk", icon: IconGaps, description: "Every tokenized stock on BSC: on-chain price vs Binance reference vs Yahoo, market status, sectors and cross-issuer spreads (RWA Data API)." },
   { href: "/dashboard/portfolio", label: "Portfolio", group: "desk", icon: IconPortfolio, description: "Wallet balances, spend caps, open positions and P&L." },
-  { href: "/dashboard/trades", label: "Trades", group: "desk", icon: IconTrades, badge: "trades", description: "Every trade attempt — Transaction API simulation, broadcast, confirmation and fill." },
+  { href: "/dashboard/trades", label: "Trades", group: "desk", icon: IconTrades, badge: "trades", description: "Every trade attempt - Transaction API simulation, broadcast, confirmation and fill." },
   { href: "/dashboard/activity", label: "Activity", group: "desk", icon: IconActivity, badge: "activity", description: "Every event from every agent, newest first." },
   { href: "/dashboard/controls", label: "Controls", group: "operate", icon: IconControls, badge: "controls", description: "Operator actions, risk limits, trading mode and agent health." },
 ];
@@ -58,7 +58,7 @@ function activeItem(pathname: string): NavItem {
 
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
-    <Link href="/" className="group flex min-w-0 items-center gap-3" aria-label="Elitr — about the project">
+    <Link href="/" className="group flex min-w-0 items-center gap-3" aria-label="Elitr - about the project">
       <span className="grid size-9 shrink-0 place-items-center bg-ink" aria-hidden="true">
         <LogoMark className="h-[18px] w-auto text-[var(--color-accent)]" />
       </span>
@@ -89,7 +89,7 @@ export function ModeBadge({ size = "md" }: { size?: "sm" | "md" }) {
     );
   if (mode === "live")
     return (
-      <span className={`inline-flex shrink-0 items-center gap-1.5 bg-neg font-bold tracking-[0.16em] text-white uppercase ${h}`} title="LIVE — the execution agent broadcasts real transactions on BSC mainnet">
+      <span className={`inline-flex shrink-0 items-center gap-1.5 bg-neg font-bold tracking-[0.16em] text-white uppercase ${h}`} title="LIVE - the execution agent broadcasts real transactions on BSC mainnet">
         <span className="live-dot size-1.5 bg-white" aria-hidden="true" />
         Live
       </span>
@@ -97,7 +97,7 @@ export function ModeBadge({ size = "md" }: { size?: "sm" | "md" }) {
   return (
     <span
       className={`inline-flex shrink-0 items-center border border-dashed border-info/70 bg-info/[0.07] font-bold tracking-[0.16em] text-info uppercase ${h}`}
-      title="PAPER — quotes, prices and Transaction API simulations are real; fills are booked at the quoted amounts and nothing is broadcast. No real money moves."
+      title="PAPER - quotes, prices and Transaction API simulations are real; fills are booked at the quoted amounts and nothing is broadcast. No real money moves."
     >
       Paper
     </span>
@@ -255,7 +255,7 @@ function StatusCard() {
         </dd>
         <dt className="font-medium tracking-[0.14em] text-faint uppercase">Next cycle</dt>
         <dd suppressHydrationWarning className="num justify-self-end font-mono text-fg">
-          {!execUp ? <span className="font-sans text-dim">agent offline</span> : s?.running ? "running…" : s?.nextCycleAt && d.now ? until(s.nextCycleAt, d.now) : "—"}
+          {!execUp ? <span className="font-sans text-dim">agent offline</span> : s?.running ? "running…" : s?.nextCycleAt && d.now ? until(s.nextCycleAt, d.now) : "-"}
         </dd>
       </dl>
       <div className="border-t border-line p-3">
@@ -265,7 +265,7 @@ function StatusCard() {
             onClick={() => void d.act("cycle")}
             disabled={!execUp || d.busy !== null || d.killed}
             className="flex h-10 w-full items-center justify-center gap-2 bg-accent text-[13px] font-semibold text-ink transition-colors hover:bg-[#ffc81a] disabled:cursor-not-allowed disabled:bg-line disabled:text-dim"
-            title={!execUp ? "Execution agent offline" : d.killed ? "Kill switch engaged" : "POST /cycle — run one trading cycle now"}
+            title={!execUp ? "Execution agent offline" : d.killed ? "Kill switch engaged" : "POST /cycle - run one trading cycle now"}
           >
             <IconRun className="size-3.5" />
             {d.busy === "cycle" ? "Running…" : "Run cycle"}
@@ -319,7 +319,7 @@ function SidebarContent({
     return (
       <div className="flex h-full min-h-0 flex-col items-center">
         <div className="flex shrink-0 flex-col items-center gap-2 border-b border-line py-3.5 w-full">
-          <Link href="/" aria-label="Elitr — about the project" title="Elitr" className="grid size-9 place-items-center bg-ink">
+          <Link href="/" aria-label="Elitr - about the project" title="Elitr" className="grid size-9 place-items-center bg-ink">
             <LogoMark className="h-[18px] w-auto text-[var(--color-accent)]" />
           </Link>
           {toggle}
@@ -365,7 +365,7 @@ function SidebarContent({
       </nav>
       <div className="shrink-0 px-3 pb-4">
         <StatusCard />
-        <p className="mt-3 px-1 text-[11px] leading-relaxed text-faint">Everything here is live agent data — nothing is simulated for display.</p>
+        <p className="mt-3 px-1 text-[11px] leading-relaxed text-faint">Everything here is live agent data - nothing is simulated for display.</p>
       </div>
     </div>
   );
@@ -440,7 +440,7 @@ function useDrawer(pathname: string) {
     closeRef.current?.focus();
   }, []);
 
-  // Native close (our close(), Escape fallback, form) — restore scroll and focus.
+  // Native close (our close(), Escape fallback, form) - restore scroll and focus.
   useEffect(() => {
     const d = dialogRef.current;
     if (!d) return;
@@ -501,7 +501,7 @@ function Banners() {
           <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-2 gap-y-1 px-4 py-2.5 text-[13px] lg:px-8">
             <IconBolt />
             <span className="font-semibold tracking-[0.12em] uppercase">Kill switch engaged</span>
-            <span className="text-white/90">— the execution agent will not open any trades.</span>
+            <span className="text-white/90">- the execution agent will not open any trades.</span>
           </div>
         </div>
       ) : null}

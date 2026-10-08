@@ -46,7 +46,7 @@ export const IconMarkets = (p: P) => (
   </Svg>
 );
 
-/** Two price levels with a gap between them — the weekend gap board. */
+/** Two price levels with a gap between them - the weekend gap board. */
 export const IconGaps = (p: P) => (
   <Svg {...p}>
     <path d="M2.5 13.5h6M11.5 6.5h6M10 4.5v11" />

@@ -69,7 +69,7 @@ const COLS: { key: SortKey; label: string; num?: boolean; title?: string }[] = [
   { key: "issuer", label: "Issuer" },
   { key: "underlying", label: "Underlying" },
   { key: "tokenPrice", label: "On-chain", num: true, title: "On-chain token price (RWA Data API tokenPrice)" },
-  { key: "referencePrice", label: "Binance ref.", num: true, title: "RWA Data API referencePrice — documented as derived from the on-chain token price" },
+  { key: "referencePrice", label: "Binance ref.", num: true, title: "RWA Data API referencePrice - documented as derived from the on-chain token price" },
   { key: "refSpreadBps", label: "vs ref. bps", num: true, title: "On-chain over Binance reference, basis points (+ = premium)" },
   { key: "yahooPrice", label: "Yahoo", num: true, title: "Independent reference: last regular-session price from Yahoo Finance" },
   { key: "yahooSpreadBps", label: "vs Yahoo bps", num: true, title: "On-chain over Yahoo, basis points (+ = premium, − = discount)" },
@@ -176,7 +176,7 @@ function BoardTable({ tokens, minGap, now }: { tokens: BoardToken[]; minGap: num
                 <td className="px-3 py-2 text-right">
                   <SpreadCell v={t.refSpreadBps} />
                 </td>
-                <td className="num px-3 py-2 text-right text-dim">{t.yahooPrice != null ? price(t.yahooPrice) : <span className="text-faint">—</span>}</td>
+                <td className="num px-3 py-2 text-right text-dim">{t.yahooPrice != null ? price(t.yahooPrice) : <span className="text-faint">-</span>}</td>
                 <td className="px-3 py-2 text-right whitespace-nowrap">
                   <SpreadCell v={t.yahooSpreadBps} cand={cand} mismatch={t.yahooBasisMismatch} raw={t.yahooRawSpreadBps} />
                 </td>
@@ -187,11 +187,11 @@ function BoardTable({ tokens, minGap, now }: { tokens: BoardToken[]; minGap: num
                       {m.reasonCode && m.reasonCode !== "MARKET_CLOSED" && m.reasonCode !== "TRADING" ? <span className="ml-1 font-mono text-[10px]">{m.reasonCode}</span> : null}
                     </span>
                   ) : (
-                    <span className="text-faint">—</span>
+                    <span className="text-faint">-</span>
                   )}
                 </td>
                 <td suppressHydrationWarning className="num px-3 py-2 text-right whitespace-nowrap text-dim">
-                  {m?.nextOpenTime && !m.openState ? (now ? `in ${span(m.nextOpenTime - now)}` : etTime(m.nextOpenTime)) : <span className="text-faint">—</span>}
+                  {m?.nextOpenTime && !m.openState ? (now ? `in ${span(m.nextOpenTime - now)}` : etTime(m.nextOpenTime)) : <span className="text-faint">-</span>}
                 </td>
               </tr>
             );
@@ -234,7 +234,7 @@ function CrossIssuer({ board }: { board: RwaBoard }) {
                     </span>
                     <span className="num text-fg">{price(l.tokenPrice)}</span>
                     <span className="num w-20 text-right text-dim" title={l.topPool ? `DEX liquidity · top pool ${l.topPool}` : "DEX liquidity (token/top-liquidity)"}>
-                      {l.liquidityUsd != null ? `${compactUsd(l.liquidityUsd)} liq.` : "liq. —"}
+                      {l.liquidityUsd != null ? `${compactUsd(l.liquidityUsd)} liq.` : "liq. -"}
                     </span>
                   </li>
                 ))}
@@ -273,7 +273,7 @@ function statusEmpty(status: JsonStatus, error: string | null) {
     return <Empty title="Not available on this agent version" hint="This execution agent build has no GET /rwa/board. Rebuild and restart the agent to enable the Gap board." />;
   if (status === "offline") return <Empty tone="offline" title="Execution agent unreachable" hint={error ?? "The board is served by the execution agent's GET /rwa/board."} />;
   if (status === "error") return <Empty tone="offline" title="The board could not be built" hint={error ?? undefined} />;
-  return <Empty title="Loading the board from the RWA Data API…" hint="First load fetches two token lists, prices, 13 sector tabs and Yahoo references — about 10 seconds." />;
+  return <Empty title="Loading the board from the RWA Data API…" hint="First load fetches two token lists, prices, 13 sector tabs and Yahoo references - about 10 seconds." />;
 }
 
 export function GapsView() {
@@ -297,7 +297,7 @@ export function GapsView() {
           </h2>
           <span suppressHydrationWarning className="text-[12px] text-faint">
             {board ? `updated ${d.now ? ago(board.fetchedAt, d.now) : ""}` : ""}
-            {stale ? <span className="ml-2 text-neg">{status === "offline" ? "agent unreachable — showing last board" : status}</span> : null}
+            {stale ? <span className="ml-2 text-neg">{status === "offline" ? "agent unreachable - showing last board" : status}</span> : null}
           </span>
         </header>
 
@@ -358,7 +358,7 @@ export function GapsView() {
         <div className="bg-panel px-4 py-4">
           <h2 className="text-[10px] font-semibold tracking-[0.16em] text-gold uppercase">Two references, on purpose</h2>
           <p className="mt-2 text-[13px] leading-relaxed text-fg">
-            Binance&apos;s <span className="font-mono text-[12px]">referencePrice</span> is documented as derived from the on-chain token price, so it cannot tell you whether the token is cheap. Yahoo Finance gives the real exchange price (the last close while the market is shut) — that is the independent reference.
+            Binance&apos;s <span className="font-mono text-[12px]">referencePrice</span> is documented as derived from the on-chain token price, so it cannot tell you whether the token is cheap. Yahoo Finance gives the real exchange price (the last close while the market is shut) - that is the independent reference.
           </p>
         </div>
         <div className="bg-panel px-4 py-4">

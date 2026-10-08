@@ -7,10 +7,10 @@ Source of truth for the `baw` commands: the `binance-agentic-wallet` skill,
 ## Commands (exact syntax)
 
 ```bash
-# 1. Preview — accepts the base64 PAYMENT-REQUIRED header value or the raw JSON body (auto-detected)
+# 1. Preview - accepts the base64 PAYMENT-REQUIRED header value or the raw JSON body (auto-detected)
 baw x402-payment preview --paymentRequirements '<base64-or-json>' --json
 
-# 2. Sign — only after the user confirmed the amount/payee shown from preview
+# 2. Sign - only after the user confirmed the amount/payee shown from preview
 baw x402-payment sign --paymentId <paymentId> --selectedIndex <index> --json
 
 # 3. Replay the SAME request with the returned header

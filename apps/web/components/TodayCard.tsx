@@ -8,11 +8,11 @@ import { ModeTag } from "./ui";
 
 const GLOSSARY: { term: string; text: string }[] = [
   { term: "Tokenized stock", text: "A digital token on a blockchain that tracks one share of a real company, like Nvidia. NVDAB and TSLAB are issued by bStocks; they trade around the clock, even when Wall Street is closed." },
-  { term: "Analyst (agent)", text: "A separate AI program that sells trading tips. One reads the news, the other watches on-chain trading. Our trader pays for a tip, then checks later whether the tip was right — that becomes the analyst's track record." },
+  { term: "Analyst (agent)", text: "A separate AI program that sells trading tips. One reads the news, the other watches on-chain trading. Our trader pays for a tip, then checks later whether the tip was right - that becomes the analyst's track record." },
   { term: "b402", text: "Binance's way for one program to pay another per request: the analyst answers \"payment required\", our trader pays about one cent in USDT, and the tip is delivered. Each payment is a real blockchain transaction you can look up." },
   { term: "USDT and BNB", text: "USDT is a digital dollar (1 USDT ≈ $1) used to pay for tips and stocks. BNB pays the small network fee every BNB Chain transaction needs." },
   { term: "Simulation (test-run)", text: "Before any trade is sent, Binance's Transaction API runs it on a copy of the blockchain to make sure it would succeed. If the test-run fails, nothing is sent." },
-  { term: "Paper vs live", text: "Paper: everything is real (prices, quotes, test-runs) except the final step — the trade is only recorded, no money moves. Live: the trade is actually sent and real money moves, within strict limits." },
+  { term: "Paper vs live", text: "Paper: everything is real (prices, quotes, test-runs) except the final step - the trade is only recorded, no money moves. Live: the trade is actually sent and real money moves, within strict limits." },
   { term: "bps (basis points)", text: "One hundredth of a percent. 50 bps = 0.5%. Used for small price differences." },
 ];
 
@@ -48,7 +48,7 @@ export function TodayCard() {
       </>
     );
   } else if (status === "unsupported") {
-    body = <p className="px-4 py-4 text-[13px] text-dim sm:px-5">Not available on this agent version — the execution agent has no GET /summary/today yet. Rebuild and restart it to see the daily summary.</p>;
+    body = <p className="px-4 py-4 text-[13px] text-dim sm:px-5">Not available on this agent version - the execution agent has no GET /summary/today yet. Rebuild and restart it to see the daily summary.</p>;
   } else if (status === "offline" || status === "error") {
     body = <p className="px-4 py-4 text-[13px] text-dim sm:px-5">The execution agent is unreachable, so there is no summary to show{error ? ` (${error})` : ""}.</p>;
   } else {

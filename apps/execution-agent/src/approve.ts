@@ -1,6 +1,6 @@
 // One-time operator step: approve USDT to Permit2 (b402 signal payments), USDT (buys) and each traded
-// token (sells) to the Trading API's spender, so signal purchases and swap dry-runs — and therefore
-// paper fills — can pass. Every approve is simulated via the Transaction API first; nothing is
+// token (sells) to the Trading API's spender, so signal purchases and swap dry-runs - and therefore
+// paper fills - can pass. Every approve is simulated via the Transaction API first; nothing is
 // broadcast without --yes.
 //
 //   pnpm --filter @elitr/execution-agent approve                 # plan + simulate only
@@ -32,12 +32,12 @@ const fail = (msg: string) => {
   console.error(`[approve] ${msg}`);
   process.exit(1);
 };
-if ("error" in acct) fail(`${acct.error} — needed to sign approvals`);
-if (!bin.client) fail(`${bin.error} — needed to resolve the spender and simulate (Transaction API)`);
+if ("error" in acct) fail(`${acct.error} - needed to sign approvals`);
+if (!bin.client) fail(`${bin.error} - needed to resolve the spender and simulate (Transaction API)`);
 const account = "account" in acct ? acct.account : fail("unreachable");
 const binance = bin.client!;
 const pc = makePublicClient(env.BSC_RPC_URL);
-const hub = new EventHub("execution"); // console only — not written to the dashboard event log
+const hub = new EventHub("execution"); // console only - not written to the dashboard event log
 const txd: TxDeps = { hub, binance, pc, account, live: yes, mevProtection: env.EXECUTION_MEV_PROTECTION !== "0" };
 const tradeUsd = Number(env.EXECUTION_TRADE_USD ?? risk.maxTradeUsd);
 
@@ -81,7 +81,7 @@ async function run(j: Job): Promise<void> {
   if (!vendor) {
     const q = await quoteSwap(binance, j.side, j.asset, account.address, j.quoteAmount);
     if (!q.route) {
-      console.log(`  ${tag}: cannot discover the SWAP vendor — ${q.detail}. Re-run when the market is open, or pass --vendor=<name>.`);
+      console.log(`  ${tag}: cannot discover the SWAP vendor - ${q.detail}. Re-run when the market is open, or pass --vendor=<name>.`);
       return;
     }
     vendor = q.route.vendorName;
@@ -92,13 +92,13 @@ async function run(j: Job): Promise<void> {
   const amt = `${formatUnits(j.amount, j.token.decimals)} ${j.token.symbol}`;
   console.log(`  ${tag}: vendor ${vendor}, spender ${ap.spender}, current allowance ${formatUnits(have, j.token.decimals)}`);
   if (have >= j.amount) {
-    console.log(`    already ≥ ${amt} — nothing to do`);
+    console.log(`    already ≥ ${amt} - nothing to do`);
     return;
   }
   console.log(`    plan: ${j.token.address}.approve(${ap.spender}, ${amt})`);
   const sim = await simulateTx(txd, `${j.token.symbol}:approve`, { to: j.token.address, data: ap.data, value: 0n }, j.side);
   if (!sim.ok) {
-    console.log(`    simulation FAILED: ${sim.failReason} — not sending`);
+    console.log(`    simulation FAILED: ${sim.failReason} - not sending`);
     return;
   }
   console.log(`    simulation OK${sim.gasUsed ? ` (gas ~${sim.gasUsed})` : ""}`);
@@ -122,14 +122,14 @@ async function permit2(): Promise<void> {
   const have = await erc20Allowance(pc, USDT_BSC.address as Address, account.address, B402_PERMIT2_ADDRESS as Address);
   console.log(`  USDT (b402 signal payments): spender Permit2 ${B402_PERMIT2_ADDRESS}, current allowance ${formatUnits(have, USDT_BSC.decimals)}`);
   if (have >= amount) {
-    console.log(`    already ≥ ${amt} — nothing to do`);
+    console.log(`    already ≥ ${amt} - nothing to do`);
     return;
   }
   const data = approveCalldata(B402_PERMIT2_ADDRESS as Address, amount);
   console.log(`    plan: ${USDT_BSC.address}.approve(${B402_PERMIT2_ADDRESS}, ${amt})`);
   const sim = await simulateTx(txd, "USDT:approve-permit2", { to: USDT_BSC.address as Address, data, value: 0n });
   if (!sim.ok) {
-    console.log(`    simulation FAILED: ${sim.failReason} — not sending`);
+    console.log(`    simulation FAILED: ${sim.failReason} - not sending`);
     return;
   }
   console.log(`    simulation OK${sim.gasUsed ? ` (gas ~${sim.gasUsed})` : ""}`);
@@ -142,17 +142,17 @@ async function permit2(): Promise<void> {
   console.log(`    confirmed: ${txHash}`);
 }
 
-console.log(`[approve] wallet ${account.address} — ${yes ? "WILL BROADCAST approvals that simulate OK" : "dry run (simulate only)"}`);
+console.log(`[approve] wallet ${account.address} - ${yes ? "WILL BROADCAST approvals that simulate OK" : "dry run (simulate only)"}`);
 try {
   await permit2();
 } catch (e) {
-  console.log(`  USDT (b402 signal payments): error — ${errMsg(e)}`);
+  console.log(`  USDT (b402 signal payments): error - ${errMsg(e)}`);
 }
 const jobs = await plan();
 for (const j of jobs) {
   try {
     await run(j);
   } catch (e) {
-    console.log(`  ${j.token.symbol} (${j.side} ${j.asset.symbol}): error — ${errMsg(e)}`);
+    console.log(`  ${j.token.symbol} (${j.side} ${j.asset.symbol}): error - ${errMsg(e)}`);
   }
 }

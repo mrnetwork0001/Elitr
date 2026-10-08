@@ -11,7 +11,7 @@ process.on("exit", () => rmSync(dir, { recursive: true, force: true }));
 let n = 0;
 const file = () => join(dir, `sub${n}`, `book-${n++}.json`);
 
-/** mulberry32 — tiny deterministic PRNG for reproducible draws. */
+/** mulberry32 - tiny deterministic PRNG for reproducible draws. */
 function seeded(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
@@ -231,7 +231,7 @@ test("choose() skips offline and paused analysts and explains why", () => {
 test("choose() statistically prefers the better analyst but still explores", () => {
   const book = new ReputationBook(file(), { rng: seeded(2024) });
   seed(book, "analyst", 14, 6); // 70%
-  seed(book, "analyst-flow", 9, 11); // 45% — not paused (trust 10/22 ≈ 0.4545)
+  seed(book, "analyst-flow", 9, 11); // 45% - not paused (trust 10/22 ≈ 0.4545)
   assert.equal(book.stats("analyst-flow").paused, false);
   const wins = { analyst: 0, "analyst-flow": 0 };
   for (let i = 0; i < 2000; i++) wins[book.choose(cands).analystId as AnalystId]++;

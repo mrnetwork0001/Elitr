@@ -101,7 +101,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): IdentityConfig
   };
 }
 
-/** True when any ERC-8004 setting is present — otherwise identityFromEnv() returns null. */
+/** True when any ERC-8004 setting is present - otherwise identityFromEnv() returns null. */
 export function isConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
   return (
     truthy(env.ERC8004_POST_FEEDBACK) ||

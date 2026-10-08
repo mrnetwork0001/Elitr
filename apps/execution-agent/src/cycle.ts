@@ -146,7 +146,7 @@ export class ExecutionAgent {
    */
   async operatorTrade(symbol: string, side: Side, usd?: number): Promise<{ ok: boolean; detail: string; txHash?: string }> {
     if (this.killSwitch || this.d.risk.killSwitch) return { ok: false, detail: "kill switch engaged" };
-    if (this.running) return { ok: false, detail: "a cycle is running — retry in a minute" };
+    if (this.running) return { ok: false, detail: "a cycle is running - retry in a minute" };
     const asset = this.assets.find((a) => a.symbol.toLowerCase() === symbol.toLowerCase());
     if (!asset) return { ok: false, detail: `unknown symbol; traded: ${this.assets.map((a) => a.symbol).join(", ")}` };
     const { hub, binance, account, risk, store } = this.d;
@@ -222,10 +222,10 @@ export class ExecutionAgent {
       return;
     }
 
-    if (!account) hub.emit({ type: "error", where: "config", message: `${this.accountErr} — skipping b402 payments, wallet balances, quotes and trades` });
-    if (!binance) hub.emit({ type: "error", where: "config", message: `${this.binanceErr} — skipping RWA Data, Market, Trading and Transaction API calls (prices fall back to on-chain PancakeSwap v3 slot0)` });
+    if (!account) hub.emit({ type: "error", where: "config", message: `${this.accountErr} - skipping b402 payments, wallet balances, quotes and trades` });
+    if (!binance) hub.emit({ type: "error", where: "config", message: `${this.binanceErr} - skipping RWA Data, Market, Trading and Transaction API calls (prices fall back to on-chain PancakeSwap v3 slot0)` });
 
-    // 2. Score signals whose horizon has elapsed (pool price on-chain — works without any API key).
+    // 2. Score signals whose horizon has elapsed (pool price on-chain - works without any API key).
     await this.step("reputation.score", () => this.scoreDue());
 
     // 3. Discover analysts once per cycle (free /info).
@@ -384,7 +384,7 @@ export class ExecutionAgent {
     const amountIn = parseUnits(cfg.tradeUsd.toFixed(6), 18);
     let choice: RouteChoice | null = null;
     if (marketClosed) {
-      missing.simulatableRoute = missing.maxSlippageBps = `bStocks market ${marketClosed.marketStatus}${marketClosed.nextOpenTime ? ` until ${iso(marketClosed.nextOpenTime)}` : ""} — quote skipped (would return 40369)`;
+      missing.simulatableRoute = missing.maxSlippageBps = `bStocks market ${marketClosed.marketStatus}${marketClosed.nextOpenTime ? ` until ${iso(marketClosed.nextOpenTime)}` : ""} - quote skipped (would return 40369)`;
     } else if (binance && account) {
       choice = await this.step(`quote:${sym}`, () => quoteSwap(binance, "buy", asset, account.address, amountIn));
       if (choice?.marketClosed) dxLog("trading-api", `Quote for ${sym} rejected with 40369 although RWA market status said tradable`, choice.detail);
@@ -394,7 +394,7 @@ export class ExecutionAgent {
       missing.simulatableRoute = missing.maxSlippageBps = why;
     } else if (!choice.route) missing.maxSlippageBps = choice.detail;
     if (choice?.route == null && choice && choice.all.length && choice.all.every((r) => r.executionMode === "RFQ")) {
-      dxLog("trading-api", `Quote for ${sym} returned only RFQ routes — not simulatable via Transaction API`, choice.detail);
+      dxLog("trading-api", `Quote for ${sym} returned only RFQ routes - not simulatable via Transaction API`, choice.detail);
     }
     const impact = choice?.route?.priceImpactPercent;
 
@@ -555,7 +555,7 @@ export class ExecutionAgent {
 
     let choice: RouteChoice | null = null;
     if (marketClosed) {
-      missing.simulatableRoute = missing.maxSlippageBps = `bStocks market ${marketClosed.marketStatus}${marketClosed.nextOpenTime ? ` until ${iso(marketClosed.nextOpenTime)}` : ""} — quote skipped (would return 40369)`;
+      missing.simulatableRoute = missing.maxSlippageBps = `bStocks market ${marketClosed.marketStatus}${marketClosed.nextOpenTime ? ` until ${iso(marketClosed.nextOpenTime)}` : ""} - quote skipped (would return 40369)`;
     } else if (qtyWei > 0n && binance && account) {
       choice = await this.step(`quote.sell:${sym}`, () => quoteSwap(binance, "sell", asset, account.address, qtyWei));
     }
@@ -585,7 +585,7 @@ export class ExecutionAgent {
     const reasons = [`${exit.reason}: ${exit.detail}`, `selling ${qty} ${sym} (${this.mode} position)`, ...statusNote];
     for (const c of checks.filter((c) => !c.ok)) reasons.push(`${c.rule} failed: ${c.value} (limit ${c.limit})`);
     if (passed) reasons.push(`all ${checks.length} sell checks passed`);
-    else reasons.push("exit triggered but blocked — position kept, retried next cycle");
+    else reasons.push("exit triggered but blocked - position kept, retried next cycle");
     hub.emit(passed ? { type: "decision", symbol: sym, action: "sell", reasons, exitReason: exit.reason } : { type: "decision", symbol: sym, action: "hold", reasons });
     if (!passed || !choice?.route) return;
 
@@ -636,7 +636,7 @@ export class ExecutionAgent {
       });
     }
     if (tokenWei <= 0n) {
-      hub.emit({ type: "error", where: `fill:${sym}`, message: `${side} produced zero ${sym} — nothing booked` });
+      hub.emit({ type: "error", where: `fill:${sym}`, message: `${side} produced zero ${sym} - nothing booked` });
       return;
     }
     try {

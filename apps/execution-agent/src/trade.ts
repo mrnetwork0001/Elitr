@@ -223,7 +223,7 @@ export async function executeSwap(
   if (!route) throw new Error("executeSwap called without a SWAP route");
 
   // 1. Allowance of the from-token for the route's spender; approval data from /approve-transaction
-  //    (vendor is required for equity tokens — ref-trading-api.md "Get ERC-20 Approve Transaction").
+  //    (vendor is required for equity tokens - ref-trading-api.md "Get ERC-20 Approve Transaction").
   const spender = route.approveTarget as Address | null | undefined;
   if (spender) {
     const allowance = await erc20Allowance(d.pc, from.address, owner, spender);

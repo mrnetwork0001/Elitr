@@ -1,7 +1,7 @@
 import type { RiskCheck, RiskConfig } from "@elitr/shared";
 
 export interface SignalView {
-  score: number; // 1-100 — the reputation-weighted effective score when rawScore is set
+  score: number; // 1-100 - the reputation-weighted effective score when rawScore is set
   stance: "bullish" | "neutral" | "bearish";
   generatedAt: number; // unix ms
   rawScore?: number; // analyst's own score before weighting

@@ -1,4 +1,4 @@
-# Secrets — API keys and wallet private keys must never be committed
+# Secrets - API keys and wallet private keys must never be committed
 .env
 .env.*
 !.env.example
@@ -28,7 +28,7 @@ logs/
 !.vscode/extensions.json
 .idea/
 
-# BNB Agent Studio workspaces (studio/*) — secrets + build output.
+# BNB Agent Studio workspaces (studio/*) - secrets + build output.
 # .studio/ holds the encrypted wallet keystore, WALLET_PASSWORD, Pieverse key,
 # B402 merchant credentials (+ .studio/b402/ RSA keys) and run logs.
 studio/**/.studio/

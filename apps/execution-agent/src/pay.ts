@@ -162,7 +162,7 @@ async function attempt(d: PayDeps, symbol: string, remainingUsd: number): Promis
     res = await fetchWithPay(url, { signal: AbortSignal.timeout(90_000) });
   } catch (e) {
     if (approval) return { kind: "approval", approval };
-    const msg = errMsg(e) + (policyNote ? ` — insufficient balance (${policyNote})` : "");
+    const msg = errMsg(e) + (policyNote ? ` - insufficient balance (${policyNote})` : "");
     d.hub.emit({ type: "error", where: `pay.${d.analystId}`, message: msg });
     return { kind: "done", signal: null };
   }
@@ -201,7 +201,7 @@ async function attempt(d: PayDeps, symbol: string, remainingUsd: number): Promis
   }
 
   if (res.status === 503 && !settle?.transaction) {
-    // e.g. the flow analyst's "insufficient flow": no signal today, payment not settled — not a fault.
+    // e.g. the flow analyst's "insufficient flow": no signal today, payment not settled - not a fault.
     d.hub.emit({ type: "risk.blocked", symbol, rule: "analystNoSignal", detail: `${d.analystId} has no signal for ${symbol} (HTTP 503: ${text.slice(0, 160)}); nothing settled` });
     return { kind: "done", signal: null };
   }
@@ -235,7 +235,7 @@ async function approvePermit2(d: PayDeps, symbol: string, a: B402Permit2Approval
   const amount = budget > a.requiredAmount ? budget : a.requiredAmount;
   const have = `allowance ${formatUnits(a.currentAllowance, s.decimals)} < ${formatUnits(a.requiredAmount, s.decimals)} ${s.symbol} to Permit2 ${B402_PERMIT2_ADDRESS}`;
   if (!d.binance) {
-    d.hub.emit({ type: "error", where: "pay.permit2", message: `${have}; cannot simulate the approve — Binance Web3 API key/secret missing` });
+    d.hub.emit({ type: "error", where: "pay.permit2", message: `${have}; cannot simulate the approve - Binance Web3 API key/secret missing` });
     return false;
   }
   const data = approveCalldata(B402_PERMIT2_ADDRESS, amount);
@@ -247,7 +247,7 @@ async function approvePermit2(d: PayDeps, symbol: string, a: B402Permit2Approval
       type: "risk.blocked",
       symbol,
       rule: "permit2Approval",
-      detail: `${have}. approve(${formatUnits(amount, s.decimals)}) simulated OK but not sent because LIVE_TRADING!=1 — signal not purchased.`,
+      detail: `${have}. approve(${formatUnits(amount, s.decimals)}) simulated OK but not sent because LIVE_TRADING!=1 - signal not purchased.`,
     });
     return false;
   }

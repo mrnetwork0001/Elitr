@@ -1,9 +1,9 @@
 /**
- * Elitr Desk Brief — the seller's value layer.
+ * Elitr Desk Brief - the seller's value layer.
  *
  * Fetches the LIVE Elitr desk's free public JSON endpoints and assembles a
  * structured, factual brief. Every number in the brief is copied (or
- * arithmetically derived, e.g. a spread in bps) from those endpoints — this
+ * arithmetically derived, e.g. a spread in bps) from those endpoints - this
  * module never invents data. If a required endpoint is unreachable the fetch
  * throws {@link ElitrUnavailableError}; the HTTP route turns that into a 503
  * BEFORE the B402 seller is invoked, so the buyer is never asked to pay
@@ -568,7 +568,7 @@ function deterministicHeadline(
 
 function renderText(b: DeskBrief): string {
   const lines: string[] = [];
-  lines.push(`ELITR DESK BRIEF — ${b.summary.day ?? ""} (${(b.mode ?? "?").toUpperCase()})`);
+  lines.push(`ELITR DESK BRIEF - ${b.summary.day ?? ""} (${(b.mode ?? "?").toUpperCase()})`);
   lines.push(b.headline);
   lines.push("");
   if (typeof b.summary.text === "string") lines.push(b.summary.text, "");

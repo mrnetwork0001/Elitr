@@ -136,7 +136,7 @@ export function span(ms: number): string {
 
 /** "+23.4" / "-5.0" bps */
 export function bpsTxt(n: number | null | undefined): string {
-  if (n == null || !Number.isFinite(n)) return "—";
+  if (n == null || !Number.isFinite(n)) return "-";
   return `${n > 0 ? "+" : ""}${n.toFixed(Math.abs(n) >= 100 ? 0 : 1)}`;
 }
 
@@ -156,7 +156,7 @@ export const MARKET_LABEL: Record<string, string> = {
 };
 
 export function compactUsd(n: number | null | undefined): string {
-  if (n == null || !Number.isFinite(n)) return "—";
+  if (n == null || !Number.isFinite(n)) return "-";
   const a = Math.abs(n);
   if (a >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
   if (a >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;

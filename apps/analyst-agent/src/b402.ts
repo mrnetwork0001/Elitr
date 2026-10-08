@@ -217,7 +217,7 @@ export class B402Gateway {
         k.extra?.assetTransferMethod === method,
     );
     // kinds[] carries no asset field; when several share the method, pick by EIP-712 token name
-    // (extra.name is the token's on-chain name() — see @bnb-chain/b402 Types.ts PaymentRequirementsExtra).
+    // (extra.name is the token's on-chain name() - see @bnb-chain/b402 Types.ts PaymentRequirementsExtra).
     if (candidates.length > 1) {
       let name = opt.tokenName ?? this.tokenNames.get(asset.toLowerCase());
       if (!name) {

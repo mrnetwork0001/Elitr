@@ -6,7 +6,7 @@
 //   node replay.mjs "<base>/signal?symbol=NVDAB" "<paymentHeaderValue>"
 //   node replay.mjs "<base>/signal?symbol=NVDAB" "<paymentHeaderValue>" --json
 //
-// Run it IMMEDIATELY after `sign` — Agentic Wallet signatures are short-lived (signatureExpiresAt).
+// Run it IMMEDIATELY after `sign` - Agentic Wallet signatures are short-lived (signatureExpiresAt).
 // Exit codes: 0 = 200 with signal, 2 = any other HTTP status (body printed), 1 = usage/network error.
 
 const args = process.argv.slice(2);
@@ -30,7 +30,7 @@ try {
   // The news analyst may call an LLM between verify and settle; allow time for it.
   res = await fetch(url, { headers: { Accept: "application/json", "PAYMENT-SIGNATURE": signature }, signal: AbortSignal.timeout(120_000) });
 } catch (e) {
-  console.error(`request failed: ${e.cause?.code ?? e.message} — the payment may or may not have settled; check \`baw wallet tx-history\` before retrying`);
+  console.error(`request failed: ${e.cause?.code ?? e.message} - the payment may or may not have settled; check \`baw wallet tx-history\` before retrying`);
   process.exit(1);
 }
 const text = await res.text();
@@ -64,7 +64,7 @@ if (asJson) {
 } else if (res.status === 200 && body && typeof body === "object") {
   const s = body;
   console.log(`Paid. Settlement tx: ${result.bscscan ?? "(no PAYMENT-RESPONSE header)"}`);
-  console.log(`\n${s.symbol} (${s.underlying}) — ${s.stance}, score ${s.score}/100, horizon ${Math.round(s.horizonSec / 60)} min`);
+  console.log(`\n${s.symbol} (${s.underlying}) - ${s.stance}, score ${s.score}/100, horizon ${Math.round(s.horizonSec / 60)} min`);
   console.log(`Analyst: ${s.analystId}  model: ${s.model}  inputs: ${s.headlineCount}  generated: ${s.generatedAt}`);
   console.log(`\nRationale: ${s.rationale}`);
   if (s.sources?.length) {

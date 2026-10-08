@@ -117,7 +117,7 @@ export async function fetchOnchainPrice(client: BinanceWeb3Client, asset: Pick<T
 // PancakeSwap v3 factory on BSC (pool.factory() of both bStock pools returns this address).
 export const PCS_V3_FACTORY = "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865" as const;
 export const WBNB = { symbol: "WBNB", address: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c" as const, decimals: 18 };
-// factory.getPool(WBNB, USDT, 500) on 2026-10-04 — the deepest WBNB/USDT v3 pool (~4.7k WBNB vs ~3.1k at
+// factory.getPool(WBNB, USDT, 500) on 2026-10-04 - the deepest WBNB/USDT v3 pool (~4.7k WBNB vs ~3.1k at
 // fee 100). Re-verified against the factory at runtime before first use.
 export const WBNB_USDT_POOL = "0x36696169C63e42cd08ce11f5deeBbCeBae652050" as const;
 
@@ -184,7 +184,7 @@ async function readPoolPrice(
   return { price: priceFromSqrtX96(sqrtPriceX96, dec0, dec1, baseIsToken0), source: "pcs-v3-slot0", pool };
 }
 
-/** USDT price of a tokenized stock from its primary PancakeSwap v3 pool (slot0 — spot, not TWAP). */
+/** USDT price of a tokenized stock from its primary PancakeSwap v3 pool (slot0 - spot, not TWAP). */
 export async function poolPrice(pc: PublicClient, symbol: string): Promise<PoolPrice> {
   const asset = ASSETS[symbol];
   if (!asset) throw new Error(`unknown asset ${symbol}`);
@@ -199,7 +199,7 @@ export async function bnbUsd(pc: PublicClient, binance: BinanceWeb3Client | null
       const p = await fetchOnchainPrice(binance, WBNB);
       return { price: p.price, source: "binance-market" };
     } catch {
-      /* fall through to the on-chain pool — a real price either way */
+      /* fall through to the on-chain pool - a real price either way */
     }
   }
   const p = await readPoolPrice(pc, WBNB_USDT_POOL, WBNB, USDT_BSC);

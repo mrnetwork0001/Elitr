@@ -38,7 +38,7 @@ export const ASSETS: Record<string, TokenizedStock> = {
     decimals: 18,
     primaryPool: "0xB0f5E5400E8F0F7C242F2b7740C004f020579c41", // 0.25% fee
   },
-  // Deployed on BSC but with negligible DEX liquidity as of 2026-10-04 — tracked, not traded.
+  // Deployed on BSC but with negligible DEX liquidity as of 2026-10-04 - tracked, not traded.
   NVDAon: {
     symbol: "NVDAon",
     underlying: "NVDA",

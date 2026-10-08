@@ -38,7 +38,7 @@ export function fromUnits(raw: string | number | undefined | null, decimals = 18
 
 /** USD with 2–4 decimals: small micro-payments keep their precision. */
 export function usd(n: number | null | undefined, opts: { min?: number; max?: number } = {}): string {
-  if (n === null || n === undefined || !Number.isFinite(n)) return "—";
+  if (n === null || n === undefined || !Number.isFinite(n)) return "-";
   const abs = Math.abs(n);
   const max = opts.max ?? (abs !== 0 && abs < 1 ? 4 : 2);
   const min = Math.min(opts.min ?? 2, max);
@@ -55,31 +55,31 @@ export function usdFromUnits(raw: string | undefined, decimals = 18): string {
 
 /** Micro-payment USD: sub-dollar amounts always show 4 decimals ($0.0100). */
 export function payUsd(n: number | null | undefined): string {
-  if (n === null || n === undefined || !Number.isFinite(n)) return "—";
+  if (n === null || n === undefined || !Number.isFinite(n)) return "-";
   return Math.abs(n) < 1 && n !== 0 ? usd(n, { min: 4, max: 4 }) : usd(n);
 }
 
 export function price(n: number | null | undefined): string {
-  if (n === null || n === undefined || !Number.isFinite(n)) return "—";
+  if (n === null || n === undefined || !Number.isFinite(n)) return "-";
   const digits = n >= 1 ? 2 : 6;
   return "$" + n.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
 export function num(n: number | null | undefined, maxFrac = 4): string {
-  if (n === null || n === undefined || !Number.isFinite(n)) return "—";
+  if (n === null || n === undefined || !Number.isFinite(n)) return "-";
   return n.toLocaleString("en-US", { maximumFractionDigits: maxFrac });
 }
 
 /** Token amount: tries smallest units first (long integer strings), else a plain number. */
 export function tokenAmount(raw: string | number | undefined | null, decimals = 18, maxFrac = 6): string {
-  if (raw === undefined || raw === null || raw === "") return "—";
+  if (raw === undefined || raw === null || raw === "") return "-";
   if (typeof raw === "string" && /^\d{13,}$/.test(raw.trim())) return num(fromUnits(raw, decimals), maxFrac);
   const n = typeof raw === "number" ? raw : Number(raw);
   return Number.isFinite(n) ? num(n, maxFrac) : String(raw);
 }
 
 export function bps(n: number | null | undefined): string {
-  if (n === null || n === undefined || !Number.isFinite(n)) return "—";
+  if (n === null || n === undefined || !Number.isFinite(n)) return "-";
   const r = Math.round(n);
   return `${r > 0 ? "+" : r < 0 ? "−" : "±"}${Math.abs(r).toLocaleString("en-US")} bps`;
 }
@@ -211,14 +211,14 @@ export function ruleLabel(rule: string): string {
 
 /** Signed USD for P&L: +$1.23 / -$0.45. */
 export function signedUsd(n: number | null | undefined): string {
-  if (n === null || n === undefined || !Number.isFinite(n)) return "—";
+  if (n === null || n === undefined || !Number.isFinite(n)) return "-";
   if (n === 0) return "$0.00";
   return (n > 0 ? "+" : "") + usd(n);
 }
 
 /** 0..1 → "64%". */
 export function pct(n: number | null | undefined, digits = 0): string {
-  if (n === null || n === undefined || !Number.isFinite(n)) return "—";
+  if (n === null || n === undefined || !Number.isFinite(n)) return "-";
   return `${(n * 100).toFixed(digits)}%`;
 }
 

@@ -108,8 +108,8 @@ function Loaded({ f, state, now }: { f: WalletApiFields; state: ExecState | null
                           {t.risky ? <span className="ml-2 text-[10px] font-bold tracking-[0.1em] text-neg uppercase">risk</span> : null}
                         </td>
                         <td className="num px-3 py-2 text-right">{num(t.balance, 6)}</td>
-                        <td className="num px-3 py-2 text-right text-dim">{r != null ? num(r, 6) : <span className="text-faint">—</span>}</td>
-                        <td className="num px-4 py-2 text-right">{t.usd != null ? usd(t.usd) : <span className="text-faint">—</span>}</td>
+                        <td className="num px-3 py-2 text-right text-dim">{r != null ? num(r, 6) : <span className="text-faint">-</span>}</td>
+                        <td className="num px-4 py-2 text-right">{t.usd != null ? usd(t.usd) : <span className="text-faint">-</span>}</td>
                       </tr>
                     );
                   })}
@@ -119,7 +119,7 @@ function Loaded({ f, state, now }: { f: WalletApiFields; state: ExecState | null
                     <td className="px-4 py-2 text-[11px] tracking-[0.12em] text-dim uppercase" colSpan={3}>
                       Total (Wallet API)
                     </td>
-                    <td className="num px-4 py-2 text-right font-semibold">{w.totalUsd != null ? usd(w.totalUsd) : "—"}</td>
+                    <td className="num px-4 py-2 text-right font-semibold">{w.totalUsd != null ? usd(w.totalUsd) : "-"}</td>
                   </tr>
                 </tfoot>
               </table>

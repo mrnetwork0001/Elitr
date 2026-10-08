@@ -93,7 +93,7 @@ export interface PriceSeries {
 export interface PriceView {
   series: PriceSeries[];
   onchain: PriceSeries | undefined;
-  /** The reference used for the gap — Yahoo first, matching the execution agent's gap rule. */
+  /** The reference used for the gap - Yahoo first, matching the execution agent's gap rule. */
   reference: PriceSeries | undefined;
   gapBps: number | null;
   gapSeries: PricePoint[];

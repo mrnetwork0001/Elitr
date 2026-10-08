@@ -21,7 +21,7 @@ export function useAnalystInfo(intervalMs = 60_000): Partial<Record<AnalystId, A
             const j = (await res.json()) as AnalystInfo;
             if (!disposed && j && typeof j === "object") setInfo((p) => ({ ...p, [id]: j }));
           } catch {
-            /* offline — keep the last answer */
+            /* offline - keep the last answer */
           } finally {
             clearTimeout(t);
           }

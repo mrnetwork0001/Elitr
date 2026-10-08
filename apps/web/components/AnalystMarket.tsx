@@ -106,7 +106,7 @@ function AnalystCard({ a, threshold, minSamples, selectedFor }: { a: AnalystCard
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
           {a.paused ? (
-            <Badge tone="neg" title="Trust fell below the pause threshold — the trader stopped buying from this analyst">
+            <Badge tone="neg" title="Trust fell below the pause threshold - the trader stopped buying from this analyst">
               Paused
             </Badge>
           ) : selectedFor.length ? (
@@ -121,19 +121,19 @@ function AnalystCard({ a, threshold, minSamples, selectedFor }: { a: AnalystCard
       <div className="mt-4 grid grid-cols-3 gap-3">
         <div className="min-w-0">
           <div className="text-[11px] tracking-wide text-faint uppercase">Hit rate</div>
-          <div className="num mt-0.5 text-xl font-semibold text-fg">{a.hitRate !== null ? pct(a.hitRate) : "—"}</div>
+          <div className="num mt-0.5 text-xl font-semibold text-fg">{a.hitRate !== null ? pct(a.hitRate) : "-"}</div>
           <div className="num truncate text-[11px] text-faint">{scored ? `over ${scored} signal${scored === 1 ? "" : "s"}` : "no scored calls yet"}</div>
         </div>
         <div className="min-w-0">
           <div className="text-[11px] tracking-wide text-faint uppercase">Avg return</div>
           <div className={`num mt-0.5 text-xl font-semibold ${a.avgReturnBps === null ? "text-fg" : a.avgReturnBps >= 0 ? "text-pos" : "text-neg"}`}>
-            {a.avgReturnBps === null ? "—" : bps(a.avgReturnBps).replace(" bps", "")}
+            {a.avgReturnBps === null ? "-" : bps(a.avgReturnBps).replace(" bps", "")}
           </div>
           <div className="truncate text-[11px] text-faint">bps per call</div>
         </div>
         <div className="min-w-0">
           <div className="text-[11px] tracking-wide text-faint uppercase">Weight</div>
-          <div className="num mt-0.5 text-xl font-semibold text-fg">{a.weight !== null ? `${a.weight.toFixed(2)}×` : "—"}</div>
+          <div className="num mt-0.5 text-xl font-semibold text-fg">{a.weight !== null ? `${a.weight.toFixed(2)}×` : "-"}</div>
           <div className="truncate text-[11px] text-faint">on its confidence</div>
         </div>
       </div>
@@ -142,7 +142,7 @@ function AnalystCard({ a, threshold, minSamples, selectedFor }: { a: AnalystCard
         <div className="flex items-baseline justify-between gap-2 text-[11px]">
           <span className="tracking-wide text-faint uppercase">Trust</span>
           <span className="num text-dim">
-            <span className="text-fg">{a.trust !== null ? a.trust.toFixed(2) : "—"}</span>
+            <span className="text-fg">{a.trust !== null ? a.trust.toFixed(2) : "-"}</span>
             {threshold !== null ? (
               <span>
                 {" "}
@@ -235,7 +235,7 @@ function CandidateRow({ c, winner, hasDraws }: { c: AnalystCandidate; winner: bo
         {hasDraws ? <span className="absolute -top-0.5 h-3 w-px bg-fg/80" style={{ left: `${Math.max(0, Math.min(1, c.trust)) * 100}%` }} title={`trust (posterior mean) ${c.trust.toFixed(2)}`} /> : null}
       </div>
       <div className="num mt-0.5 truncate text-[10px] text-faint">
-        trust {c.trust.toFixed(2)} · hit {c.hitRate !== null ? pct(c.hitRate) : "—"} over {c.samples} · {payUsd(c.priceUsd)}
+        trust {c.trust.toFixed(2)} · hit {c.hitRate !== null ? pct(c.hitRate) : "-"} over {c.samples} · {payUsd(c.priceUsd)}
       </div>
     </li>
   );

@@ -12,7 +12,7 @@ export function useOperatorToken() {
       const t = window.localStorage.getItem(KEY);
       if (t) setTokenState(t);
     } catch {
-      /* storage blocked — token lives in memory only */
+      /* storage blocked - token lives in memory only */
     }
   }, []);
 

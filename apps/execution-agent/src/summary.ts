@@ -197,7 +197,7 @@ export function buildSummary(inp: SummaryInput): TodaySummary {
     facts.push({
       id: "signals",
       label: "Tips bought",
-      text: `${plural(pays.length, "signal")} for ${money(payUsd)} — ${fromTxt}.`,
+      text: `${plural(pays.length, "signal")} for ${money(payUsd)} - ${fromTxt}.`,
       links: pays.filter((p) => p.txHash).slice(-5).map((p) => ({ label: `payment ${p.txHash!.slice(0, 10)}…`, href: TX(p.txHash!) })),
     });
   } else {
@@ -247,7 +247,7 @@ export function buildSummary(inp: SummaryInput): TodaySummary {
       links: fills.filter((f) => f.txHash).map((f) => ({ label: `${f.side} ${f.symbol} on BscScan`, href: TX(f.txHash!) })),
     });
   } else {
-    facts.push({ id: "trades", label: "Trades", text: "No trades today — every check above has to pass before the agent buys or sells." });
+    facts.push({ id: "trades", label: "Trades", text: "No trades today - every check above has to pass before the agent buys or sells." });
   }
   const blockedSims = of("risk.blocked").filter((b) => b.rule === "simulation");
   if (blockedSims.length) facts.push({ id: "simulation", label: "Test-runs", text: `${plural(blockedSims.length, "trade")} stopped because the transaction test-run (Transaction API) failed.` });
@@ -303,7 +303,7 @@ export function buildSummary(inp: SummaryInput): TodaySummary {
     const where = new Map<string, number>();
     for (const e of errors) where.set(e.where.split(":")[0], (where.get(e.where.split(":")[0]) ?? 0) + 1);
     const top = [...where].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([w, n]) => `${w} ×${n}`);
-    facts.push({ id: "errors", label: "Problems logged", text: `${plural(errors.length, "error")} today (${top.join(", ")}). Each one made the agent skip that step — it never guesses a missing price.` });
+    facts.push({ id: "errors", label: "Problems logged", text: `${plural(errors.length, "error")} today (${top.join(", ")}). Each one made the agent skip that step - it never guesses a missing price.` });
   }
 
   return {

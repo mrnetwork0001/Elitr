@@ -44,7 +44,7 @@ export function portfolioData(state: ExecState | null, status: StateStatus, even
     if (p.qty > 0 && p.markUsd !== null) valueUsd = (valueUsd ?? 0) + p.qty * p.markUsd;
   }
   if (valueUsd === null && positions.length && positions.every((p) => p.qty === 0)) valueUsd = 0;
-  // /state positionUsd = combined holdings of the active mode — authoritative when reported.
+  // /state positionUsd = combined holdings of the active mode - authoritative when reported.
   if (status === "ok" && state?.positionUsd !== null && state?.positionUsd !== undefined) valueUsd = state.positionUsd;
   return {
     mode: pnl?.mode ?? state?.mode ?? snap?.mode ?? null,
@@ -79,7 +79,7 @@ export function Portfolio({ data, state, events, executionOffline, now }: { data
         {executionOffline ? (
           <Empty tone="offline" title="Execution agent offline" hint="Positions and P&L come from the execution agent's fill ledger (GET /state and pnl.snapshot events)." />
         ) : (
-          <Empty title="No fills yet" hint="P&L starts with the first fill. In paper mode a fill is booked at the real quoted amounts after the Transaction API simulation passes — nothing is broadcast." />
+          <Empty title="No fills yet" hint="P&L starts with the first fill. In paper mode a fill is booked at the real quoted amounts after the Transaction API simulation passes - nothing is broadcast." />
         )}
       </Panel>
     );
@@ -126,8 +126,8 @@ export function Portfolio({ data, state, events, executionOffline, now }: { data
       <div className="grid grid-cols-2 gap-3 border-t border-line pt-3 sm:grid-cols-4">
         <Figure label="Realized" value={signedUsd(pnl?.realizedUsd)} tone={toneOf(pnl?.realizedUsd)} />
         <Figure label="Unrealized" value={signedUsd(pnl?.unrealizedUsd)} tone={toneOf(pnl?.unrealizedUsd)} />
-        <Figure label="Signal spend" value={pnl?.signalSpendUsd != null ? usd(-Math.abs(pnl.signalSpendUsd), { max: 4 }) : "—"} sub="b402, real" />
-        <Figure label="Gas" value={pnl?.gasSpendUsd != null ? usd(-Math.abs(pnl.gasSpendUsd), { max: 4 }) : "—"} sub={paper ? "none broadcast" : "BNB → USD"} />
+        <Figure label="Signal spend" value={pnl?.signalSpendUsd != null ? usd(-Math.abs(pnl.signalSpendUsd), { max: 4 }) : "-"} sub="b402, real" />
+        <Figure label="Gas" value={pnl?.gasSpendUsd != null ? usd(-Math.abs(pnl.gasSpendUsd), { max: 4 }) : "-"} sub={paper ? "none broadcast" : "BNB → USD"} />
       </div>
 
       {open.length ? (
@@ -157,12 +157,12 @@ export function Portfolio({ data, state, events, executionOffline, now }: { data
                       {flat ? <span className="ml-1.5 font-sans text-[10px] text-faint uppercase">closed</span> : null}
                     </td>
                     <td className="num py-1.5 pr-2 text-right text-fg">{num(p.qty, 6)}</td>
-                    <td className="num py-1.5 pr-2 text-right text-dim">{flat ? "—" : price(p.avgCostUsd)}</td>
+                    <td className="num py-1.5 pr-2 text-right text-dim">{flat ? "-" : price(p.avgCostUsd)}</td>
                     <td className="num py-1.5 pr-2 text-right text-fg">
                       {price(p.markUsd)}
                       {moveBps !== null ? <div className={`text-[10px] ${toneOf(moveBps)}`}>{moveBps >= 0 ? "+" : ""}{(moveBps / 100).toFixed(2)}%</div> : null}
                     </td>
-                    <td className={`num py-1.5 pr-2 text-right ${toneOf(p.unrealizedUsd)}`}>{flat ? "—" : signedUsd(p.unrealizedUsd)}</td>
+                    <td className={`num py-1.5 pr-2 text-right ${toneOf(p.unrealizedUsd)}`}>{flat ? "-" : signedUsd(p.unrealizedUsd)}</td>
                     <td className={`num py-1.5 pr-2 text-right ${toneOf(p.realizedUsd)}`}>{signedUsd(p.realizedUsd)}</td>
                     <td className="num py-1.5 text-right whitespace-nowrap">
                       {tpPx !== null || slPx !== null ? (
@@ -176,7 +176,7 @@ export function Portfolio({ data, state, events, executionOffline, now }: { data
                           </span>
                         </>
                       ) : (
-                        <span className="text-faint">—</span>
+                        <span className="text-faint">-</span>
                       )}
                     </td>
                   </tr>

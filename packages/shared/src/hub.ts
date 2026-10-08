@@ -46,7 +46,7 @@ export class EventHub {
     return this.history.slice(-limit);
   }
 
-  /** GET /events — replays recent history, then streams live. */
+  /** GET /events - replays recent history, then streams live. */
   sse(req: IncomingMessage, res: ServerResponse): void {
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
@@ -54,7 +54,7 @@ export class EventHub {
       Connection: "keep-alive",
       "Access-Control-Allow-Origin": process.env.DASHBOARD_ORIGIN ?? "*",
     });
-    res.write(": connected\n\n"); // flush headers now — an empty history would otherwise delay onopen until the first ping
+    res.write(": connected\n\n"); // flush headers now - an empty history would otherwise delay onopen until the first ping
     for (const e of this.recent()) res.write(`data: ${JSON.stringify(e)}\n\n`);
     this.clients.add(res);
     const ping = setInterval(() => res.write(": ping\n\n"), 15_000);

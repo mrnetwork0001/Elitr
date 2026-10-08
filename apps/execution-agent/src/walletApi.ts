@@ -1,12 +1,12 @@
 // Agent wallet as Binance sees it: Wallet API balances + transaction history, Address Portfolio overview.
-// Read-only (address in, data out) — works without the private key via EXECUTION_WALLET_ADDRESS.
+// Read-only (address in, data out) - works without the private key via EXECUTION_WALLET_ADDRESS.
 //
 // Endpoints (binance-web3-llms-full.txt "Wallet API" and "Address Portfolio"):
 //   GET /api/v1/dex/balance/all-token-balances-by-address    (address, binanceChainId, excludeRiskToken)
 //   GET /api/v1/dex/post-transaction/transactions-by-address (address, binanceChainId, limit)
 //   GET /api/v1/dex/market/portfolio/overview                (address, binanceChainId)
-// The bundled docs list these endpoints with one-line descriptions only — no parameter or response
-// tables — so responses are parsed structurally and every failure is surfaced, never filled in.
+// The bundled docs list these endpoints with one-line descriptions only - no parameter or response
+// tables - so responses are parsed structurally and every failure is surfaced, never filled in.
 
 import type { BinanceWeb3Client } from "@elitr/binance";
 import { Cached, errText, throttled } from "./apiThrottle.js";

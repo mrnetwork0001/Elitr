@@ -102,7 +102,7 @@ export function startServers(env: NodeJS.ProcessEnv = process.env): Server[] {
         publicUrl: env.FLOW_ANALYST_PUBLIC_URL,
         dashboardOrigin: origin,
         resourceDescription: (a: TokenizedStock) => `On-chain order-flow signal (score 1-100) for ${a.symbol} from its PancakeSwap v3 pool`,
-        // RPC hosts only — full URLs can embed API keys.
+        // RPC hosts only - full URLs can embed API keys.
         health: () => ({ model: FLOW_MODEL, lookbackSec, minSwaps, rpcHosts: rpcUrls.map((u) => new URL(u).host) }),
         info: info(
           {

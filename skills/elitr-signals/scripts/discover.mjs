@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Elitr analyst discovery — free, read-only. Node 18+ (uses global fetch), no dependencies.
+// Elitr analyst discovery - free, read-only. Node 18+ (uses global fetch), no dependencies.
 //
 //   node discover.mjs                         # bases from $ELITR_ANALYSTS, else the public defaults
 //   node discover.mjs http://localhost:4001 http://localhost:4003

@@ -103,7 +103,7 @@ export function Badge({ tone, children, className = "", title }: { tone: "pos" |
 export function ModeTag({ mode, className = "" }: { mode: "paper" | "live" | null | undefined; className?: string }) {
   if (mode === "live")
     return (
-      <span title="Broadcast on BSC mainnet — real funds" className={`inline-flex shrink-0 items-center rounded bg-neg px-1.5 py-0.5 text-[10px] font-bold tracking-[0.12em] text-white uppercase ${className}`}>
+      <span title="Broadcast on BSC mainnet - real funds" className={`inline-flex shrink-0 items-center rounded bg-neg px-1.5 py-0.5 text-[10px] font-bold tracking-[0.12em] text-white uppercase ${className}`}>
         Live
       </span>
     );

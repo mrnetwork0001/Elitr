@@ -13,7 +13,7 @@ const host = env.EXECUTION_HOST ?? "127.0.0.1";
 const controlToken = env.CONTROL_TOKEN?.trim() || undefined;
 if (!isLoopback(host) && !controlToken) {
   console.error(
-    `[execution] refusing to start: EXECUTION_HOST=${host} is not loopback and CONTROL_TOKEN is not set — ` +
+    `[execution] refusing to start: EXECUTION_HOST=${host} is not loopback and CONTROL_TOKEN is not set - ` +
       `POST /cycle and /kill would be open to the network. Set CONTROL_TOKEN or bind 127.0.0.1.`,
   );
   process.exit(1);
@@ -76,7 +76,7 @@ console.log(
 
 const server = startServer(agent, Number(env.EXECUTION_PORT ?? 4002), host, controlToken);
 
-// Announce configured ERC-8004 identities — only those that actually exist on-chain.
+// Announce configured ERC-8004 identities - only those that actually exist on-chain.
 if (identity) {
   for (const subject of ["analyst", "analyst-flow", "execution"] as const) {
     const id = identity.agentIdOf(subject);

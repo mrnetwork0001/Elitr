@@ -75,7 +75,7 @@ export function WalletStrip({
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-panel px-4 py-3 text-xs">
         <span className="flex items-center gap-2 text-dim">
           <span className={`size-1.5 shrink-0 rounded-full ${status === "offline" ? "bg-neg" : "bg-warn"}`} />
-          {status === "offline" ? "Execution agent offline — wallet, balances and spend caps unavailable" : "Loading wallet state…"}
+          {status === "offline" ? "Execution agent offline - wallet, balances and spend caps unavailable" : "Loading wallet state…"}
         </span>
         <span className="font-mono text-faint">GET /state</span>
       </div>

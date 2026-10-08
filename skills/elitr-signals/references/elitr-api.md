@@ -99,7 +99,7 @@ payment is **not settled** (503) and the user is not charged.
 | 503 | `<id> cannot produce signals` | no |
 | 503 | `signal unavailable, payment NOT settled: insufficient flow: N swaps in the last M min …` | no |
 | 402 | `payment invalid: …`, `settlement failed: …`, `payment authorization already used`, `paymentPayload.accepted does not match …` | no |
-| 502 | `settlement not confirmed; reconcile before retrying` (+ `transaction`) | **maybe** — check BscScan, do not pay again |
+| 502 | `settlement not confirmed; reconcile before retrying` (+ `transaction`) | **maybe** - check BscScan, do not pay again |
 | 502 | `b402 verify failed: …` / `b402 settle failed: …` | no (same signature may be resent once) |
 
 Source: `apps/analyst-agent/src/paywall.ts` in the Elitr repo.
@@ -111,6 +111,6 @@ Source: `apps/analyst-agent/src/paywall.ts` in the Elitr repo.
 | NVDAB | NVIDIA | bStocks | `0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436` | yes (bStock) |
 | TSLAB | Tesla | bStocks | `0x5b1910eAaD6450E50f816082Aa078C41F10C292f` | yes (bStock) |
 | NVDAon | NVIDIA | Ondo | `0xA9eE28C80f960B889dFbd1902055218cBa016F75` | yes (Ondo), thin DEX liquidity |
-| TSLAx | Tesla | xStocks | `0x8aD3c73F833d3F9A523aB01476625F269aEB7Cf0` | not documented — Agentic Wallet docs cover bStock and Ondo only |
+| TSLAx | Tesla | xStocks | `0x8aD3c73F833d3F9A523aB01476625F269aEB7Cf0` | not documented - Agentic Wallet docs cover bStock and Ondo only |
 
 NVDAB / TSLAB addresses match the Binance RWA list `…/rwa/stock/detail/list/ai?type=3` (checked 2026-10-07).

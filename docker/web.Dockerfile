@@ -4,7 +4,7 @@
 #     --build-arg NEXT_PUBLIC_FLOW_ANALYST_URL=https://flow.example.com \
 #     --build-arg NEXT_PUBLIC_EXECUTION_URL=https://execution.example.com \
 #     -t elitr-web .
-# NEXT_PUBLIC_* are inlined into the browser bundle at BUILD time — changing them needs a rebuild.
+# NEXT_PUBLIC_* are inlined into the browser bundle at BUILD time - changing them needs a rebuild.
 # (A smaller image is possible with `output: "standalone"` in apps/web/next.config.ts; see docs/deploy.md.)
 
 ARG NODE_VERSION=24

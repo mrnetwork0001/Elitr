@@ -8,7 +8,7 @@ export interface Signal {
   underlying: string;
   score: number; // 1-100 confidence that price rises over the horizon
   stance: Stance;
-  horizonSec: number; // how long the call is meant to hold — used to score it later
+  horizonSec: number; // how long the call is meant to hold - used to score it later
   rationale: string;
   sources: { title: string; url: string; publishedAt: string }[];
   generatedAt: string; // ISO
@@ -16,7 +16,7 @@ export interface Signal {
   headlineCount: number; // inputs considered (headlines, swaps, …)
 }
 
-// Free GET /info on every analyst — how the execution agent discovers and compares sellers.
+// Free GET /info on every analyst - how the execution agent discovers and compares sellers.
 export interface AnalystInfo {
   analystId: AnalystId;
   name: string;

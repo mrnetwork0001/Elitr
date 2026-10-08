@@ -24,7 +24,7 @@ export interface ClientOptions {
   apiSecret: string;
   baseUrl?: string;
   recvWindowMs?: number;
-  /** Called for every response — used to feed the DX evidence log. */
+  /** Called for every response - used to feed the DX evidence log. */
   onResponse?: (info: { method: string; path: string; status: number; code: unknown; ms: number }) => void;
 }
 

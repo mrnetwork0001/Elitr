@@ -6,8 +6,8 @@
 //   GET /api/v1/dex/market/rwa/platforms           which issuers exist (hourly)
 //   GET /api/v1/dex/market/rwa/tokens              per platform (bstock, ondo) and per sector tabId 1-13 (hourly)
 //   GET /api/v1/dex/market/rwa/price               batch, <= 100 addresses per call
-//   GET /api/v1/dex/market/rwa/underlying-market   52w range, P/E — headline tickers only (10 min)
-//   GET /api/v1/dex/market/token/top-liquidity     DEX pools — cross-issuer tokens only (10 min)
+//   GET /api/v1/dex/market/rwa/underlying-market   52w range, P/E - headline tickers only (10 min)
+//   GET /api/v1/dex/market/token/top-liquidity     DEX pools - cross-issuer tokens only (10 min)
 // Read-only: no signing, no wallet.
 
 import type { BinanceWeb3Client } from "@elitr/binance";
@@ -445,7 +445,7 @@ export class RwaBoard {
           t.refSpreadBps = spreadBps(t.tokenPrice, t.referencePrice);
         }
       } catch (e) {
-        errors.push(`rwa/price (${chunk.length} tokens): ${errText(e)} — showing rwa/tokens prices`);
+        errors.push(`rwa/price (${chunk.length} tokens): ${errText(e)} - showing rwa/tokens prices`);
       }
     }
 

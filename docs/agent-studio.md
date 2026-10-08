@@ -1,4 +1,4 @@
-# ERC-8004 identity, on-chain reputation and BNB Agent Studio — runbook
+# ERC-8004 identity, on-chain reputation and BNB Agent Studio - runbook
 
 Elitr's angle for **Best Use of BNB Agent Studio** is that agents rate agents. Each of our three agents
 (`analyst`, `analyst-flow`, `execution`) has an ERC-8004 identity. After a signal's horizon has passed,

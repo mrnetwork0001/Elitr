@@ -6,7 +6,7 @@ const sans = Inter({ subsets: ["latin"], weight: ["300", "400", "500", "600", "7
 const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export const metadata: Metadata = {
-  title: "Elitr — agent-to-agent trading desk",
+  title: "Elitr - agent-to-agent trading desk",
   description: "Live view of the Elitr analyst and execution agents: b402 pay-per-signal, risk checks and tokenized-stock execution on BSC.",
 };
 

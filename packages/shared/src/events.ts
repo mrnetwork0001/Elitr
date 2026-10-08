@@ -1,5 +1,5 @@
 // Events the agents stream to the dashboard over SSE (GET /events).
-// Every event is a real occurrence — nothing here is ever synthesized for display.
+// Every event is a real occurrence - nothing here is ever synthesized for display.
 
 // "analyst" = news/sentiment analyst, "analyst-flow" = on-chain flow analyst.
 export type AgentId = "analyst" | "analyst-flow" | "execution";

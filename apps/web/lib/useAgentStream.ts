@@ -18,7 +18,7 @@ export interface AgentStream {
   /** Every event seen, deduped by id, newest first. */
   events: AgentEvent[];
   conn: Record<AgentId, AgentConn>;
-  /** ids that arrived live (after the initial history replay) — used for highlight effects. */
+  /** ids that arrived live (after the initial history replay) - used for highlight effects. */
   liveIds: ReadonlySet<string>;
 }
 

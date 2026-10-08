@@ -80,7 +80,7 @@ export function OverviewView() {
           href="/dashboard/portfolio"
           label="Net P&L"
           aside={<ModeTag mode={d.portfolio.mode} />}
-          value={pnl?.netUsd !== null && pnl?.netUsd !== undefined ? <span className={pnl.netUsd > 0 ? "text-pos" : pnl.netUsd < 0 ? "text-neg" : ""}>{signedUsd(pnl.netUsd)}</span> : "—"}
+          value={pnl?.netUsd !== null && pnl?.netUsd !== undefined ? <span className={pnl.netUsd > 0 ? "text-pos" : pnl.netUsd < 0 ? "text-neg" : ""}>{signedUsd(pnl.netUsd)}</span> : "-"}
           sub={
             pnl
               ? `realized ${signedUsd(pnl.realizedUsd)} · unrealized ${signedUsd(pnl.unrealizedUsd)}`
@@ -92,7 +92,7 @@ export function OverviewView() {
         <Tile
           href="/dashboard/analysts"
           label="Signals today"
-          value={pay.basis ? pay.todayCount : execOffline && d.analystsOffline ? "—" : 0}
+          value={pay.basis ? pay.todayCount : execOffline && d.analystsOffline ? "-" : 0}
           sub={dataSpend !== null ? `data spend ${usd(dataSpend, { max: 4 })}${dataCap !== null ? ` of ${usd(dataCap)} cap` : ""}` : "data spend not reported"}
         >
           <div
@@ -117,12 +117,12 @@ export function OverviewView() {
           }
           sub={picked ? "latest analyst chosen per asset" : "no analyst picked yet"}
         >
-          <Rows rows={picks.map((p) => ({ k: p.a, v: p.s ? (p.s.analystId ? d.nameOf(p.s.analystId) : <span className="text-dim">none eligible</span>) : <span className="text-dim">—</span> }))} />
+          <Rows rows={picks.map((p) => ({ k: p.a, v: p.s ? (p.s.analystId ? d.nameOf(p.s.analystId) : <span className="text-dim">none eligible</span>) : <span className="text-dim">-</span> }))} />
         </Tile>
         <Tile
           href="/dashboard/markets"
           label="Last decision"
-          value={lastDecision ? <span className="uppercase">{lastDecision.action}</span> : "—"}
+          value={lastDecision ? <span className="uppercase">{lastDecision.action}</span> : "-"}
           sub={lastDecision ? <span suppressHydrationWarning>{`${lastDecision.symbol} · ${d.now ? ago(lastDecision.ts, d.now) : ""}`}</span> : "no decision yet"}
         >
           <Rows
@@ -131,7 +131,7 @@ export function OverviewView() {
               v: p.decision ? (
                 <span className={`inline-flex h-5 items-center px-1.5 text-[10px] font-bold tracking-[0.12em] uppercase ${ACTION_TONE[p.decision.action]}`}>{p.decision.action}</span>
               ) : (
-                <span className="text-dim">—</span>
+                <span className="text-dim">-</span>
               ),
             }))}
           />
@@ -148,7 +148,7 @@ export function OverviewView() {
                 <span className="ml-1 text-[13px] font-medium tracking-[0.1em] text-dim uppercase">blocked</span>
               </>
             ) : (
-              "—"
+              "-"
             )
           }
           sub={evaluated.length ? (failing.length ? `failing: ${failing.join(", ")}` : "every rule passing") : execOffline ? "execution agent offline" : "no evaluation yet"}
@@ -181,7 +181,7 @@ export function OverviewView() {
           </ol>
         ) : (
           <p className="px-4 py-6 text-[13px] text-dim">
-            {Object.values(d.conn).every((c) => c.status === "offline") ? "No agents reachable — events appear as soon as an /events stream connects." : "Waiting for the first agent event…"}
+            {Object.values(d.conn).every((c) => c.status === "offline") ? "No agents reachable - events appear as soon as an /events stream connects." : "Waiting for the first agent event…"}
           </p>
         )}
       </section>

@@ -4,7 +4,7 @@
 # Build context is the repo root. Secrets are NEVER baked in: pass them at runtime (env_file / platform secrets).
 #
 # The monorepo layout is kept inside the image (/app/apps/<APP>/dist) because the agents resolve the
-# repo root as ../../.. from dist/ and keep their state in <repo>/data — so /app/data is the volume.
+# repo root as ../../.. from dist/ and keep their state in <repo>/data - so /app/data is the volume.
 
 ARG NODE_VERSION=24
 

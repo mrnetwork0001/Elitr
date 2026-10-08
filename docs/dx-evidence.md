@@ -4,7 +4,7 @@ These are raw facts sorted under the seven questions of the Developer Experience
 
 ---
 
-## 1. Onboarding — time to first successful call, where you got stuck
+## 1. Onboarding - time to first successful call, where you got stuck
 
 - **Timeline to fill in from memory:**
   - when you opened the docs
@@ -26,7 +26,7 @@ These are raw facts sorted under the seven questions of the Developer Experience
   - We only found this out by checking the hackathon rules.
   - The API still answered unauthenticated requests from there.
 
-## 2. Documentation issues — page + exact place
+## 2. Documentation issues - page + exact place
 
 - **b402 API reference** (`/rest-api/b402-payments`):
   - only the response envelope is documented
@@ -46,7 +46,7 @@ These are raw facts sorted under the seven questions of the Developer Experience
 - **Wallet API / Address Portfolio** pages in `llms-full.txt`: one-line descriptions only, with no parameter or response tables.
 - **Agentic Wallet:** see section 4.
 
-## 3. API pitfalls — confusing errors, edge cases, latency
+## 3. API pitfalls - confusing errors, edge cases, latency
 
 - **The Trading API `/swap` gas estimate was too low:**
   - `tx.gas = 450,000` for a 2 USDT → NVDAB swap
@@ -68,7 +68,7 @@ These are raw facts sorted under the seven questions of the Developer Experience
   - unauthenticated probe about 0.28–0.65 s
 - **Market-hours errors:** documented as `40369 BSTOCK_INVALID_TRADING_TIME`. Note whether you actually hit it; the market status read "tradable, TRADING" even with the US session closed.
 
-## 4. AI stack feedback — Wallet Skills / Agentic Wallet / CLI
+## 4. AI stack feedback - Wallet Skills / Agentic Wallet / CLI
 
 The full list with sources is in [agentic-wallet.md](agentic-wallet.md).
 - **The installed `baw` (1.9.0) was older than the skill requires (1.10.0).** Upgrading also needed `--allow-scripts=@github/keytar` for Keychain session storage.

@@ -113,7 +113,7 @@ export function AgentFlow({
     { label: "402 challenge", sub: required ? `${payUsd(priceUsd)} · ${nameOf(required.agent)}` : "awaiting request", done: !!required },
     { label: "Payment signed", sub: "execution → b402", done: !!(anchor && sent && sent.ts >= anchor - 2000) },
     { label: "Verified & settled", sub: "analyst ← facilitator", done: !!(anchor && verified && verified.ts >= anchor - 2000) },
-    { label: "Signal delivered", sub: signal ? `${signal.symbol} · ${signal.score}/100` : "—", done: !!(anchor && signal && signal.ts >= anchor - 2000) },
+    { label: "Signal delivered", sub: signal ? `${signal.symbol} · ${signal.score}/100` : "-", done: !!(anchor && signal && signal.ts >= anchor - 2000) },
   ];
 
   const nothingYet = !pay.latest && !required && !signal;
@@ -189,7 +189,7 @@ export function AgentFlow({
               <p className="text-sm text-dim">{allOffline ? "All agents offline" : "Waiting for the first paid signal…"}</p>
               <p className="text-xs leading-relaxed text-faint">
                 {allOffline
-                  ? "Start the analysts (:4001 news, :4003 flow) and the execution agent (:4002) — this panel lights up when the first b402 payment settles."
+                  ? "Start the analysts (:4001 news, :4003 flow) and the execution agent (:4002) - this panel lights up when the first b402 payment settles."
                   : "Each cycle the execution agent picks an analyst, receives an HTTP 402 challenge, pays it over b402 and gets a signal back."}
               </p>
             </div>

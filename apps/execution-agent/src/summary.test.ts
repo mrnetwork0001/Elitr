@@ -17,7 +17,7 @@ test("every risk rule the engine can emit has a plain-English translation", () =
 test("plainCause hides env-var jargon", () => {
   assert.equal(plainCause("unavailable: EXECUTION_PRIVATE_KEY is not set"), "the agent has no wallet key configured");
   assert.equal(plainCause("unavailable: quote failed: fetch failed"), "Binance's data service could not be reached");
-  assert.equal(plainCause("bStocks market closed until 2026-10-07T13:30:00Z — quote skipped (would return 40369)"), "the US stock market is closed");
+  assert.equal(plainCause("bStocks market closed until 2026-10-07T13:30:00Z - quote skipped (would return 40369)"), "the US stock market is closed");
 });
 
 test("parseGap reads the minGapBps check value", () => {
@@ -40,7 +40,7 @@ test("hold reason: market closed + premium over Friday's close", () => {
     type: "risk.evaluated",
     symbol: "NVDAB",
     passed: false,
-    checks: [chk("minConfidence", true, "70"), chk("minGapBps", false, "-60.0 bps (ref 233.95 vs on-chain 235.35)", "on-chain >= 50 bps below reference"), chk("simulatableRoute", false, "bStocks market closed until 2026-10-05T13:30:00Z — quote skipped (would return 40369)")],
+    checks: [chk("minConfidence", true, "70"), chk("minGapBps", false, "-60.0 bps (ref 233.95 vs on-chain 235.35)", "on-chain >= 50 bps below reference"), chk("simulatableRoute", false, "bStocks market closed until 2026-10-05T13:30:00Z - quote skipped (would return 40369)")],
   }) as Extract<AgentEvent, { type: "risk.evaluated" }>;
   assert.equal(holdReason(decision, risk), "the US stock market is closed and the token is trading 0.60% above Friday's closing price");
 });
@@ -59,7 +59,7 @@ test("hold reason: no signal because no key, gap below threshold", () => {
   );
 });
 
-test("buildSummary: counts, wording, links — all from events", () => {
+test("buildSummary: counts, wording, links - all from events", () => {
   const events: AgentEvent[] = [
     ev({ type: "payment.sent", amount: "10000000000000000", asset: "0x55d3", payTo: "0xabc", txHash: "0x" + "1".repeat(64), analystId: "analyst-flow" }),
     ev({ type: "payment.sent", amount: "10000000000000000", asset: "0x55d3", payTo: "0xabc", txHash: "0x" + "2".repeat(64), analystId: "analyst" }),

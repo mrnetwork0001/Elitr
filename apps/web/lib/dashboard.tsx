@@ -137,7 +137,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       let message: string;
       if (r.status === 401 || r.status === 403) {
         setTokenRejected(true);
-        message = `${r.status} Unauthorized — operator token ${token ? "rejected" : "required"}`;
+        message = `${r.status} Unauthorized - operator token ${token ? "rejected" : "required"}`;
       } else {
         if (r.ok) setTokenRejected(false);
         message = r.ok ? (kind === "cycle" ? "Cycle started" : "Kill switch engaged") : `${kind === "cycle" ? "Cycle" : "Kill"} failed: ${r.message}`;

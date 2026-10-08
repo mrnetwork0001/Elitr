@@ -23,7 +23,7 @@ export function summary(e: AgentEvent): string {
     case "price.onchain":
       return `${e.symbol} on-chain ${price(e.price)} (${e.source})`;
     case "decision":
-      return `${e.action.toUpperCase()} ${e.symbol}${e.exitReason ? ` (${e.exitReason})` : ""}${e.reasons?.[0] ? ` — ${e.reasons[0]}` : ""}`;
+      return `${e.action.toUpperCase()} ${e.symbol}${e.exitReason ? ` (${e.exitReason})` : ""}${e.reasons?.[0] ? ` - ${e.reasons[0]}` : ""}`;
     case "risk.evaluated": {
       const f = e.checks?.filter((c) => !c.ok).map((c) => c.rule) ?? [];
       return `${e.symbol} ${e.passed ? "PASS" : "BLOCKED"} (${e.checks?.length ?? 0} rules${f.length ? `, failing: ${f.join(", ")}` : ""})`;
@@ -31,7 +31,7 @@ export function summary(e: AgentEvent): string {
     case "risk.blocked":
       return `Blocked by ${e.rule}: ${e.detail}`;
     case "tx.simulated":
-      return `${e.side ? e.side + " " : ""}${e.symbol} simulation ${e.ok ? "ok" : "reverted"}${e.error ? ` — ${e.error}` : ""}`;
+      return `${e.side ? e.side + " " : ""}${e.symbol} simulation ${e.ok ? "ok" : "reverted"}${e.error ? ` - ${e.error}` : ""}`;
     case "tx.broadcast":
       return `${e.symbol} broadcast ${shortHash(e.txHash)}`;
     case "tx.confirmed":
@@ -41,9 +41,9 @@ export function summary(e: AgentEvent): string {
     case "signal.scored":
       return `${e.analystId} ${e.symbol} ${e.stance} call ${e.correct ? "correct" : "wrong"} (${e.returnBps >= 0 ? "+" : ""}${Math.round(e.returnBps)} bps)`;
     case "analyst.selected":
-      return `${e.symbol} → ${e.analystId ?? "none"}${e.reasons?.[0] ? ` — ${e.reasons[0]}` : ""}`;
+      return `${e.symbol} → ${e.analystId ?? "none"}${e.reasons?.[0] ? ` - ${e.reasons[0]}` : ""}`;
     case "reputation.updated":
-      return `${e.stats.analystId} trust ${e.stats.trust.toFixed(2)}, hit ${e.stats.hitRate !== null ? Math.round(e.stats.hitRate * 100) + "%" : "—"} over ${e.stats.samples}${e.stats.paused ? " · PAUSED" : ""}`;
+      return `${e.stats.analystId} trust ${e.stats.trust.toFixed(2)}, hit ${e.stats.hitRate !== null ? Math.round(e.stats.hitRate * 100) + "%" : "-"} over ${e.stats.samples}${e.stats.paused ? " · PAUSED" : ""}`;
     case "reputation.posted":
       return e.error ? `ERC-8004 rating for ${e.analystId} failed: ${e.error}` : `Rated ${e.analystId} (#${e.erc8004AgentId}) on-chain: ${e.value} ${e.tag}`;
     case "identity.registered":

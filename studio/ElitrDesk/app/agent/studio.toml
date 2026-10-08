@@ -7,11 +7,11 @@ name = "ElitrDesk-agent"
 # check, load, and route. runtime: agentcore | azure-foundry.
 runtime = "agentcore"
 # Public faces exposed by this one runtime and signer (canonical order):
-#   A2A — serveA2a: agent card + negotiate/notify_funded skills.
-#   MCP — streamable-HTTP /mcp: negotiate (signed quote) + notify_funded
+#   A2A - serveA2a: agent card + negotiate/notify_funded skills.
+#   MCP - streamable-HTTP /mcp: negotiate (signed quote) + notify_funded
 #         (verify → deliver → submit, synchronously within the tool call) +
 #         read-only chain tools.
-#   X402 or MPP — publish exactly one sibling B402 seller route (/x402 or
+#   X402 or MPP - publish exactly one sibling B402 seller route (/x402 or
 #          /mpp). Payment-only still uses A2A as the cloud carrier but hides
 #          that native face at the public gateway.
 protocols = ["A2A","X402"]
@@ -25,14 +25,14 @@ default = "bsc-mainnet"
 # this field is never used as a silent provider default. Post-deploy state is
 # recorded under [deploy.platform].
 destination = "self"
-# Artifact channel: 'zip' (evm-local default — managed runtime, no Docker)
+# Artifact channel: 'zip' (evm-local default - managed runtime, no Docker)
 # or 'container' (local Docker build → brokered ECR; forced for twak).
 platform_artifact = "zip"
 
 [wallet]
 # Local keystore signer. The Agent is the SOLE key-holder/signer.
-# The keystore lives at the WORKSPACE root — outside app/agent (the deploy
-# codeLocation) — so no packaging path can bundle it into a deploy artifact.
+# The keystore lives at the WORKSPACE root - outside app/agent (the deploy
+# codeLocation) - so no packaging path can bundle it into a deploy artifact.
 kind = "evm-local"
 signer = "local"
 keystore_dir = "../../.studio/wallets"
@@ -54,7 +54,7 @@ initial_allocation_usd = 0
 [llm.auto_renew]
 # hook auto-allocates from Pieverse Account Balance to the API key when Key
 # Credit < min_balance_usd. Account Balance is NEVER refilled automatically
-# from your wallet UNLESS you opt in via `bag budget enable` — defaults below
+# from your wallet UNLESS you opt in via `bag budget enable` - defaults below
 # stay in allocate-only mode. This automatic hook IS the agent's LLM-credit
 # self-top-up (NOT an LLM-callable tool).
 enabled = true            # set false to opt out of in-process auto-allocate
@@ -77,7 +77,7 @@ price_usd = "0"
 assets = ["U"]
 
 [storage]
-# Deliverables written to local disk (file://). Offline-dev only —
+# Deliverables written to local disk (file://). Offline-dev only -
 # does NOT survive deploy. Path from STORAGE_LOCAL_PATH.
 kind = "local"
 

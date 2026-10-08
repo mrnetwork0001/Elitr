@@ -64,14 +64,14 @@ const AGENTS: { role: string; title: string; body: string; marker: string; key?:
     title: "The Execution agent",
     marker: "",
     key: true,
-    body: "Holds the capital. Chooses which analyst to pay, scores every call it buys, compares real and on-chain prices, runs every risk rule, simulates each swap with Binance's Transaction API, and only then fills — on paper by default.",
+    body: "Holds the capital. Chooses which analyst to pay, scores every call it buys, compares real and on-chain prices, runs every risk rule, simulates each swap with Binance's Transaction API, and only then fills - on paper by default.",
   },
 ];
 
 const STEPS: { n: string; title: string; body: string; api: string }[] = [
   { n: "01", title: "Pick an analyst", body: "Two analysts sell signals for each stock: one reads the news, one reads on-chain swap flow. The Execution agent draws a Thompson sample from each one's track record and buys from the highest draw. Analysts whose trust falls too low are paused.", api: "Analyst market" },
   { n: "02", title: "Buy the signal", body: "It asks the chosen analyst for a signal, gets an HTTP 402 price tag, signs a USDT payment and retries. The analyst checks the payment with Binance's b402 facilitator, and only settles once it has actually produced the signal. No signal, no charge.", api: "b402 payments" },
-  { n: "03", title: "Get three prices", body: "The real stock price from Yahoo Finance, the Binance RWA Data reference price and market status, and the live on-chain token price — for NVDAB and TSLAB.", api: "RWA Data · Market API" },
+  { n: "03", title: "Get three prices", body: "The real stock price from Yahoo Finance, the Binance RWA Data reference price and market status, and the live on-chain token price - for NVDAB and TSLAB.", api: "RWA Data · Market API" },
   { n: "04", title: "Check exits first", body: "For a held position, the agent sells on take-profit, stop-loss, or a bearish signal before it considers buying more.", api: "Portfolio" },
   { n: "05", title: "Quote the trade", body: "Asks the aggregator for the best route. Only regular swap routes are accepted, because only those can be simulated.", api: "Trading API" },
   { n: "06", title: "Run the risk checks", body: "14 rules on a buy (portfolio cap included), 6 on a sell. Every rule is logged with its observed value and limit. One failure and the agent holds.", api: "Risk engine" },
@@ -182,7 +182,7 @@ const FAQ: [string, ReactNode][] = [
   ],
   [
     "What is paper mode?",
-    "The default. The agent does everything for real up to the last step: it buys real signals, fetches real prices and quotes, and simulates the exact swap with Binance's Transaction API. If the simulation passes, the fill is booked at the quoted amounts, but nothing is broadcast. The dashboard marks every paper fill and paper P&L as PAPER — it is never presented as real money.",
+    "The default. The agent does everything for real up to the last step: it buys real signals, fetches real prices and quotes, and simulates the exact swap with Binance's Transaction API. If the simulation passes, the fill is booked at the quoted amounts, but nothing is broadcast. The dashboard marks every paper fill and paper P&L as PAPER - it is never presented as real money.",
   ],
   [
     "Why pay your own analyst?",
@@ -316,7 +316,7 @@ export function Sections() {
           idx="LIVE"
           eyebrow="On-chain proof"
           title={{ lead: "Not a mock-up. ", muted: "Real agents, ", accent: "real transactions." }}
-          intro="Elitr runs live on BSC mainnet. Every row below is a transaction the system made itself — open any of them on BscScan."
+          intro="Elitr runs live on BSC mainnet. Every row below is a transaction the system made itself - open any of them on BscScan."
         />
         <div {...reveal("fade", 0, l.scrollX)}>
           <table className={cx(l.table, l.proofTable)}>
@@ -527,7 +527,7 @@ export function Sections() {
                 {EXITS.map(([rule, limit]) => (
                   <tr key={rule}>
                     <td>
-                      <span className={l.ruleIdx}>—</span>
+                      <span className={l.ruleIdx}>-</span>
                       {rule}
                     </td>
                     <td className={l.limit}>{limit}</td>

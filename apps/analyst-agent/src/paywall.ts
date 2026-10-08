@@ -44,7 +44,7 @@ export function startAnalystServer(o: AnalystServerOptions): Server {
   const { hub, info, label, port } = o;
   const gateway = o.b402.config ? new B402Gateway(o.b402.config) : undefined;
   const problems = o.b402.problems;
-  // Authorizations in flight or already settled — a signed payment buys exactly one response.
+  // Authorizations in flight or already settled - a signed payment buys exactly one response.
   const used = new Map<string, "pending" | "settled">();
 
   const cors = {
@@ -131,7 +131,7 @@ export function startAnalystServer(o: AnalystServerOptions): Server {
       const s = await gateway.settle(payload, requirements);
       if (!s.success) {
         if (s.transaction) {
-          // Broadcast but not confirmed successful — doc: reconcile before any retry.
+          // Broadcast but not confirmed successful - doc: reconcile before any retry.
           used.set(authId, "settled");
           hub.emit({ type: "error", where: "b402.settle", message: `unconfirmed settlement ${s.transaction}: ${s.errorReason}` });
           return send(res, 502, { error: "settlement not confirmed; reconcile before retrying", transaction: s.transaction, reason: s.errorReason });
@@ -197,9 +197,9 @@ export function startAnalystServer(o: AnalystServerOptions): Server {
 
   server.listen(port, () => {
     console.log(`[${label}] listening on :${port}`);
-    if (problems.length) console.warn(`[${label}] b402 disabled — ${problems.join("; ")}`);
+    if (problems.length) console.warn(`[${label}] b402 disabled - ${problems.join("; ")}`);
     const missing = o.notReady();
-    if (missing.length) console.warn(`[${label}] signals disabled — ${missing.join("; ")}`);
+    if (missing.length) console.warn(`[${label}] signals disabled - ${missing.join("; ")}`);
   });
   return server;
 }

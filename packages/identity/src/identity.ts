@@ -219,7 +219,7 @@ export async function registerAgent(o: RegisterAgentOpts): Promise<RegisterAgent
   const account = privateKeyToAccount(o.privateKey);
   if (o.forbidOwner && getAddress(o.forbidOwner) === account.address) {
     throw new Error(
-      `refusing: ${o.subject} identity would be owned by ${account.address}, the trader's address — ` +
+      `refusing: ${o.subject} identity would be owned by ${account.address}, the trader's address - ` +
         `the trader could then never rate it (giveFeedback reverts "Self-feedback not allowed"). Use a different owner key.`,
     );
   }

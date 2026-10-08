@@ -174,7 +174,7 @@ export class FlowReader {
     return out as unknown as { args: { amount0: bigint; amount1: bigint; sqrtPriceX96: bigint }; transactionHash: `0x${string}`; blockNumber: bigint; logIndex: number }[];
   }
 
-  /** tx.from for each hash (batched, cached). Throws if any lookup fails — traders are never guessed. */
+  /** tx.from for each hash (batched, cached). Throws if any lookup fails - traders are never guessed. */
   private async traders(hashes: `0x${string}`[]) {
     const todo = [...new Set(hashes)].filter((h) => !this.senders.has(h));
     const CONC = 8;
@@ -272,7 +272,7 @@ export class FlowReader {
 // raw = Σ wᵢ·cᵢ ∈ [-1, 1]; evidence shrink k = n / (n + 20) with n = swaps, so a handful of swaps
 // cannot produce an extreme call; score = round(50 + 49·k·raw) ∈ [1, 99].
 // Stance uses the same cut-offs as the news analyst: bullish > 60, bearish < 40, else neutral.
-// The buy/sell ratio is reported but not scored separately — it is a monotone transform of I.
+// The buy/sell ratio is reported but not scored separately - it is a monotone transform of I.
 
 export const FLOW_MODEL = "deterministic-flow-v1";
 export const FLOW_WEIGHTS = { imbalance: 0.35, large: 0.25, breadth: 0.15, momentum: 0.25 } as const;

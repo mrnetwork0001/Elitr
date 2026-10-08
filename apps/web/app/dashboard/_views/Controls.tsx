@@ -18,7 +18,7 @@ function fmtLimit(key: string, v: unknown): string {
     if (key === "minConfidence") return `${v} / 100`;
     return v.toLocaleString("en-US");
   }
-  if (v === null || v === undefined) return "—";
+  if (v === null || v === undefined) return "-";
   return typeof v === "object" ? JSON.stringify(v) : String(v);
 }
 
@@ -84,7 +84,7 @@ export function ControlsView() {
               title="Kill switch"
               endpoint="POST /kill"
               body="Stop opening trades immediately. Every later cycle is blocked by the killSwitch rule until it is reset on the agent host."
-              meta={execUp ? (d.killed ? <span className="font-semibold text-neg">engaged</span> : "armed — not engaged") : undefined}
+              meta={execUp ? (d.killed ? <span className="font-semibold text-neg">engaged</span> : "armed - not engaged") : undefined}
             >
               <button
                 type="button"
@@ -127,7 +127,7 @@ export function ControlsView() {
               </tbody>
             </table>
           ) : (
-            <p className="px-4 py-6 text-[13px] text-dim">{execUp ? "The execution agent did not report its risk configuration." : "Execution agent offline — risk limits unavailable."}</p>
+            <p className="px-4 py-6 text-[13px] text-dim">{execUp ? "The execution agent did not report its risk configuration." : "Execution agent offline - risk limits unavailable."}</p>
           )}
         </Panel>
       </div>

@@ -1,6 +1,6 @@
 # Acting on a signal: buying NVDAB / TSLAB with the Agentic Wallet
 
-Source of truth: `binance-agentic-wallet` skill — `SKILL.md` (Build the Command, Common Token
+Source of truth: `binance-agentic-wallet` skill - `SKILL.md` (Build the Command, Common Token
 Addresses, US stock resolution), `references/market-order.md`, `references/security.md`. Background:
 Agentic Wallet docs, "Tokenized Securities" use case (`/agentic-wallet/use-cases/trading/tokenized-securities`):
 "Research and trade tokenized stocks (bStock and Ondo)".
@@ -48,7 +48,7 @@ baw market-order quote --binanceChainId 56 --fromTokenQty <budget> \
 
 Show: spend (USDT + address), expected NVDAB/TSLAB amount, slippage, the signal that motivated it,
 and the risk notice from SKILL.md. Disclose defaults if not set: slippage `auto`, MEV protection
-`true`; `gasLevel` defaults to `HIGH` in `baw` 1.9.0 `--help` (the skill reference says `MEDIUM`) —
+`true`; `gasLevel` defaults to `HIGH` in `baw` 1.9.0 `--help` (the skill reference says `MEDIUM`) -
 pass `--gasLevel MEDIUM` explicitly if the user cares. Only on a clear "yes":
 
 ```bash

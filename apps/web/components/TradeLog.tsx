@@ -56,7 +56,7 @@ function Attempt({ a, now, liveTrading, isLatest }: { a: TradeAttempt; now: numb
           ? { t: "Pending", c: "text-warn" }
           : sim?.ok
             ? { t: liveTrading ? "Not broadcast" : "Simulated only", c: "text-dim" }
-            : { t: "—", c: "text-faint" };
+            : { t: "-", c: "text-faint" };
   const exit = a.decision?.exitReason;
 
   return (
@@ -97,7 +97,7 @@ function Attempt({ a, now, liveTrading, isLatest }: { a: TradeAttempt; now: numb
           ) : liveTrading === false ? (
             "paper mode"
           ) : (
-            "—"
+            "-"
           )}
         </Stage>
         <Connector on={!!(a.confirmed || fill)} />
@@ -114,7 +114,7 @@ function Attempt({ a, now, liveTrading, isLatest }: { a: TradeAttempt; now: numb
           ) : fState === "pending" ? (
             "waiting for receipt"
           ) : (
-            "—"
+            "-"
           )}
         </Stage>
       </div>

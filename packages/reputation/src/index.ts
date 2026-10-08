@@ -1,9 +1,9 @@
 /**
- * @elitr/reputation — how the execution agent learns which analyst to trust, and how much.
+ * @elitr/reputation - how the execution agent learns which analyst to trust, and how much.
  *
  * Every paid signal is a falsifiable prediction: "over the next `horizonSec`, `symbol` will go
  * up / down / nowhere". We record it with the on-chain entry price, and once the horizon has
- * elapsed we mark it against the exit price. Nothing here is a vibe score — every number is a
+ * elapsed we mark it against the exit price. Nothing here is a vibe score - every number is a
  * deterministic function of recorded (signal, entry, exit) triples, and the file on disk is the
  * whole audit trail.
  *
@@ -11,12 +11,12 @@
  *    roughly one PancakeSwap fee tier + noise, so a call has to clear trading friction to count).
  *      bullish  correct iff returnBps >  +band
  *      bearish  correct iff returnBps <  −band
- *      neutral  correct iff |returnBps| ≤ band   (shown for transparency, but an abstention — see §2)
+ *      neutral  correct iff |returnBps| ≤ band   (shown for transparency, but an abstention - see §2)
  *    A directional call whose move stays inside ±band is INCONCLUSIVE: the market didn't move enough to
  *    say whether the call was right (e.g. a pool with no trades while the US market is closed), so it is
  *    neither a hit nor a miss.
  *    avgReturnBps = mean of returnBps signed by stance (bullish +r, bearish −r; neutral calls carry
- *    no direction and are excluded) — "how many bps did following this analyst earn, gross".
+ *    no direction and are excluded) - "how many bps did following this analyst earn, gross".
  *
  * 2. Only conclusive directional calls (bullish / bearish beyond ±band) count toward trust. A neutral call is an abstention:
  *    the trader cannot act on it, and "price stays within ±band over 30–60 min" is close to a coin
@@ -41,14 +41,14 @@
  *    would make the weight jump from 0.5 to m(trust) on one sample.)
  *
  * 4. Pause: paused = samples ≥ minSamples ∧ trust < pauseBelow (default 0.45). A paused analyst is
- *    not bought from at all (saves the b402 fee) — its record is kept and it keeps being scored on
+ *    not bought from at all (saves the b402 fee) - its record is kept and it keeps being scored on
  *    signals already bought, so the pause is a verdict on evidence, not a ban.
  *    Probation: if every online analyst is paused, nobody would ever be paid again, so nobody could
  *    ever earn trust back. choose() then buys one probe from the most-trusted paused analyst
  *    (ties → cheaper). Its weight is ~0 below the trust line, so the probe's confidence collapses to
- *    neutral and cannot trigger a trade — it only buys the evidence needed to recover (or stay paused).
+ *    neutral and cannot trigger a trade - it only buys the evidence needed to recover (or stay paused).
  *
- * 5. Choosing whom to pay — Thompson sampling. For each online, unpaused candidate draw
+ * 5. Choosing whom to pay - Thompson sampling. For each online, unpaused candidate draw
  *      θ ~ Beta(hits + 1, misses + 1)
  *    (a plausible hit rate given its record) and buy from the highest  θ − λ · priceUsd
  *    (λ = `priceLambda`, default 1 ⇒ a $0.01 price gap is worth one point of hit rate, enough to

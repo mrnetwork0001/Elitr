@@ -70,7 +70,7 @@ export async function readBalances(pc: PublicClient, owner: Address, assets: Tok
   };
 }
 
-/** USDT held by the asset's primary PancakeSwap v3 pool — a real, on-chain liquidity floor. */
+/** USDT held by the asset's primary PancakeSwap v3 pool - a real, on-chain liquidity floor. */
 export async function poolUsdtLiquidity(pc: PublicClient, asset: TokenizedStock): Promise<number> {
   if (!asset.primaryPool) throw new Error(`${asset.symbol} has no primaryPool configured`);
   const bal = await erc20Balance(pc, USDT_BSC.address, asset.primaryPool);
@@ -92,7 +92,7 @@ export interface UnsignedTx {
 
 /**
  * Sign locally (key never leaves the process). Field mapping per Trading API integration flow
- * (docs/reference/binance-web3-llms-full.txt "Step 4 — Sign Locally"): when the API returns
+ * (docs/reference/binance-web3-llms-full.txt "Step 4 - Sign Locally"): when the API returns
  * maxPriorityFeePerGas, gasPrice is used as maxFeePerGas (type-2); otherwise legacy gasPrice.
  */
 export async function signTx(pc: PublicClient, account: PrivateKeyAccount, tx: UnsignedTx): Promise<{ raw: Hex; nonce: number }> {

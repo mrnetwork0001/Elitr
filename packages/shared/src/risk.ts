@@ -29,7 +29,7 @@ export const RiskConfigSchema = z.object({
 
 export type RiskConfig = z.infer<typeof RiskConfigSchema>;
 
-// Empty env values ("FOO=") mean unset — otherwise z.coerce turns "" into 0.
+// Empty env values ("FOO=") mean unset - otherwise z.coerce turns "" into 0.
 const v = (x: string | undefined) => (x === undefined || x.trim() === "" ? undefined : x);
 
 export function loadRiskConfig(env: NodeJS.ProcessEnv = process.env): RiskConfig {
