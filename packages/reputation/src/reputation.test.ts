@@ -294,3 +294,23 @@ test("directional calls inside the noise band are inconclusive and don't move tr
   assert.equal(st.samples, 1);
   assert.equal(st.hits, 1);
 });
+
+test("record(): same id from another analyst is kept under a namespaced id; a true duplicate is dropped", () => {
+  const book = new ReputationBook(file());
+  const a = sig("analyst", "bullish", { signalId: "shared-1" });
+  assert.equal(book.record(a), true);
+  assert.equal(book.record({ ...a, score: 99 }), false); // same analyst + id: duplicate
+  const b = sig("analyst-flow", "bearish", { signalId: "shared-1", entryPrice: 50 });
+  assert.equal(book.record(b), true);
+  assert.equal(book.record(b), false); // its namespaced copy is now the duplicate
+  const due = book.due(a.issuedAt + a.horizonSec * 1000);
+  assert.deepEqual(due.map((d) => [d.signalId, d.analystId]).sort(), [
+    ["analyst-flow:shared-1", "analyst-flow"],
+    ["shared-1", "analyst"],
+  ]);
+  const scored = book.score("analyst-flow:shared-1", 49, 9_999_999); // −200 bps: bearish correct
+  assert.equal(scored.correct, true);
+  assert.equal(scored.entryPrice, 50);
+  assert.equal(book.stats("analyst-flow").hits, 1);
+  assert.equal(book.stats("analyst").samples, 0); // the news analyst's identical id was untouched
+});

@@ -132,15 +132,20 @@ export function priceUsd(asset: string, amount: string): number | null {
   return Number(amount) / 1e18;
 }
 
+/** Sorted-keys serialisation, so the same value always maps to the same string whatever the key order. */
+export function canonicalJson(v: unknown): string {
+  const canon = (x: unknown): unknown =>
+    Array.isArray(x)
+      ? x.map(canon)
+      : x && typeof x === "object"
+        ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, canon((x as any)[k])]))
+        : x;
+  return JSON.stringify(canon(v));
+}
+
 /** Key-order-insensitive structural equality (the doc requires `accepted` to exactly match). */
 export function deepEqual(a: unknown, b: unknown): boolean {
-  const canon = (v: unknown): unknown =>
-    Array.isArray(v)
-      ? v.map(canon)
-      : v && typeof v === "object"
-        ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, canon((v as any)[k])]))
-        : v;
-  return JSON.stringify(canon(a)) === JSON.stringify(canon(b));
+  return canonicalJson(a) === canonicalJson(b);
 }
 
 export const encodeHeader = (v: unknown) => Buffer.from(JSON.stringify(v), "utf8").toString("base64");
@@ -158,9 +163,9 @@ export function decodePaymentSignature(header: string): PaymentPayload {
   return p;
 }
 
-/** Stable id of a signed authorization, used to refuse replays of an already-used payment. */
+/** Stable id of a signed authorization (canonical key order), used to refuse replays of an already-used payment. */
 export const authorizationId = (p: PaymentPayload) =>
-  createHash("sha256").update(JSON.stringify(p.payload)).digest("hex");
+  createHash("sha256").update(canonicalJson(p.payload)).digest("hex");
 
 export class B402Gateway {
   private supported?: { value: { kinds: any[] }; expires: number };

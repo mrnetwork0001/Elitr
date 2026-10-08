@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { b402ConfigFromEnv, priceUsd } from "./b402.js";
+import { authorizationId, b402ConfigFromEnv, priceUsd, type PaymentPayload } from "./b402.js";
 
 const base = {
   BINANCE_WEB3_API_KEY: "k",
@@ -30,4 +30,15 @@ test("invalid or duplicate alternates are reported, not guessed", () => {
 
 test("U is priced as an 18-decimal dollar stablecoin", () => {
   assert.equal(priceUsd(U, "10000000000000000"), 0.01);
+});
+
+test("replay key does not depend on key order inside the signed payload", () => {
+  const accepted = { scheme: "exact", network: "eip155:56", amount: "1", asset: "0xa", payTo: "0xb", maxTimeoutSeconds: 300, extra: {} };
+  const p1: PaymentPayload = { x402Version: 2, accepted, payload: { signature: "0xsig", authorization: { from: "0x1", to: "0x2", value: "1", nonce: "0x9" } } };
+  const p2: PaymentPayload = { x402Version: 2, accepted, payload: { authorization: { nonce: "0x9", value: "1", to: "0x2", from: "0x1" }, signature: "0xsig" } };
+  assert.notEqual(JSON.stringify(p1.payload), JSON.stringify(p2.payload));
+  assert.equal(authorizationId(p1), authorizationId(p2));
+  assert.match(authorizationId(p1), /^[0-9a-f]{64}$/);
+  const p3: PaymentPayload = { ...p1, payload: { ...p1.payload, signature: "0xother" } };
+  assert.notEqual(authorizationId(p1), authorizationId(p3));
 });

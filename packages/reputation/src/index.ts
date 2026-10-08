@@ -207,17 +207,28 @@ export class ReputationBook {
     this.load();
   }
 
-  /** Remember a bought signal. Idempotent on signalId (a re-delivered signal is the same call). */
-  record(s: SignalRecord): void {
-    if (this.signals.has(s.signalId)) return;
+  /**
+   * Remember a bought signal. Idempotent on (analystId, signalId): a re-delivered signal is the same call
+   * and returns false. The same signalId from a DIFFERENT analyst is a separate call and is stored under
+   * `${analystId}:${signalId}` (its signalId field is rewritten, so due()/score() keep working).
+   */
+  record(s: SignalRecord): boolean {
     if (!s.signalId) throw new Error("signalId is required");
+    let signalId = s.signalId;
+    const clash = this.signals.get(signalId);
+    if (clash) {
+      if (clash.analystId === s.analystId) return false;
+      signalId = `${s.analystId}:${s.signalId}`;
+      if (this.signals.has(signalId)) return false;
+    }
     if (!STANCES.includes(s.stance)) throw new Error(`invalid stance: ${s.stance}`);
     if (!(Number.isFinite(s.entryPrice) && s.entryPrice > 0)) throw new Error(`invalid entryPrice for ${s.signalId}: ${s.entryPrice}`);
     if (!(Number.isFinite(s.horizonSec) && s.horizonSec > 0)) throw new Error(`invalid horizonSec for ${s.signalId}: ${s.horizonSec}`);
     if (!Number.isFinite(s.issuedAt)) throw new Error(`invalid issuedAt for ${s.signalId}`);
-    const { signalId, analystId, symbol, stance, score, issuedAt, horizonSec, entryPrice } = s;
+    const { analystId, symbol, stance, score, issuedAt, horizonSec, entryPrice } = s;
     this.signals.set(signalId, { signalId, analystId, symbol, stance, score, issuedAt, horizonSec, entryPrice });
     this.save();
+    return true;
   }
 
   /** Signals whose horizon has elapsed and that have not been scored yet, oldest first. */

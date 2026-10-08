@@ -8,9 +8,13 @@ type Payload = AgentEvent extends infer E ? (E extends AgentEvent ? Omit<E, "id"
 
 // In-process event log, persisted as JSONL so the dashboard keeps history across restarts,
 // and served to the dashboard as Server-Sent Events.
+export const MAX_SSE_CLIENTS = 200;
+const PING_MS = 15_000;
+
 export class EventHub {
   private readonly history: AgentEvent[] = [];
   private readonly clients = new Set<ServerResponse>();
+  private ping?: NodeJS.Timeout; // one keep-alive timer for every client, running only while someone listens
 
   constructor(
     private readonly agent: AgentId,
@@ -46,8 +50,17 @@ export class EventHub {
     return this.history.slice(-limit);
   }
 
-  /** GET /events - replays recent history, then streams live. */
+  get clientCount(): number {
+    return this.clients.size;
+  }
+
+  /** GET /events - replays recent history, then streams live. At most MAX_SSE_CLIENTS streams per hub. */
   sse(req: IncomingMessage, res: ServerResponse): void {
+    if (this.clients.size >= MAX_SSE_CLIENTS) {
+      res.writeHead(503, { "Content-Type": "application/json", "Access-Control-Allow-Origin": process.env.DASHBOARD_ORIGIN ?? "*" });
+      res.end('{"error":"too many event streams"}');
+      return;
+    }
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
@@ -57,10 +70,18 @@ export class EventHub {
     res.write(": connected\n\n"); // flush headers now - an empty history would otherwise delay onopen until the first ping
     for (const e of this.recent()) res.write(`data: ${JSON.stringify(e)}\n\n`);
     this.clients.add(res);
-    const ping = setInterval(() => res.write(": ping\n\n"), 15_000);
+    if (!this.ping) {
+      this.ping = setInterval(() => {
+        for (const c of this.clients) c.write(": ping\n\n");
+      }, PING_MS);
+      this.ping.unref();
+    }
     req.on("close", () => {
-      clearInterval(ping);
       this.clients.delete(res);
+      if (!this.clients.size && this.ping) {
+        clearInterval(this.ping);
+        this.ping = undefined;
+      }
     });
   }
 }

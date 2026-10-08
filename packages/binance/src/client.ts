@@ -5,6 +5,8 @@ const DEFAULT_BASE = "https://web3.binance.com";
 const PREFIX = "/build";
 
 type Query = Record<string, string | number | boolean | undefined>;
+type CallOpts = { query?: Query; body?: unknown; timeoutMs?: number };
+const DEFAULT_TIMEOUT_MS = 30_000;
 
 export class BinanceApiError extends Error {
   constructor(
@@ -24,6 +26,8 @@ export interface ClientOptions {
   apiSecret: string;
   baseUrl?: string;
   recvWindowMs?: number;
+  /** Per-request timeout (default 30 s; broadcast 60 s, simulate 45 s). */
+  timeoutMs?: number;
   /** Called for every response - used to feed the DX evidence log. */
   onResponse?: (info: { method: string; path: string; status: number; code: unknown; ms: number }) => void;
 }
@@ -46,7 +50,7 @@ export class BinanceWeb3Client {
   }
 
   /** Low-level signed call. Returns the parsed JSON envelope untouched. */
-  async raw(method: "GET" | "POST", path: string, opts: { query?: Query; body?: unknown } = {}): Promise<any> {
+  async raw(method: "GET" | "POST", path: string, opts: CallOpts = {}): Promise<any> {
     const pathWithQuery = `${PREFIX}${path}${buildQuery(opts.query)}`;
     const body = opts.body === undefined ? "" : JSON.stringify(opts.body);
     const timestamp = new Date().toISOString(); // ISO 8601 with ms, not epoch
@@ -60,8 +64,20 @@ export class BinanceWeb3Client {
     if (body) headers["Content-Type"] = "application/json";
 
     const started = Date.now();
-    const res = await fetch(`${this.base}${pathWithQuery}`, { method, headers, body: body || undefined });
-    const text = await res.text();
+    const timeoutMs = opts.timeoutMs ?? this.opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    let res: Response;
+    let text: string;
+    try {
+      res = await fetch(`${this.base}${pathWithQuery}`, { method, headers, body: body || undefined, signal: AbortSignal.timeout(timeoutMs) });
+      text = await res.text();
+    } catch (e) {
+      const name = (e as Error)?.name;
+      if (name === "TimeoutError" || name === "AbortError") {
+        this.opts.onResponse?.({ method, path, status: 0, code: "timeout", ms: Date.now() - started });
+        throw new BinanceApiError(`timeout after ${timeoutMs} ms ${path}`, 0, "timeout", path, undefined);
+      }
+      throw e;
+    }
     let json: any;
     try {
       json = JSON.parse(text);
@@ -76,7 +92,7 @@ export class BinanceWeb3Client {
   }
 
   /** Standard Web3 API call: success is code 0 / "0". Returns `data`. */
-  async call<T = any>(method: "GET" | "POST", path: string, opts: { query?: Query; body?: unknown } = {}): Promise<T> {
+  async call<T = any>(method: "GET" | "POST", path: string, opts: CallOpts = {}): Promise<T> {
     const json = await this.raw(method, path, opts);
     if (json?.code !== 0 && json?.code !== "0") {
       throw new BinanceApiError(`API ${json?.code} ${path}: ${json?.msg}`, 200, json?.code, path, json);
@@ -138,10 +154,10 @@ export class BinanceWeb3Client {
 
   // ---- Transaction API ----------------------------------------------------
   simulate(binanceChainId: string, evmTx: { from: string; to: string; value: string; data: string }) {
-    return this.call<any>("POST", "/api/v1/dex/pre-transaction/simulate", { body: { binanceChainId, evmTx } });
+    return this.call<any>("POST", "/api/v1/dex/pre-transaction/simulate", { body: { binanceChainId, evmTx }, timeoutMs: 45_000 });
   }
   broadcast(body: { binanceChainId: string; signedTransaction: string; address: string; enableMevProtection?: boolean }) {
-    return this.call<{ orderId: string; txHash: string }>("POST", "/api/v1/dex/pre-transaction/broadcast-transaction", { body });
+    return this.call<{ orderId: string; txHash: string }>("POST", "/api/v1/dex/pre-transaction/broadcast-transaction", { body, timeoutMs: 60_000 });
   }
   txDetail(binanceChainId: string, txHash: string) {
     return this.call<any>("GET", "/api/v1/dex/post-transaction/transaction-detail-by-txhash", {
