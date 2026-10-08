@@ -28,6 +28,8 @@ const STABLES: Record<string, { symbol: string; decimals: number }> = {
 export type { Signal };
 
 export const DEFAULT_HORIZON_SEC = 3600;
+export const MIN_HORIZON_SEC = 60;
+export const MAX_HORIZON_SEC = 86_400;
 
 export interface PayDeps {
   hub: EventHub;
@@ -41,6 +43,7 @@ export interface PayDeps {
   live: boolean;
   mevProtection: boolean;
   onReceipt?: TxDeps["onReceipt"];
+  abort?: TxDeps["abort"];
 }
 
 function trustedSpenders(): string[] {
@@ -51,9 +54,11 @@ function trustedSpenders(): string[] {
 /**
  * Validate an analyst's /signal body. Older analysts omit signalId / analystId / horizonSec: the analyst
  * id comes from our config (the URL we paid), a signalId is generated locally, and the horizon defaults
- * to 1 h. A body that names a different analyst than the one we paid is rejected.
+ * to 1 h and is clamped to [1 min, 24 h] (reported via `hub`) so a seller cannot park a call for years
+ * or have it scored before the pool moved. A body that names a different analyst than the one we paid
+ * is rejected.
  */
-export function parseSignal(body: unknown, symbol: string, analystId: AnalystId): Signal {
+export function parseSignal(body: unknown, symbol: string, analystId: AnalystId, hub?: Pick<EventHub, "emit">): Signal {
   const b = body as Partial<Signal> | null;
   const problems: string[] = [];
   if (!b || typeof b !== "object") throw new Error("analyst returned a non-object body");
@@ -64,11 +69,14 @@ export function parseSignal(body: unknown, symbol: string, analystId: AnalystId)
   if (b.analystId != null && b.analystId !== analystId) problems.push(`analystId=${JSON.stringify(b.analystId)} (paid ${analystId})`);
   if (b.horizonSec != null && !(typeof b.horizonSec === "number" && b.horizonSec > 0)) problems.push(`horizonSec=${JSON.stringify(b.horizonSec)}`);
   if (problems.length) throw new Error(`analyst signal failed validation: ${problems.join(", ")}`);
+  const wanted = b.horizonSec ?? DEFAULT_HORIZON_SEC;
+  const horizonSec = Math.min(MAX_HORIZON_SEC, Math.max(MIN_HORIZON_SEC, wanted));
+  if (horizonSec !== wanted) hub?.emit({ type: "error", where: `pay.${analystId}`, message: `horizonSec ${wanted} clamped to ${horizonSec} (allowed ${MIN_HORIZON_SEC}-${MAX_HORIZON_SEC})` });
   return {
     ...(b as Signal),
     analystId,
     signalId: typeof b.signalId === "string" && b.signalId ? b.signalId : `local-${randomUUID()}`,
-    horizonSec: b.horizonSec ?? DEFAULT_HORIZON_SEC,
+    horizonSec,
     sources: Array.isArray(b.sources) ? b.sources : [],
   };
 }
@@ -220,7 +228,7 @@ async function attempt(d: PayDeps, symbol: string, remainingUsd: number): Promis
     d.hub.emit({ type: "error", where: `pay.${d.analystId}`, message: `analyst returned non-JSON: ${text.slice(0, 200)}` });
     return { kind: "done", signal: null };
   }
-  return { kind: "done", signal: parseSignal(body, symbol, d.analystId) };
+  return { kind: "done", signal: parseSignal(body, symbol, d.analystId, d.hub) };
 }
 
 /**
@@ -239,7 +247,7 @@ async function approvePermit2(d: PayDeps, symbol: string, a: B402Permit2Approval
     return false;
   }
   const data = approveCalldata(B402_PERMIT2_ADDRESS, amount);
-  const txd: TxDeps = { hub: d.hub, binance: d.binance, pc: d.pc, account: d.account, live: d.live, mevProtection: d.mevProtection, onReceipt: d.onReceipt };
+  const txd: TxDeps = { hub: d.hub, binance: d.binance, pc: d.pc, account: d.account, live: d.live, mevProtection: d.mevProtection, onReceipt: d.onReceipt, abort: d.abort };
   const sim = await simulateTx(txd, label, { to: a.token, data, value: 0n });
   if (!sim.ok) return false;
   if (!d.live) {

@@ -19,9 +19,9 @@ import { heldWei, positionView, summarize, type PnlSummary } from "./ledger.js";
 import { buySignal } from "./pay.js";
 import { bnbUsd, fetchOnchainPrice, fetchRwa, fetchYahoo, poolPrice, type RwaSnapshot, type YahooQuote } from "./prices.js";
 import { evaluateRisk, evaluateSellRisk, exitTrigger, gapBps, worthBuyingSignal, type ExitReason } from "./risk.js";
-import { dxLog, type StateStore } from "./state.js";
-import { errMsg, executeSwap, quoteSwap, type RouteChoice, type TxDeps } from "./trade.js";
-import { poolUsdtLiquidity, readBalances, type Balances } from "./wallet.js";
+import { dxLog, KILL_FILE, readKillFile, removeKillFile, writeKillFile, type StateStore } from "./state.js";
+import { errMsg, executeSwap, legs, quoteSwap, type RouteChoice, type SwapResult, type TxDeps } from "./trade.js";
+import { poolUsdtLiquidity, readBalances, transferredIn, transferredOut, type Balances } from "./wallet.js";
 
 export interface AgentConfig {
   analysts: AnalystEndpoint[];
@@ -48,6 +48,7 @@ export interface AgentDeps {
   cfg: AgentConfig;
   configErrors?: string[]; // non-fatal startup problems (e.g. bad ANALYSTS entries), shown in /state
   assets?: TokenizedStock[]; // defaults to TRADED_ASSETS
+  killFile?: string; // persisted kill switch (default <EXECUTION_DATA_DIR>/kill-switch)
 }
 
 interface LatestSignal {
@@ -66,9 +67,33 @@ interface Mark {
 
 const iso = (ms: number) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, "Z");
 const r2 = (n: number) => Math.round(n * 100) / 100;
+const PENDING_GRACE_MS = 10 * 60_000;
+
+/**
+ * Caps an operator buy (POST /trade) must respect besides maxTradeUsd: the name of the first rule it
+ * would break, or null. Unknown position / portfolio values fail closed.
+ */
+export function operatorBuyCap(
+  input: { usd: number; dailySpendUsd: number; positionUsd: number | null; portfolioUsd: number | null },
+  cfg: RiskConfig,
+): { rule: string; detail: string } | null {
+  const u = (n: number) => `$${n.toFixed(2)}`;
+  if (input.dailySpendUsd + input.usd > cfg.maxDailySpendUsd) {
+    return { rule: "maxDailySpendUsd", detail: `${u(input.dailySpendUsd)} spent today + ${u(input.usd)} > ${u(cfg.maxDailySpendUsd)}` };
+  }
+  if (input.positionUsd == null) return { rule: "maxPositionUsd", detail: "position value unknown (no mark price)" };
+  if (input.positionUsd + input.usd > cfg.maxPositionUsd) {
+    return { rule: "maxPositionUsd", detail: `${u(input.positionUsd)} held + ${u(input.usd)} > ${u(cfg.maxPositionUsd)}` };
+  }
+  if (input.portfolioUsd == null) return { rule: "maxPortfolioUsd", detail: "portfolio value unknown (a mark price or balance is missing)" };
+  if (input.portfolioUsd + input.usd > cfg.maxPortfolioUsd) {
+    return { rule: "maxPortfolioUsd", detail: `${u(input.portfolioUsd)} portfolio + ${u(input.usd)} > ${u(cfg.maxPortfolioUsd)}` };
+  }
+  return null;
+}
 
 export class ExecutionAgent {
-  killSwitch = false; // runtime switch, one-way until restart
+  killSwitch = false; // runtime switch, persisted in killFile; cleared only by resetKill()
   running = false;
   lastCycleAt: number | null = null;
   nextCycleAt: number | null = null;
@@ -92,9 +117,43 @@ export class ExecutionAgent {
     return this.d.cfg.live ? "live" : "paper";
   }
 
+  get killFile(): string {
+    return this.d.killFile ?? KILL_FILE;
+  }
+
+  /** The persisted switch is read live so a file dropped (or removed) by an operator counts immediately. */
+  get killed(): boolean {
+    return this.killSwitch || this.d.risk.killSwitch || readKillFile(this.killFile) !== null;
+  }
+
   engageKill(source: string): void {
     this.killSwitch = true;
-    this.d.hub.emit({ type: "risk.blocked", symbol: "*", rule: "killSwitch", detail: `kill switch engaged via ${source}; no further cycles will trade until restart` });
+    try {
+      writeKillFile(source, this.killFile);
+    } catch (e) {
+      this.d.hub.emit({ type: "error", where: "kill.persist", message: `kill switch engaged in memory only - could not write ${this.killFile}: ${errMsg(e)}` });
+    }
+    this.d.hub.emit({ type: "risk.blocked", symbol: "*", rule: "killSwitch", detail: `kill switch engaged via ${source}; no cycle will trade until POST /kill/reset (survives restarts)` });
+  }
+
+  /** Startup: a kill-switch file (or KILL_SWITCH env) from before the restart keeps the switch engaged. */
+  restorePersistedKill(): void {
+    const rec = readKillFile(this.killFile);
+    if (!rec && !this.d.risk.killSwitch) return;
+    this.killSwitch = true;
+    const detail = rec
+      ? `kill switch persisted from ${rec.at} (${rec.source}); reset with POST /kill/reset`
+      : "KILL_SWITCH env is set; unset it and restart to trade";
+    this.d.hub.emit({ type: "risk.blocked", symbol: "*", rule: "killSwitch", detail });
+  }
+
+  /** POST /kill/reset: clears the runtime switch and its file. A KILL_SWITCH env cannot be reset here. */
+  resetKill(source: string): { ok: boolean; detail: string } {
+    if (this.d.risk.killSwitch) return { ok: false, detail: "KILL_SWITCH env is set; unset it and restart" };
+    removeKillFile(this.killFile);
+    this.killSwitch = false;
+    this.d.hub.emit({ type: "risk.blocked", symbol: "*", rule: "killSwitchReset", detail: `kill switch reset via ${source}; cycles may trade again` });
+    return { ok: true, detail: "kill switch reset" };
   }
 
   /** Fresh-ish on-chain balances for /state (15 s cache). */
@@ -145,7 +204,7 @@ export class ExecutionAgent {
    * slippage/price-impact protection and a passing simulation before anything is sent.
    */
   async operatorTrade(symbol: string, side: Side, usd?: number): Promise<{ ok: boolean; detail: string; txHash?: string }> {
-    if (this.killSwitch || this.d.risk.killSwitch) return { ok: false, detail: "kill switch engaged" };
+    if (this.killed) return { ok: false, detail: "kill switch engaged" };
     if (this.running) return { ok: false, detail: "a cycle is running - retry in a minute" };
     const asset = this.assets.find((a) => a.symbol.toLowerCase() === symbol.toLowerCase());
     if (!asset) return { ok: false, detail: `unknown symbol; traded: ${this.assets.map((a) => a.symbol).join(", ")}` };
@@ -154,6 +213,7 @@ export class ExecutionAgent {
     if (!txd || !binance || !account) return { ok: false, detail: "wallet or Binance Web3 API not configured" };
     this.running = true;
     try {
+      await this.reconcilePending();
       const bal = await readBalances(this.d.pc, account.address, this.assets);
       this.balCache = bal;
       let amountIn: bigint;
@@ -162,9 +222,27 @@ export class ExecutionAgent {
         if (!(want > 0)) return { ok: false, detail: "usd must be positive" };
         amountIn = parseUnits(want.toFixed(6), 18);
         if (bal.raw.usdt < amountIn) return { ok: false, detail: `insufficient USDT: have ${bal.usdt}, need ${want}` };
+        // Same caps an autonomous buy faces (fail closed on a missing mark).
+        const pools = new Map<string, number>();
+        for (const a of this.assets) if (!this.marks.has(a.symbol)) await this.refreshMark(a, pools);
+        const held = this.heldFor(asset, bal) ?? 0n;
+        const mark = this.marks.get(asset.symbol);
+        const cap = operatorBuyCap(
+          {
+            usd: want,
+            dailySpendUsd: store.dailySpend(this.mode),
+            positionUsd: held === 0n ? 0 : mark ? Number(formatUnits(held, asset.decimals)) * mark.price : null,
+            portfolioUsd: this.portfolioUsd(bal),
+          },
+          risk,
+        );
+        if (cap) {
+          hub.emit({ type: "risk.blocked", symbol: asset.symbol, rule: cap.rule, detail: `operator buy refused: ${cap.detail}` });
+          return { ok: false, detail: `${cap.rule} failed: ${cap.detail}` };
+        }
       } else {
-        const held = heldWei(store.get().ledgers[this.mode], asset.symbol);
         const onchain = bal.raw.tokens[asset.symbol] ?? 0n;
+        const held = this.mode === "live" ? this.adoptUntracked(asset, onchain) : heldWei(store.get().ledgers[this.mode], asset.symbol);
         amountIn = held < onchain ? held : onchain;
         if (amountIn <= 0n) return { ok: false, detail: `no ${asset.symbol} position to sell (ledger ${held}, wallet ${onchain})` };
       }
@@ -197,9 +275,92 @@ export class ExecutionAgent {
   }
 
   private txDeps(): TxDeps | null {
-    const { hub, binance, pc, account, cfg } = this.d;
+    const { hub, binance, pc, account, cfg, store } = this.d;
     if (!binance || !account) return null;
-    return { hub, binance, pc, account, live: cfg.live, mevProtection: cfg.mevProtection, onReceipt: (r, l) => this.bookGas(r, l) };
+    return {
+      hub,
+      binance,
+      pc,
+      account,
+      live: cfg.live,
+      mevProtection: cfg.mevProtection,
+      onReceipt: (r, l) => this.bookGas(r, l),
+      store,
+      abort: () => this.killed,
+    };
+  }
+
+  /**
+   * Book live swaps that were broadcast but never booked (crash or RPC failure while waiting for the
+   * receipt). Runs at startup, at the start of every cycle and before an operator trade.
+   */
+  async reconcilePending(): Promise<void> {
+    const { hub, store, pc } = this.d;
+    for (const p of [...store.get().pending]) {
+      const where = `reconcile:${p.symbol}`;
+      const hash = p.txHash as `0x${string}`;
+      let receipt: TransactionReceipt | null = null;
+      try {
+        receipt = await pc.getTransactionReceipt({ hash });
+      } catch {
+        receipt = null; // not mined (or not found) yet
+      }
+      if (!receipt) {
+        if (Date.now() - p.at < PENDING_GRACE_MS) continue;
+        hub.emit({ type: "error", where, message: `${p.label} tx ${p.txHash} has no receipt ${Math.round((Date.now() - p.at) / 60_000)} min after broadcast; dropping the pending record (a late fill is adopted by the wallet-vs-ledger check)` });
+        store.clearPending(p.txHash);
+        continue;
+      }
+      await this.bookGas(receipt, p.label);
+      if (receipt.status !== "success") {
+        hub.emit({ type: "error", where, message: `${p.label} tx ${p.txHash} reverted on-chain (found while reconciling); nothing booked` });
+        store.clearPending(p.txHash);
+        continue;
+      }
+      const asset = this.assets.find((a) => a.symbol === p.symbol);
+      const already = store.get().ledgers.live.fills.some((f) => f.txHash?.toLowerCase() === p.txHash.toLowerCase());
+      if (!asset || already) {
+        hub.emit({ type: "error", where, message: `${p.label} tx ${p.txHash} confirmed; ${already ? "already booked" : "not a traded asset"} - pending record cleared` });
+        store.clearPending(p.txHash);
+        continue;
+      }
+      const owner = this.d.account?.address ?? receipt.from;
+      const { from, to } = legs(p.side, asset);
+      const inWei = transferredOut(receipt, from.address, owner);
+      const outWei = transferredIn(receipt, to.address, owner);
+      hub.emit({ type: "tx.confirmed", symbol: asset.symbol, txHash: p.txHash, amountIn: `${formatUnits(inWei, from.decimals)} ${from.symbol}`, amountOut: `${formatUnits(outWei, to.decimals)} ${to.symbol}`, side: p.side });
+      hub.emit({ type: "error", where, message: `${p.side} ${asset.symbol} tx ${p.txHash} was broadcast but never booked; booking it now from the receipt` });
+      this.bookLive(asset, p.side, { txHash: p.txHash, inWei, outWei });
+      store.clearPending(p.txHash);
+    }
+  }
+
+  /**
+   * Live safety net: tokens in the wallet the live ledger does not know about (a fill lost on the way to
+   * the ledger) are adopted as a buy at the current mark, so a sell can cover the whole wallet balance
+   * and P&L stays honest. Returns the ledger quantity afterwards. Paper mode never calls this.
+   */
+  private adoptUntracked(asset: TokenizedStock, walletQty: bigint): bigint {
+    const { hub, store } = this.d;
+    const sym = asset.symbol;
+    const ledgerQty = heldWei(store.get().ledgers.live, sym);
+    if (walletQty <= ledgerQty) return ledgerQty;
+    const delta = walletQty - ledgerQty;
+    const mark = this.marks.get(sym);
+    const qty = formatUnits(delta, asset.decimals);
+    if (!mark) {
+      hub.emit({ type: "error", where: `ledger.reconcile:${sym}`, message: `wallet holds ${qty} ${sym} more than the live ledger but there is no mark price to value it; not adopted` });
+      return ledgerQty;
+    }
+    const usd = Number(qty) * mark.price;
+    try {
+      const f = store.recordFill({ ts: Date.now(), mode: "live", symbol: sym, side: "buy", qtyWei: delta, decimals: asset.decimals, usd, txHash: "reconciled" });
+      hub.emit({ type: "error", where: `ledger.reconcile:${sym}`, message: `wallet holds ${qty} ${sym} more than the live ledger; adopted as a buy at mark ${mark.price.toFixed(4)} (${mark.source}), $${usd.toFixed(4)}, txHash "reconciled"` });
+      hub.emit({ type: "trade.filled", symbol: sym, side: "buy", mode: "live", qty: f.qty, usd: f.usd, priceUsd: f.priceUsd, txHash: "reconciled" });
+    } catch (e) {
+      hub.emit({ type: "error", where: `ledger.reconcile:${sym}`, message: errMsg(e) });
+    }
+    return heldWei(store.get().ledgers.live, sym);
   }
 
   /** Live gas accounting: receipt gasUsed × effectiveGasPrice, valued at BNB/USD. */
@@ -216,9 +377,12 @@ export class ExecutionAgent {
   private async cycle(): Promise<void> {
     const { hub, risk, account, binance } = this.d;
 
+    // 0. Book any live swap left unbooked by a crash (not a trade, so it runs even when killed).
+    await this.step("reconcile", () => this.reconcilePending());
+
     // 1. Kill switch
-    if (this.killSwitch || risk.killSwitch) {
-      hub.emit({ type: "risk.blocked", symbol: "*", rule: "killSwitch", detail: risk.killSwitch ? "KILL_SWITCH env is set" : "kill switch engaged at runtime (POST /kill)" });
+    if (this.killed) {
+      hub.emit({ type: "risk.blocked", symbol: "*", rule: "killSwitch", detail: risk.killSwitch ? "KILL_SWITCH env is set" : "kill switch engaged (POST /kill, persisted); reset with POST /kill/reset" });
       return;
     }
 
@@ -417,7 +581,7 @@ export class ExecutionAgent {
     const checks = evaluateRisk(
       {
         now: Date.now(),
-        killSwitch: this.killSwitch || risk.killSwitch,
+        killSwitch: this.killed,
         signal: signal
           ? { score: signal.effectiveScore, rawScore: signal.score, weight: signal.weight, stance: signal.stance, generatedAt: signal.generatedAt }
           : null,
@@ -491,7 +655,7 @@ export class ExecutionAgent {
     const ep = statuses.find((s) => s.endpoint.id === choice.analystId)!.endpoint;
     const sig = await this.step(`pay.${ep.id}`, () =>
       buySignal(
-        { hub, store, risk, pc, account, binance, analystId: ep.id, analystUrl: ep.url, live: cfg.live, mevProtection: cfg.mevProtection, onReceipt: (r, l) => this.bookGas(r, l) },
+        { hub, store, risk, pc, account, binance, analystId: ep.id, analystUrl: ep.url, live: cfg.live, mevProtection: cfg.mevProtection, onReceipt: (r, l) => this.bookGas(r, l), abort: () => this.killed },
         sym,
       ),
     );
@@ -558,12 +722,14 @@ export class ExecutionAgent {
     const { hub, store, risk, binance, account, cfg } = this.d;
     const sym = asset.symbol;
     const missing: Record<string, string> = {};
-    const ledgerQty = heldWei(store.get().ledgers[this.mode], sym);
+    let ledgerQty = heldWei(store.get().ledgers[this.mode], sym);
     let qtyWei = ledgerQty;
     if (this.mode === "live") {
-      // Never sell more than the agent bought, nor more than the wallet holds.
+      // Never sell more than the ledger knows of, nor more than the wallet holds; an untracked surplus
+      // in the wallet is adopted into the ledger first so the whole position is exited.
       const w = bal?.raw.tokens[sym];
       if (w == null) missing.positionExists = missing.balances = bal ? "token balance missing" : this.accountErr;
+      else ledgerQty = this.adoptUntracked(asset, w);
       qtyWei = w == null ? 0n : w < ledgerQty ? w : ledgerQty;
     }
     if (!bal) missing.balances ??= account ? "balance read failed" : this.accountErr;
@@ -584,7 +750,7 @@ export class ExecutionAgent {
     const qty = Number(formatUnits(qtyWei, asset.decimals));
     const checks = evaluateSellRisk(
       {
-        killSwitch: this.killSwitch || risk.killSwitch,
+        killSwitch: this.killed,
         qty,
         liquidityUsd: liquidity,
         priceImpactPct: impact == null || impact === "" ? null : Number(impact),
@@ -629,35 +795,42 @@ export class ExecutionAgent {
       });
       return;
     }
-    let tokenWei: bigint;
-    let usdtWei: bigint;
-    let txHash: string | undefined;
-    if (!cfg.live) {
-      if (!res.route) return;
-      const out = BigInt(res.route.toTokenAmount);
-      [tokenWei, usdtWei] = side === "buy" ? [out, amountIn] : [amountIn, out];
-    } else {
-      if (!res.txHash || res.inWei == null || res.outWei == null) return;
-      [tokenWei, usdtWei] = side === "buy" ? [res.outWei, res.inWei] : [res.inWei, res.outWei];
-      txHash = res.txHash;
-      store.recordTrade({
-        ts: Date.now(),
-        txHash,
-        side,
-        symbol: sym,
-        amountInUsdt: side === "buy" ? formatUnits(usdtWei, 18) : "0",
-        amountOut: side === "buy" ? formatUnits(tokenWei, asset.decimals) : "0",
-        amountInToken: side === "sell" ? formatUnits(tokenWei, asset.decimals) : undefined,
-        amountOutUsdt: side === "sell" ? formatUnits(usdtWei, 18) : undefined,
-      });
-    }
+    if (cfg.live) return this.bookLive(asset, side, res);
+    if (!res.route) return;
+    const out = BigInt(res.route.toTokenAmount);
+    const [tokenWei, usdtWei] = side === "buy" ? [out, amountIn] : [amountIn, out];
+    this.book("paper", asset, side, tokenWei, usdtWei);
+  }
+
+  /** Live fill from a confirmed receipt: trade record, ledger, then the pending record is released. */
+  private bookLive(asset: TokenizedStock, side: Side, res: Pick<SwapResult, "txHash" | "inWei" | "outWei">): void {
+    const { store } = this.d;
+    if (!res.txHash || res.inWei == null || res.outWei == null) return;
+    const [tokenWei, usdtWei] = side === "buy" ? [res.outWei, res.inWei] : [res.inWei, res.outWei];
+    store.recordTrade({
+      ts: Date.now(),
+      txHash: res.txHash,
+      side,
+      symbol: asset.symbol,
+      amountInUsdt: side === "buy" ? formatUnits(usdtWei, 18) : "0",
+      amountOut: side === "buy" ? formatUnits(tokenWei, asset.decimals) : "0",
+      amountInToken: side === "sell" ? formatUnits(tokenWei, asset.decimals) : undefined,
+      amountOutUsdt: side === "sell" ? formatUnits(usdtWei, 18) : undefined,
+    });
+    this.book("live", asset, side, tokenWei, usdtWei, res.txHash);
+    store.clearPending(res.txHash);
+  }
+
+  private book(mode: FillMode, asset: TokenizedStock, side: Side, tokenWei: bigint, usdtWei: bigint, txHash?: string): void {
+    const { hub, store } = this.d;
+    const sym = asset.symbol;
     if (tokenWei <= 0n) {
       hub.emit({ type: "error", where: `fill:${sym}`, message: `${side} produced zero ${sym} - nothing booked` });
       return;
     }
     try {
-      const f = store.recordFill({ ts: Date.now(), mode: this.mode, symbol: sym, side, qtyWei: tokenWei, decimals: asset.decimals, usd: Number(formatUnits(usdtWei, 18)), txHash });
-      hub.emit({ type: "trade.filled", symbol: sym, side, mode: this.mode, qty: f.qty, usd: f.usd, priceUsd: f.priceUsd, txHash, realizedUsd: f.realizedUsd });
+      const f = store.recordFill({ ts: Date.now(), mode, symbol: sym, side, qtyWei: tokenWei, decimals: asset.decimals, usd: Number(formatUnits(usdtWei, 18)), txHash });
+      hub.emit({ type: "trade.filled", symbol: sym, side, mode, qty: f.qty, usd: f.usd, priceUsd: f.priceUsd, txHash, realizedUsd: f.realizedUsd });
     } catch (e) {
       hub.emit({ type: "error", where: `fill:${sym}`, message: errMsg(e) });
     }

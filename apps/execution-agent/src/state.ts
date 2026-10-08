@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AnalystId, FillMode, Side } from "@elitr/shared";
@@ -11,6 +11,7 @@ export const DATA_DIR = (process.env.EXECUTION_DATA_DIR?.trim() || `${REPO_ROOT}
 export const EVENTS_FILE = `${DATA_DIR}/execution-events.jsonl`;
 export const REPUTATION_FILE = `${DATA_DIR}/reputation.json`;
 const STATE_FILE = `${DATA_DIR}/execution-state.json`;
+export const KILL_FILE = `${DATA_DIR}/kill-switch`;
 const DX_LOG = `${REPO_ROOT}docs/dx-raw-log.md`;
 
 export interface TradeRecord {
@@ -34,6 +35,16 @@ export interface PaymentRecord {
   symbol?: string;
 }
 
+/** A live swap that was broadcast but whose receipt has not been booked yet (survives a crash mid-wait). */
+export interface PendingTx {
+  txHash: string;
+  side: Side;
+  symbol: string;
+  label: string;
+  amountIn: string; // smallest units of the from-token
+  at: number; // ms, when broadcast returned
+}
+
 export interface PersistedState {
   day: string; // UTC YYYY-MM-DD the counters below belong to
   dailySpendUsd: number; // USDT spent on live buys today
@@ -43,6 +54,7 @@ export interface PersistedState {
   trades: TradeRecord[];
   payments: PaymentRecord[];
   ledgers: Record<FillMode, LedgerState>;
+  pending: PendingTx[];
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -55,6 +67,7 @@ const empty = (): PersistedState => ({
   trades: [],
   payments: [],
   ledgers: { paper: emptyLedger(), live: emptyLedger() },
+  pending: [],
 });
 
 export class StateStore {
@@ -74,6 +87,7 @@ export class StateStore {
             live: { ...emptyLedger(), ...loaded.ledgers?.live },
           },
           signalSpendUsd: loaded.signalSpendUsd ?? (loaded.payments ?? []).reduce((s, p) => s + p.usd, 0),
+          pending: Array.isArray(loaded.pending) ? loaded.pending : [],
         };
       } catch (e) {
         console.error(`[execution] corrupt ${file}, refusing to guess: ${(e as Error).message}`);
@@ -142,12 +156,57 @@ export class StateStore {
     return this.s.signalSpendUsd;
   }
 
+  /** Remember a broadcast live swap until its receipt is booked (replaces an entry with the same hash). */
+  setPending(p: PendingTx): void {
+    this.s.pending = [...this.s.pending.filter((x) => x.txHash.toLowerCase() !== p.txHash.toLowerCase()), p];
+    this.save();
+  }
+
+  clearPending(txHash: string): void {
+    const before = this.s.pending.length;
+    this.s.pending = this.s.pending.filter((x) => x.txHash.toLowerCase() !== txHash.toLowerCase());
+    if (this.s.pending.length !== before) this.save();
+  }
+
   private save(): void {
     mkdirSync(dirname(this.file), { recursive: true });
     const tmp = `${this.file}.tmp`;
     writeFileSync(tmp, JSON.stringify(this.s, null, 2));
     renameSync(tmp, this.file);
   }
+}
+
+// ---- persisted kill switch ------------------------------------------------------
+// POST /kill writes this file so the switch survives a restart; only POST /kill/reset (or an operator
+// deleting the file) clears it. A KILL_SWITCH=1 env cannot be reset at runtime.
+
+export interface KillRecord {
+  source: string;
+  at: string; // ISO time
+}
+
+export function writeKillFile(source: string, file = KILL_FILE): KillRecord {
+  const rec: KillRecord = { source, at: new Date().toISOString() };
+  mkdirSync(dirname(file), { recursive: true });
+  const tmp = `${file}.${process.pid}.tmp`;
+  writeFileSync(tmp, JSON.stringify(rec) + "\n");
+  renameSync(tmp, file);
+  return rec;
+}
+
+/** The persisted record, or null when there is none. An unreadable file still counts as engaged. */
+export function readKillFile(file = KILL_FILE): KillRecord | null {
+  if (!existsSync(file)) return null;
+  try {
+    const r = JSON.parse(readFileSync(file, "utf8"));
+    return { source: String(r?.source ?? "unknown"), at: String(r?.at ?? "unknown") };
+  } catch {
+    return { source: "unknown (unreadable kill-switch file)", at: "unknown" };
+  }
+}
+
+export function removeKillFile(file = KILL_FILE): void {
+  if (existsSync(file)) unlinkSync(file);
 }
 
 /** Append a factual friction line to docs/dx-raw-log.md (once per distinct `what`). */

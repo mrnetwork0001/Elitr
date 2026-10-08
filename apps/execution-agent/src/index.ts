@@ -6,6 +6,7 @@ import { parseAnalysts } from "./analysts.js";
 import { ExecutionAgent, makeBinance } from "./cycle.js";
 import { isLoopback, startServer } from "./server.js";
 import { EVENTS_FILE, REPUTATION_FILE, StateStore } from "./state.js";
+import { maxFeeWeiFromEnv } from "./trade.js";
 import { loadAccount, makePublicClient } from "./wallet.js";
 
 const env = process.env;
@@ -19,11 +20,22 @@ if (!isLoopback(host) && !controlToken) {
   process.exit(1);
 }
 
+const live = env.LIVE_TRADING === "1";
+if (live && !controlToken) {
+  console.error("[execution] refusing to start: LIVE_TRADING=1 needs CONTROL_TOKEN so POST /cycle, /kill and /trade are authenticated. Set CONTROL_TOKEN (e.g. openssl rand -hex 32).");
+  process.exit(1);
+}
+try {
+  maxFeeWeiFromEnv(env);
+} catch (e) {
+  console.error(`[execution] refusing to start: ${(e as Error).message}`);
+  process.exit(1);
+}
+
 const risk = loadRiskConfig(env);
 const hub = new EventHub("execution", EVENTS_FILE);
 const acct = loadAccount(env);
 const bin = makeBinance();
-const live = env.LIVE_TRADING === "1";
 const tradeUsd = Number(env.EXECUTION_TRADE_USD ?? risk.maxTradeUsd);
 const minBnbForGas = Number(env.EXECUTION_MIN_BNB_GAS ?? 0.001);
 if (!Number.isFinite(tradeUsd) || tradeUsd <= 0) throw new Error(`EXECUTION_TRADE_USD invalid: ${env.EXECUTION_TRADE_USD}`);
@@ -73,6 +85,10 @@ console.log(
     `analysts=${analysts.map((a) => `${a.id}@${a.url}`).join(",")} erc8004Feedback=${postFeedback ? (identity ? "on" : "on (no identity)") : "off"} ` +
     `controlAuth=${controlToken ? "bearer" : "none (loopback)"}`,
 );
+
+// A kill switch engaged before a restart stays engaged; a swap broadcast before a crash gets booked.
+agent.restorePersistedKill();
+await agent.reconcilePending().catch((e) => hub.emit({ type: "error", where: "reconcile", message: String((e as Error)?.message ?? e) }));
 
 const server = startServer(agent, Number(env.EXECUTION_PORT ?? 4002), host, controlToken);
 

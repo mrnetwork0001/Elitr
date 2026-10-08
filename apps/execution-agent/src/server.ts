@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { REGISTRATION_WELL_KNOWN_PATH, registrationFromEnv } from "@elitr/identity";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { publicAnalystUrl } from "./analysts.js";
 import type { ExecutionAgent } from "./cycle.js";
 import { errMsg } from "./trade.js";
 import { makeExtras } from "./routes.js";
@@ -19,8 +20,8 @@ export function bearerOk(header: string | undefined, token: string): boolean {
   return timingSafeEqual(a, b);
 }
 
-// POST /cycle and /kill require `Authorization: Bearer $CONTROL_TOKEN` when CONTROL_TOKEN is set;
-// index.ts refuses to bind a non-loopback host without one.
+// POST /cycle, /kill, /kill/reset and /trade require `Authorization: Bearer $CONTROL_TOKEN` when CONTROL_TOKEN
+// is set; index.ts refuses to bind a non-loopback host, or to trade live, without one.
 export function startServer(agent: ExecutionAgent, port: number, host: string, controlToken?: string): Server {
   const origin = process.env.DASHBOARD_ORIGIN ?? "http://localhost:3000";
   const cors = {
@@ -30,25 +31,32 @@ export function startServer(agent: ExecutionAgent, port: number, host: string, c
     "Access-Control-Max-Age": "600",
     Vary: "Origin",
   };
-  const send = (res: ServerResponse, status: number, body: unknown) => {
+  // HEAD is answered like GET with the body dropped (uptime probes, link checkers).
+  const send = (res: ServerResponse, status: number, body: unknown, head = false) => {
     res.writeHead(status, { "Content-Type": "application/json", ...cors });
-    res.end(JSON.stringify(body));
+    res.end(head ? undefined : JSON.stringify(body));
   };
   const authorized = (req: IncomingMessage) => !controlToken || bearerOk(req.headers.authorization, controlToken);
   const extras = makeExtras(agent);
 
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     const path = new URL(req.url ?? "/", "http://x").pathname;
+    const head = req.method === "HEAD";
+    const method = head ? "GET" : req.method;
     try {
-      if (req.method === "OPTIONS") {
+      if (method === "OPTIONS") {
         res.writeHead(204, cors);
         return res.end();
       }
-      if (req.method === "GET" && path === "/health") return send(res, 200, { ok: true, agent: "execution", running: agent.running });
-      if (req.method === "GET" && path === "/events") return agent.d.hub.sse(req, res);
-      if (req.method === "GET" && path === "/state") return send(res, 200, { ...(await state(agent)), ...extras.stateFields() });
-      if (req.method === "GET" && path === REGISTRATION_WELL_KNOWN_PATH) return send(res, 200, registrationFromEnv("execution"));
-      if (req.method === "POST" && (path === "/cycle" || path === "/kill" || path === "/trade") && !authorized(req)) {
+      if (method === "GET" && path === "/health") return send(res, 200, { ok: true, agent: "execution", running: agent.running }, head);
+      if (method === "GET" && path === "/events") {
+        if (!head) return agent.d.hub.sse(req, res);
+        res.writeHead(200, { "Content-Type": "text/event-stream", ...cors });
+        return res.end();
+      }
+      if (method === "GET" && path === "/state") return send(res, 200, { ...(await state(agent)), ...extras.stateFields() }, head);
+      if (method === "GET" && path === REGISTRATION_WELL_KNOWN_PATH) return send(res, 200, registrationFromEnv("execution"), head);
+      if (req.method === "POST" && (path === "/cycle" || path === "/kill" || path === "/kill/reset" || path === "/trade") && !authorized(req)) {
         res.setHeader("WWW-Authenticate", 'Bearer realm="elitr-execution"');
         return send(res, 401, { error: "unauthorized: send Authorization: Bearer <CONTROL_TOKEN>" });
       }
@@ -58,6 +66,7 @@ export function startServer(agent: ExecutionAgent, port: number, host: string, c
         return send(res, 202, { started: true });
       }
       if (req.method === "POST" && path === "/trade") {
+        if (!isJson(req)) return send(res, 415, { error: "Content-Type must be application/json" });
         const body = await readJson(req);
         const side = body?.side === "sell" ? "sell" : body?.side === "buy" ? "buy" : null;
         if (!side || typeof body?.symbol !== "string") return send(res, 400, { error: 'body: {"symbol":"NVDAB","side":"buy"|"sell","usd"?:number}' });
@@ -68,16 +77,22 @@ export function startServer(agent: ExecutionAgent, port: number, host: string, c
         if (!agent.killSwitch) agent.engageKill("POST /kill");
         return send(res, 200, { killSwitch: true });
       }
-      const extra = await extras.route(req.method ?? "GET", path);
-      if (extra) return send(res, extra.status, extra.body);
-      send(res, 404, { error: "not found" });
+      if (req.method === "POST" && path === "/kill/reset") {
+        const r = agent.resetKill("POST /kill/reset");
+        return send(res, r.ok ? 200 : 409, { killSwitch: agent.killed, detail: r.detail });
+      }
+      const extra = await extras.route(method ?? "GET", path);
+      if (extra) return send(res, extra.status, extra.body, head);
+      send(res, 404, { error: "not found" }, head);
     } catch (e) {
-      send(res, 500, { error: errMsg(e) });
+      send(res, 500, { error: errMsg(e) }, head);
     }
   });
   server.listen(port, host, () => console.log(`[execution] listening on http://${host}:${port}`));
   return server;
 }
+
+const isJson = (req: IncomingMessage) => /^application\/json\b/i.test(req.headers["content-type"] ?? "");
 
 async function readJson(req: IncomingMessage): Promise<any> {
   let raw = "";
@@ -112,10 +127,11 @@ async function state(agent: ExecutionAgent) {
   const statuses = await agent.analystStatuses().catch(() => []);
   const analysts = d.cfg.analysts.map((ep) => {
     const s = statuses.find((x) => x.endpoint.id === ep.id);
+    const url = publicAnalystUrl(ep.id, s?.publicUrl); // never the internal (localhost) endpoint
     return {
       ...d.book.stats(ep.id),
       name: s?.info?.name ?? ep.id,
-      url: ep.url,
+      ...(url ? { url } : {}),
       online: !!s?.online,
       priceUsd: s?.info?.priceUsd ?? null,
       erc8004AgentId: agent.erc8004IdOf(s, ep.id),
@@ -136,7 +152,7 @@ async function state(agent: ExecutionAgent) {
     dailyDataUsd: s.dailyDataUsd,
     liveTrading: d.cfg.live,
     mode: agent.mode,
-    killSwitch: agent.killSwitch || d.risk.killSwitch,
+    killSwitch: agent.killed,
     risk: d.risk,
     lastCycleAt: agent.lastCycleAt,
     nextCycleAt: agent.nextCycleAt,

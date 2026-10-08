@@ -1,9 +1,15 @@
-import { decodeFunctionData, erc20Abi, formatUnits, type PrivateKeyAccount, type PublicClient, type TransactionReceipt } from "viem";
+import { decodeFunctionData, erc20Abi, formatEther, formatUnits, parseEther, type PrivateKeyAccount, type PublicClient, type TransactionReceipt } from "viem";
 import { BinanceApiError, type BinanceWeb3Client, type QuoteRoute } from "@elitr/binance";
-import { USDT_BSC, type EventHub, type RiskConfig, type Side, type TokenizedStock } from "@elitr/shared";
+import { ASSETS, USDT_BSC, type EventHub, type RiskConfig, type Side, type TokenizedStock } from "@elitr/shared";
+import type { PendingTx, StateStore } from "./state.js";
 import { erc20Allowance, signTx, toBig, transferredIn, transferredOut, type Address, type UnsignedTx } from "./wallet.js";
 
 const CHAIN = "56";
+
+/** Trading API router on BSC (docs/reference/binance-web3-llms-full.txt, "Router Contract" table). */
+export const KNOWN_ROUTERS = ["0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5"].map((a) => a.toLowerCase());
+export const MAX_GAS = 3_000_000n;
+export const MAX_GAS_PRICE_MULTIPLE = 3n;
 
 export interface TxDeps {
   hub: EventHub;
@@ -14,6 +20,48 @@ export interface TxDeps {
   mevProtection: boolean;
   /** Called with every confirmed receipt (gas accounting). Must not throw. */
   onReceipt?: (receipt: TransactionReceipt, label: string) => Promise<void> | void;
+  /** Pending-swap records (H1): written right after broadcast, cleared by the caller once the fill is booked. */
+  store?: Pick<StateStore, "setPending" | "clearPending">;
+  /** Checked right before signing; true aborts the send (kill switch). */
+  abort?: () => boolean;
+  /** Worst-case fee cap in wei (default EXECUTION_MAX_FEE_BNB, 0.01 BNB). */
+  maxFeeWei?: bigint;
+}
+
+export function maxFeeWeiFromEnv(env: NodeJS.ProcessEnv = process.env): bigint {
+  const v = env.EXECUTION_MAX_FEE_BNB?.trim() || "0.01";
+  if (!/^\d+(\.\d+)?$/.test(v) || !(Number(v) > 0)) throw new Error(`EXECUTION_MAX_FEE_BNB invalid: ${JSON.stringify(env.EXECUTION_MAX_FEE_BNB)}`);
+  return parseEther(v);
+}
+
+/**
+ * Sanity limits on what we are about to sign: a runaway gas limit, a fee above the BNB budget, or a
+ * gas price far above the network's. Throws with the reason; nothing is signed.
+ */
+export function checkGasBudget(tx: Pick<UnsignedTx, "gas" | "gasPrice">, networkGasPrice: bigint, maxFeeWei: bigint): void {
+  if (tx.gas > MAX_GAS) throw new Error(`refusing to sign: gas limit ${tx.gas} > ${MAX_GAS}`);
+  const fee = tx.gas * tx.gasPrice;
+  if (fee > maxFeeWei) {
+    throw new Error(`refusing to sign: worst-case fee ${formatEther(fee)} BNB (${tx.gas} gas × ${tx.gasPrice} wei) > EXECUTION_MAX_FEE_BNB ${formatEther(maxFeeWei)}`);
+  }
+  if (networkGasPrice > 0n && tx.gasPrice > networkGasPrice * MAX_GAS_PRICE_MULTIPLE) {
+    throw new Error(`refusing to sign: gas price ${tx.gasPrice} wei > ${MAX_GAS_PRICE_MULTIPLE}× network ${networkGasPrice} wei`);
+  }
+}
+
+/**
+ * A swap may only call the spender the quote named (route.approveTarget), or a known Trading API router
+ * when the quote named none - never a token contract, which is what an approve() or transfer() would hit.
+ */
+export function checkSwapDestination(to: string, approveTarget?: string | null): void {
+  const t = String(to).toLowerCase();
+  const tokens = [USDT_BSC.address, ...Object.values(ASSETS).map((a) => a.address)].map((a) => a.toLowerCase());
+  if (tokens.includes(t)) throw new Error(`swap tx.to ${to} is a token contract; refusing`);
+  if (approveTarget) {
+    if (t !== String(approveTarget).toLowerCase()) throw new Error(`swap tx.to ${to} != route approveTarget ${approveTarget}; refusing`);
+    return;
+  }
+  if (!KNOWN_ROUTERS.includes(t)) throw new Error(`swap tx.to ${to} is not a known router (${KNOWN_ROUTERS.join(", ")}); refusing`);
 }
 
 export const errMsg = (e: unknown) =>
@@ -51,14 +99,22 @@ export async function simulateTx(
   return { ok, failReason, gasUsed };
 }
 
-/** Sign locally, broadcast through the Transaction API, wait for the receipt. Live mode only. */
+/**
+ * Sign locally, broadcast through the Transaction API, wait for the receipt. Live mode only.
+ * With `pending` (a swap), the record is persisted the moment the hash is known, so a crash or RPC
+ * failure during the wait leaves a trail that reconcilePending() books later. It is removed here only
+ * on a revert; a successful fill is cleared by the caller once it is in the ledger.
+ */
 export async function sendTx(
   d: TxDeps,
   label: string,
   tx: UnsignedTx,
   side?: Side,
+  pending?: Pick<PendingTx, "symbol" | "amountIn">,
 ): Promise<{ txHash: `0x${string}`; receipt: TransactionReceipt }> {
   if (!d.live) throw new Error("refusing to broadcast: LIVE_TRADING is not 1");
+  checkGasBudget(tx, await d.pc.getGasPrice(), d.maxFeeWei ?? maxFeeWeiFromEnv());
+  if (d.abort?.()) throw new Error("aborted: kill switch engaged");
   const { raw } = await signTx(d.pc, d.account, tx);
   const res = await d.binance.broadcast({
     binanceChainId: CHAIN,
@@ -67,11 +123,15 @@ export async function sendTx(
     enableMevProtection: d.mevProtection,
   });
   const txHash = res.txHash as `0x${string}`;
+  if (pending && side && d.store) d.store.setPending({ txHash, side, symbol: pending.symbol, label, amountIn: pending.amountIn, at: Date.now() });
   d.hub.emit({ type: "tx.broadcast", symbol: label, txHash, side });
   const receipt = await d.pc.waitForTransactionReceipt({ hash: txHash, timeout: 180_000 });
   if (d.onReceipt) await d.onReceipt(receipt, label);
   await crossCheckDetail(d, label, txHash);
-  if (receipt.status !== "success") throw new Error(`${label} tx ${txHash} reverted on-chain`);
+  if (receipt.status !== "success") {
+    d.store?.clearPending(txHash);
+    throw new Error(`${label} tx ${txHash} reverted on-chain`);
+  }
   return { txHash, receipt };
 }
 
@@ -157,6 +217,18 @@ export function safeGasLimit(suggested: unknown, simulated: string | undefined, 
   const a = toBig(suggested, label);
   const b = simulated && /^\d+$/.test(simulated) ? BigInt(simulated) : 0n;
   return ((a > b ? a : b) * 125n) / 100n;
+}
+
+/** Re-quote after an approval: same spender, price impact still within the slippage limit. */
+export function checkFreshRoute(route: QuoteRoute, spender: Address, maxSlippageBps: number): void {
+  if (String(route.approveTarget ?? "").toLowerCase() !== spender.toLowerCase()) {
+    throw new Error(`re-quote approveTarget ${route.approveTarget} != approved spender ${spender}; refusing`);
+  }
+  const impact = route.priceImpactPercent;
+  if (impact != null && impact !== "") {
+    const bps = Math.abs(Number(impact)) * 100;
+    if (!Number.isFinite(bps) || bps > maxSlippageBps) throw new Error(`re-quote price impact ${impact}% exceeds ${maxSlippageBps} bps; refusing`);
+  }
 }
 
 /** Back-compat wrapper for the buy leg. */
@@ -250,12 +322,14 @@ export async function executeSwap(
           side,
         );
         d.hub.emit({ type: "tx.confirmed", symbol: label, txHash: approveHash, amountIn: `approve ${formatUnits(amountIn, from.decimals)} ${from.symbol}`, amountOut: "0", side });
-        // quoteId TTL is ~30s; the approval wait likely outlived it.
+        // quoteId TTL is ~30s; the approval wait likely outlived it. The fresh route must still use the
+        // spender we just approved and stay within the price-impact limit the risk engine checked.
         const fresh = await quoteSwap(d.binance, side, asset, owner, amountIn);
         if (!fresh.route) {
           d.hub.emit({ type: "risk.blocked", symbol: asset.symbol, rule: "simulatableRoute", detail: fresh.detail });
           return { simulated: false, failReason: fresh.detail };
         }
+        checkFreshRoute(fresh.route, spender, cfg.maxSlippageBps);
         route = fresh.route;
       }
     }
@@ -277,6 +351,7 @@ export async function executeSwap(
   const tx = sw?.tx;
   if (!tx?.to || !tx?.data) throw new Error(`swap returned no tx: ${JSON.stringify(sw).slice(0, 300)}`);
   if (String(tx.from).toLowerCase() !== owner.toLowerCase()) throw new Error(`swap tx.from ${tx.from} is not the agent wallet`);
+  checkSwapDestination(tx.to, route.approveTarget);
 
   // 3. Dry-run via Transaction API.
   const value = toBig(tx.value ?? "0", "swap.value");
@@ -296,6 +371,7 @@ export async function executeSwap(
       maxPriorityFeePerGas: tx.maxPriorityFeePerGas ? toBig(tx.maxPriorityFeePerGas, "swap.maxPriorityFeePerGas") : undefined,
     },
     side,
+    { symbol: asset.symbol, amountIn: amountIn.toString() },
   );
   const inWei = transferredOut(receipt, from.address, owner);
   const outWei = transferredIn(receipt, to.address, owner);

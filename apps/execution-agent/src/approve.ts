@@ -144,6 +144,14 @@ async function permit2(): Promise<void> {
   console.log(`    confirmed: ${txHash}`);
 }
 
+// A running cycle shares the wallet nonce; never interleave approvals with it.
+try {
+  const h = await fetch(`http://127.0.0.1:${env.EXECUTION_PORT || 4002}/health`, { signal: AbortSignal.timeout(3_000) });
+  if ((await h.json())?.running === true) fail("a cycle is running; retry in a minute");
+} catch {
+  /* agent not reachable: nothing to collide with */
+}
+
 console.log(`[approve] wallet ${account.address} - ${yes ? "WILL BROADCAST approvals that simulate OK" : "dry run (simulate only)"}`);
 try {
   await permit2();
