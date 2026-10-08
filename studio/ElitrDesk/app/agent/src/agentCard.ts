@@ -164,6 +164,8 @@ export function buildAgentCard(
     // same AGENT_PORT → 9000 resolution main.ts serves on. Do not honor the
     // AgentCore HTTP $PORT=8080 convention for this A2A runtime.
     url:
+      // Self-hosted (e.g. behind Caddy on a VPS): advertise the public HTTPS base.
+      (process.env.BNBAGENT_PUBLIC_URL ? process.env.BNBAGENT_PUBLIC_URL.replace(/\/?$/, "/") : undefined) ??
       process.env.AGENTCORE_RUNTIME_URL ??
       `http://${process.env.AGENT_HOST ?? "localhost"}:${process.env.AGENT_PORT || "9000"}/`,
     version: "1.0.0",

@@ -17,14 +17,14 @@ runtime = "agentcore"
 protocols = ["A2A","X402"]
 
 [network]
-default = "bsc-testnet"
+default = "bsc-mainnet"
 
 [deploy]
 # Legacy scaffold intent: this project was created for the managed BNB trial.
 # Deployment still requires an explicit `bag deploy --provider bnb` choice;
 # this field is never used as a silent provider default. Post-deploy state is
 # recorded under [deploy.platform].
-destination = "platform"
+destination = "self"
 # Artifact channel: 'zip' (evm-local default — managed runtime, no Docker)
 # or 'container' (local Docker build → brokered ECR; forced for twak).
 platform_artifact = "zip"
@@ -37,7 +37,7 @@ kind = "evm-local"
 signer = "local"
 keystore_dir = "../../.studio/wallets"
 # address = "0x..."   # filled by `bag wallet new`
-address = "0x53102f38FE622B91708081661Df2939Ea08B72E5"
+address = "0xFD9fBD6719a0b521314a67fF36EF26634bf71642"
 
 [llm]
 provider = "pieverse-llm"
@@ -70,11 +70,11 @@ allowed_payment_tokens = ["U","USDC","USDT"]
 
 [payments.seller]
 # 所有 Seller rail 与已配置资产共用同一个 USD 标价；"0" 表示 FREE。
-price_usd = "0.01"
+price_usd = "0"
 # 使用当前网络的 canonical AssetId；顺序会保留，允许改为任意非空子集。
 # 这里只列出当前 ERC-8183 合约栈能托管的资产。要卖更多币种，需要指向
 # 支持多 token 的部署（同时设置三个 ERC8183_*_ADDRESS），再把资产加回来。
-assets = ["TEST_U","TEST_USDC","TEST_USDT"]
+assets = ["U"]
 
 [storage]
 # Deliverables written to local disk (file://). Offline-dev only —
