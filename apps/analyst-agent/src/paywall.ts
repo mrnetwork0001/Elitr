@@ -28,6 +28,8 @@ export interface AnalystServerOptions {
   info: AnalystInfo; // served at /info
   label: string; // log prefix
   port: number;
+  /** Bind address. Loopback by default: a reverse proxy or the Docker network fronts the service. */
+  host?: string;
   hub: EventHub;
   assets: TokenizedStock[]; // symbols this analyst sells
   b402: { config?: B402Config; problems: string[] };
@@ -195,8 +197,9 @@ export function startAnalystServer(o: AnalystServerOptions): Server {
     send(res, 404, { error: "not found" });
   });
 
-  server.listen(port, () => {
-    console.log(`[${label}] listening on :${port}`);
+  const host = o.host || "127.0.0.1";
+  server.listen(port, host, () => {
+    console.log(`[${label}] listening on ${host}:${port}`);
     if (problems.length) console.warn(`[${label}] b402 disabled - ${problems.join("; ")}`);
     const missing = o.notReady();
     if (missing.length) console.warn(`[${label}] signals disabled - ${missing.join("; ")}`);

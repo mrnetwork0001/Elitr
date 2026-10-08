@@ -60,6 +60,7 @@ export function startServers(env: NodeJS.ProcessEnv = process.env): Server[] {
           llmConfigured ? [] : ["No LLM credentials: set ANTHROPIC_AUTH_TOKEN (0G Router) or ANTHROPIC_API_KEY"],
         signals: new SignalService(newsProducer(scorer, horizonSec), cacheSec),
         publicUrl: env.ANALYST_PUBLIC_URL,
+        host: env.ANALYST_HOST,
         dashboardOrigin: origin,
         resourceDescription: (a: TokenizedStock) => `News-sentiment signal (score 1-100) for ${a.symbol} / ${a.underlying}`,
         health: () => ({ llmConfigured, model: scorer.model, newsSources: NEWS_FEEDS.map((f) => f.name) }),
@@ -100,6 +101,7 @@ export function startServers(env: NodeJS.ProcessEnv = process.env): Server[] {
         notReady: () => [],
         signals: new SignalService(flowProducer(reader, horizonSec, minSwaps), cacheSec),
         publicUrl: env.FLOW_ANALYST_PUBLIC_URL,
+        host: env.ANALYST_HOST,
         dashboardOrigin: origin,
         resourceDescription: (a: TokenizedStock) => `On-chain order-flow signal (score 1-100) for ${a.symbol} from its PancakeSwap v3 pool`,
         // RPC hosts only - full URLs can embed API keys.

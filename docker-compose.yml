@@ -27,6 +27,7 @@ services:
       HEALTH_PORT: "4001"
       ANALYST_PORT: "4001"
       FLOW_ANALYST_PORT: "4003"
+      ANALYST_HOST: "0.0.0.0" # inside the container; published ports front it
       DASHBOARD_ORIGIN: ${DASHBOARD_ORIGIN:-http://localhost:3000}
     ports:
       - "4001:4001" # news-sentiment analyst (b402-paid GET /signal)
