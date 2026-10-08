@@ -1,0 +1,6 @@
+[Unit]
+Description=Elitr nightly data backup
+[Service]
+Type=oneshot
+User=ubuntu
+ExecStart=/bin/bash -c "tar -czf /home/ubuntu/backups/elitr-data-$(date -u +%%F).tgz -C /home/ubuntu/elitr data && ls -1t /home/ubuntu/backups/elitr-data-*.tgz | tail -n +8 | xargs -r rm -f"
