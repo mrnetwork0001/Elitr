@@ -93,3 +93,9 @@ work_timeout_seconds = 60
 # Optional Bazaar metadata can be added later as scalar JSON fields under
 # [payments.b402_seller.bazaar]: info_json, schema_json, description,
 # and route_template.
+
+[identity]
+agent_id = 367734
+endpoint = "https://desk.elitr.xyz"
+registered_tx = "0xd95b1b475f44dd6537b3df63c380d7d0d4f948d001434cd8ed3856b96a5ae22b"
+network = "bsc-mainnet"
