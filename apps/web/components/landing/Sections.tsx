@@ -87,6 +87,7 @@ const PROOF: [string, string, string][] = [
   ["Agent pays agent (b402)", "Trader → flow analyst, 0.01 USDT for a signal, settled by Binance's facilitator", "0xe2a30c0801799c2b1c128fdc4e332c8485ce3249eacedd52470e2b1971a6c49f"],
   ["Agent rates agent (ERC-8004)", "Trader posts the news analyst's accuracy to the reputation registry", "0xf09e9f6edd8d64d0fd4f4a75f463ba2106093b16b2f986ad774c7b584aa887d6"],
   ["Live trade", "Operator-triggered test buy: 2 USDT → 0.008433 NVDAB, simulated with the Transaction API, then broadcast", "0x0ce91120a0e7f14792a20565aa99f4a1819afafc0d1f1e9ee51ee3e36aa03807"],
+  ["Autonomous live exit", "Stop-loss fired 221 bps under cost: the trader sold 0.008433 NVDAB for 1.96 USDT on its own, simulated first, then broadcast", "0x37ff1c71218a1a68d3c5f04985398fe12796c2a984c6e11e64d8003e941d3b11"],
   ["Binance Agentic Wallet buys a signal", "Paid in U via EIP-3009, no approval needed, 3.5 s from signature to signal", "0xd2535021423ae6d30b4bbc6fde8f2b58fc0bc22dba7831c7d97c7eed78ca2e4e"],
   ["BNB Agent Studio agent registers", "Elitr Desk Brief #367734, self-hosted on mainnet at desk.elitr.xyz (gas sponsored by MegaFuel)", "0xd95b1b475f44dd6537b3df63c380d7d0d4f948d001434cd8ed3856b96a5ae22b"],
 ];
