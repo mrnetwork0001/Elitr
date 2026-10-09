@@ -186,3 +186,18 @@ test("kill switch persists to a file, is restored at startup and reset only when
   assert.equal(c.agent.resetKill("POST /kill/reset").ok, false);
   assert.equal(c.agent.killed, true);
 });
+
+test("reconcilePending keeps a stale record when the receipt lookup fails for a non-not-found reason", async () => {
+  const { agent, events } = makeAgent({
+    pc: { getTransactionReceipt: async () => { throw new Error("HTTP 502 bad gateway"); } } as any,
+  });
+  const store = (agent as any).d.store as StateStore;
+  store.setPending({ txHash: "0x" + "ab".repeat(32), side: "buy", symbol: "NVDAB", label: "swap", amountIn: "2", at: Date.now() - 60 * 60_000 });
+  await agent.reconcilePending();
+  assert.equal(store.get().pending.length, 1, "record must survive an RPC error");
+  assert.ok(events.some((e) => e.type === "error" && /receipt lookup failed/.test((e as any).message)));
+  // A real not-found after the grace period is still dropped.
+  (agent as any).d.pc = { getTransactionReceipt: async () => { throw new Error("Transaction receipt with hash 0x.. could not be found."); } };
+  await agent.reconcilePending();
+  assert.equal(store.get().pending.length, 0);
+});

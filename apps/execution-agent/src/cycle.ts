@@ -22,6 +22,12 @@ import { evaluateRisk, evaluateSellRisk, exitTrigger, gapBps, pickProbe, worthBu
 
 /** Free per-asset pre-screen inputs, computed for the whole basket before any signal is bought. */
 type PreScreen = { yahoo: YahooQuote | null; gap: number | null; held: bigint; probe: boolean };
+
+/** viem throws TransactionReceiptNotFoundError while a tx is unmined; anything else is an RPC problem. */
+function isReceiptNotFound(e: unknown): boolean {
+  const err = e as { name?: string; message?: string } | null;
+  return err?.name === "TransactionReceiptNotFoundError" || /TransactionReceiptNotFound|could not be found/i.test(String(err?.message ?? ""));
+}
 import { dxLog, KILL_FILE, readKillFile, removeKillFile, writeKillFile, type StateStore } from "./state.js";
 import { errMsg, executeSwap, legs, quoteSwap, type RouteChoice, type SwapResult, type TxDeps } from "./trade.js";
 import { poolUsdtLiquidity, readBalances, transferredIn, transferredOut, type Balances } from "./wallet.js";
@@ -305,12 +311,26 @@ export class ExecutionAgent {
       let receipt: TransactionReceipt | null = null;
       try {
         receipt = await pc.getTransactionReceipt({ hash });
-      } catch {
-        receipt = null; // not mined (or not found) yet
+      } catch (e) {
+        if (!isReceiptNotFound(e)) {
+          // RPC trouble is not evidence that the tx never mined: keep the record and try again next cycle.
+          hub.emit({ type: "error", where, message: `${p.label} tx ${p.txHash}: receipt lookup failed (${errMsg(e)}); keeping the pending record` });
+          continue;
+        }
+        receipt = null; // definitely not mined (or not found) yet
       }
       if (!receipt) {
         if (Date.now() - p.at < PENDING_GRACE_MS) continue;
         hub.emit({ type: "error", where, message: `${p.label} tx ${p.txHash} has no receipt ${Math.round((Date.now() - p.at) / 60_000)} min after broadcast; dropping the pending record (a late fill is adopted by the wallet-vs-ledger check)` });
+        store.clearPending(p.txHash);
+        continue;
+      }
+      const hashLc = p.txHash.toLowerCase();
+      const st = store.get();
+      const already = st.ledgers.live.fills.some((f) => f.txHash?.toLowerCase() === hashLc) || st.trades.some((t) => t.txHash?.toLowerCase() === hashLc);
+      if (already) {
+        // The fill (or at least the trade record and its gas) reached the ledger before the crash.
+        hub.emit({ type: "error", where, message: `${p.label} tx ${p.txHash} confirmed and already booked - pending record cleared` });
         store.clearPending(p.txHash);
         continue;
       }
@@ -321,9 +341,8 @@ export class ExecutionAgent {
         continue;
       }
       const asset = this.assets.find((a) => a.symbol === p.symbol);
-      const already = store.get().ledgers.live.fills.some((f) => f.txHash?.toLowerCase() === p.txHash.toLowerCase());
-      if (!asset || already) {
-        hub.emit({ type: "error", where, message: `${p.label} tx ${p.txHash} confirmed; ${already ? "already booked" : "not a traded asset"} - pending record cleared` });
+      if (!asset) {
+        hub.emit({ type: "error", where, message: `${p.label} tx ${p.txHash} confirmed; not a traded asset - pending record cleared` });
         store.clearPending(p.txHash);
         continue;
       }
@@ -557,7 +576,10 @@ export class ExecutionAgent {
     }
     if (mark) statusNote.push(`mark ${mark.price.toFixed(4)} USDT (${mark.source})`);
 
-    // c. Exit check on the open position (active mode).
+    // c. Exit check on the open position (active mode). In live mode the wallet is the truth: tokens the
+    //    ledger does not know about (a fill lost on the way to the ledger) are adopted first, so the
+    //    stop-loss / take-profit / bearish exits apply to them too.
+    if (this.mode === "live" && bal) this.adoptUntracked(asset, bal.raw.tokens[sym] ?? 0n);
     const ledger = store.get().ledgers[this.mode];
     const view = positionView(ledger, sym, mark?.price ?? null);
     const latest = this.latestSignal.get(sym) ?? null;
@@ -671,6 +693,11 @@ export class ExecutionAgent {
     let sig: Awaited<ReturnType<typeof buySignal>> = null;
     for (let attempt = 0; attempt < 2 && !this.killed; attempt++) {
       const choice = book.choose(candidates.map((c) => (declined.includes(c.analystId) ? { ...c, online: false } : c)));
+      if (attempt && choice.probation) {
+        // Only paused analysts are left: a paused analyst is not bought from while an unpaused one exists (it is retried next cycle).
+        missing.signal = `no signal purchased from ${declined.join(", ")} this cycle (see preceding events); only paused analysts remain`;
+        return null;
+      }
       const fallback = attempt ? [`fallback: ${declined.join(", ")} sold no signal for ${sym} this cycle`] : [];
       hub.emit({ type: "analyst.selected", symbol: sym, analystId: choice.analystId, reasons: [...fallback, ...choice.reasons, ...extra], candidates: choice.candidates });
       if (!choice.analystId) {
@@ -684,6 +711,7 @@ export class ExecutionAgent {
         return null;
       }
       const ep = statuses.find((s) => s.endpoint.id === choice.analystId)!.endpoint;
+      const spentBefore = store.get().dailyDataUsd;
       sig = await this.step(`pay.${ep.id}`, () =>
         buySignal(
           { hub, store, risk, pc, account, binance, analystId: ep.id, analystUrl: ep.url, live: cfg.live, mevProtection: cfg.mevProtection, onReceipt: (r, l) => this.bookGas(r, l), abort: () => this.killed },
@@ -692,6 +720,11 @@ export class ExecutionAgent {
       );
       if (sig) break;
       declined.push(ep.id);
+      if (store.get().dailyDataUsd > spentBefore) {
+        // A payment settled but no usable signal came back: do not pay a second analyst for the same asset this cycle.
+        missing.signal = `paid ${ep.id} but received no usable signal for ${sym} this cycle (see preceding event)`;
+        return null;
+      }
     }
     if (!sig) {
       missing.signal = `no signal purchased from ${declined.join(", ")} this cycle (see preceding events)`;
@@ -914,7 +947,7 @@ export class ExecutionAgent {
   /** ERC-8004 feedback (on-chain, costs gas). Opt-in; failures are reported and never thrown. */
   private async postFeedback(analystId: AnalystId, signalId: string, trust: number, detail: Record<string, unknown>): Promise<void> {
     const { hub, identity, cfg } = this.d;
-    if (!cfg.postFeedback) return;
+    if (!cfg.postFeedback || this.killed) return;
     const value = Math.max(0, Math.min(100, Math.round(trust * 100)));
     const tag = "signal-accuracy";
     if (!identity) {

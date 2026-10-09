@@ -174,7 +174,8 @@ export function startAnalystServer(o: AnalystServerOptions): Server {
       res.writeHead(204, cors);
       return res.end();
     }
-    if (req.method !== "GET") return send(res, 405, { error: "method not allowed" });
+    // HEAD is answered like GET (Node drops the body for HEAD responses), so uptime probes work.
+    if (req.method !== "GET" && req.method !== "HEAD") return send(res, 405, { error: "method not allowed" });
     if (url.pathname === "/health") {
       const missing = [...problems, ...o.notReady()];
       return send(res, 200, {

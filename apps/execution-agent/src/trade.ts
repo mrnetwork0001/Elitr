@@ -1,4 +1,4 @@
-import { decodeFunctionData, erc20Abi, formatEther, formatUnits, parseEther, type PrivateKeyAccount, type PublicClient, type TransactionReceipt } from "viem";
+import { decodeFunctionData, erc20Abi, formatEther, formatUnits, keccak256, parseEther, type PrivateKeyAccount, type PublicClient, type TransactionReceipt } from "viem";
 import { BinanceApiError, type BinanceWeb3Client, type QuoteRoute } from "@elitr/binance";
 import { ASSETS, USDT_BSC, type EventHub, type RiskConfig, type Side, type TokenizedStock } from "@elitr/shared";
 import type { PendingTx, StateStore } from "./state.js";
@@ -116,14 +116,31 @@ export async function sendTx(
   checkGasBudget(tx, await d.pc.getGasPrice(), d.maxFeeWei ?? maxFeeWeiFromEnv());
   if (d.abort?.()) throw new Error("aborted: kill switch engaged");
   const { raw } = await signTx(d.pc, d.account, tx);
-  const res = await d.binance.broadcast({
-    binanceChainId: CHAIN,
-    signedTransaction: raw,
-    address: d.account.address,
-    enableMevProtection: d.mevProtection,
-  });
+  // The hash is known before the relay answers: persist the record first, so a broadcast whose HTTP
+  // response is lost (timeout, crash) still leaves a trail for reconcilePending().
+  const signedHash = keccak256(raw as `0x${string}`);
+  const track = (txHash: `0x${string}`) => {
+    if (pending && side && d.store) d.store.setPending({ txHash, side, symbol: pending.symbol, label, amountIn: pending.amountIn, at: Date.now() });
+  };
+  track(signedHash);
+  let res;
+  try {
+    res = await d.binance.broadcast({
+      binanceChainId: CHAIN,
+      signedTransaction: raw,
+      address: d.account.address,
+      enableMevProtection: d.mevProtection,
+    });
+  } catch (e) {
+    // A definitive rejection means nothing is in flight; a timeout might still have been accepted.
+    if (!(e instanceof BinanceApiError && e.code === "timeout")) d.store?.clearPending(signedHash);
+    throw e;
+  }
   const txHash = res.txHash as `0x${string}`;
-  if (pending && side && d.store) d.store.setPending({ txHash, side, symbol: pending.symbol, label, amountIn: pending.amountIn, at: Date.now() });
+  if (txHash.toLowerCase() !== signedHash.toLowerCase()) {
+    d.store?.clearPending(signedHash);
+    track(txHash);
+  }
   d.hub.emit({ type: "tx.broadcast", symbol: label, txHash, side });
   const receipt = await d.pc.waitForTransactionReceipt({ hash: txHash, timeout: 180_000 });
   if (d.onReceipt) await d.onReceipt(receipt, label);
