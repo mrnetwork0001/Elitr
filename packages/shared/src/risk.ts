@@ -10,6 +10,10 @@ export const RiskConfigSchema = z.object({
   minLiquidityUsd: z.coerce.number().nonnegative().default(50_000),
   minConfidence: z.coerce.number().min(1).max(100).default(65),
   minGapBps: z.coerce.number().nonnegative().default(50), // on-chain must lag reference by at least this
+  probeSignals: z
+    .string()
+    .optional()
+    .transform((v) => v === undefined || v === "1" || v === "true"), // buy one signal per cycle even when nothing clears the pre-screen
   maxSignalAgeSec: z.coerce.number().int().positive().default(300),
   maxDailyDataUsd: z.coerce.number().nonnegative().default(1), // cap on b402 spend for signals
   maxPortfolioUsd: z.coerce.number().positive().default(50), // all positions combined
@@ -41,6 +45,7 @@ export function loadRiskConfig(env: NodeJS.ProcessEnv = process.env): RiskConfig
     minLiquidityUsd: v(env.RISK_MIN_LIQUIDITY_USD),
     minConfidence: v(env.RISK_MIN_CONFIDENCE),
     minGapBps: v(env.RISK_MIN_GAP_BPS),
+    probeSignals: v(env.RISK_PROBE_SIGNALS),
     maxSignalAgeSec: v(env.RISK_MAX_SIGNAL_AGE_SEC),
     maxDailyDataUsd: v(env.RISK_MAX_DAILY_DATA_USD),
     maxPortfolioUsd: v(env.RISK_MAX_PORTFOLIO_USD),

@@ -18,7 +18,10 @@ import { covers, fetchInfo, type AnalystEndpoint, type AnalystStatus } from "./a
 import { heldWei, positionView, summarize, type PnlSummary } from "./ledger.js";
 import { buySignal } from "./pay.js";
 import { bnbUsd, fetchOnchainPrice, fetchRwa, fetchYahoo, poolPrice, type RwaSnapshot, type YahooQuote } from "./prices.js";
-import { evaluateRisk, evaluateSellRisk, exitTrigger, gapBps, worthBuyingSignal, type ExitReason } from "./risk.js";
+import { evaluateRisk, evaluateSellRisk, exitTrigger, gapBps, pickProbe, worthBuyingSignal, type ExitReason } from "./risk.js";
+
+/** Free per-asset pre-screen inputs, computed for the whole basket before any signal is bought. */
+type PreScreen = { yahoo: YahooQuote | null; gap: number | null; held: bigint; probe: boolean };
 import { dxLog, KILL_FILE, readKillFile, removeKillFile, writeKillFile, type StateStore } from "./state.js";
 import { errMsg, executeSwap, legs, quoteSwap, type RouteChoice, type SwapResult, type TxDeps } from "./trade.js";
 import { poolUsdtLiquidity, readBalances, transferredIn, transferredOut, type Balances } from "./wallet.js";
@@ -407,8 +410,21 @@ export class ExecutionAgent {
     const pools = new Map<string, number>();
     for (const a of this.assets) await this.refreshMark(a, pools);
 
+    // 5b. Free Yahoo reference for every asset, then the pre-screen across the basket. When no asset is
+    //     cheap enough for a buy and nothing is held, one "probe" signal is still bought for the asset
+    //     closest to qualifying, so the analysts keep getting scored (at most one signal per cycle).
+    const pre = new Map<string, PreScreen>();
     for (const a of this.assets) {
-      await this.step(`asset:${a.symbol}`, () => this.runAsset(a, statuses, bal, pools));
+      const yahoo: YahooQuote | null = await this.step(`yahoo:${a.symbol}`, () => fetchYahoo(a.underlying));
+      if (yahoo) hub.emit({ type: "price.reference", symbol: a.symbol, price: yahoo.price, source: "yahoo" });
+      const markNow = this.marks.get(a.symbol) ?? null;
+      pre.set(a.symbol, { yahoo, gap: yahoo && markNow ? gapBps(yahoo.price, markNow.price) : null, held: this.heldFor(a, bal) ?? 0n, probe: false });
+    }
+    const probe = risk.probeSignals ? pickProbe([...pre].map(([symbol, p]) => ({ symbol, gap: p.gap, held: p.held })), risk.minGapBps) : null;
+    if (probe) pre.get(probe)!.probe = true;
+
+    for (const a of this.assets) {
+      await this.step(`asset:${a.symbol}`, () => this.runAsset(a, statuses, bal, pools, pre.get(a.symbol)!));
       // A trade invalidates the cache; re-read so the next asset sees post-trade balances.
       if (!this.balCache && account) this.balCache = await this.step("wallet.balances", () => readBalances(this.d.pc, account.address, this.assets));
       bal = this.balCache;
@@ -471,22 +487,28 @@ export class ExecutionAgent {
 
   // ---- per asset ---------------------------------------------------------------
 
-  private async runAsset(asset: TokenizedStock, statuses: AnalystStatus[], bal: Balances | null, pools: Map<string, number>): Promise<void> {
+  private async runAsset(asset: TokenizedStock, statuses: AnalystStatus[], bal: Balances | null, pools: Map<string, number>, pre: PreScreen): Promise<void> {
     const { hub, store, risk, binance, account, cfg } = this.d;
     const sym = asset.symbol;
     const missing: Record<string, string> = {};
 
-    // a. Free pre-screen, then (maybe) choose an analyst and buy its signal. Buys need the on-chain price
-    //    at least minGapBps below the Yahoo reference, so with six assets we only spend $0.01 where a buy
-    //    is possible this cycle, or where a position is open and a bearish call could trigger an exit.
-    const yahoo: YahooQuote | null = await this.step(`yahoo:${sym}`, () => fetchYahoo(asset.underlying));
-    if (yahoo) hub.emit({ type: "price.reference", symbol: sym, price: yahoo.price, source: "yahoo" });
-    else missing.minGapBps = "Yahoo reference price unavailable";
+    // a. Free pre-screen (computed for the basket in cycle()), then (maybe) choose an analyst and buy its
+    //    signal. Buys need the on-chain price at least minGapBps below the Yahoo reference, so with six
+    //    assets we only spend $0.01 where a buy is possible this cycle, where a position is open and a
+    //    bearish call could trigger an exit, or for the one probe asset when nothing qualifies.
+    const { yahoo, gap: preGap } = pre;
+    if (!yahoo) missing.minGapBps = "Yahoo reference price unavailable";
     const markNow = this.marks.get(sym) ?? null;
-    const preGap = yahoo && markNow ? gapBps(yahoo.price, markNow.price) : null;
     const heldNow = this.heldFor(asset, bal) ?? 0n;
+    const probeNote: string[] = [];
     let signal: Awaited<ReturnType<typeof this.acquireSignal>> = null;
-    if (worthBuyingSignal(preGap, heldNow, risk.minGapBps)) {
+    if (worthBuyingSignal(preGap, heldNow, risk.minGapBps) || pre.probe) {
+      if (pre.probe && !worthBuyingSignal(preGap, heldNow, risk.minGapBps)) {
+        probeNote.push(
+          `pre-screen probe: no asset is >= ${risk.minGapBps} bps below its reference this cycle and nothing is held; ` +
+            `one signal bought for ${sym}, the closest (${preGap === null ? "gap unknown" : `${Math.abs(preGap).toFixed(1)} bps ${preGap < 0 ? "above" : "below"}`}), so the analysts keep being scored`,
+        );
+      }
       signal = await this.acquireSignal(asset, statuses, pools.get(sym) ?? null, missing);
     } else {
       const detail =
@@ -520,7 +542,7 @@ export class ExecutionAgent {
     if (liquidity == null) missing.minLiquidityUsd = "pool balance read failed";
     if (!bal) missing.balances = account ? "balance read failed" : this.accountErr;
 
-    const statusNote: string[] = [];
+    const statusNote: string[] = [...probeNote];
     if (rwa?.status) {
       const s = rwa.status;
       statusNote.push(

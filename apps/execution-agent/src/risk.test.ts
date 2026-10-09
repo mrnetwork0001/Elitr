@@ -175,3 +175,14 @@ test("worthBuyingSignal: pay only when a buy is possible or a position is open",
   assert.equal(worthBuyingSignal(null, 0n, 50), false); // unknown -> risk would fail closed anyway
   assert.equal(worthBuyingSignal(-40, 1n, 50), true); // open position: a bearish call can exit it
 });
+
+import { pickProbe } from "./risk.js";
+test("pickProbe: one probe signal only when nothing clears the pre-screen and nothing is held", () => {
+  const none = (g: (number | null)[]) => g.map((gap, i) => ({ symbol: `S${i}`, gap, held: 0n }));
+  assert.equal(pickProbe(none([-120, -40, -300]), 50), "S1"); // all above reference: closest wins
+  assert.equal(pickProbe(none([-120, 80, -300]), 50), null); // S1 qualifies on its own
+  assert.equal(pickProbe(none([null, null]), 50), null); // no usable gap
+  assert.equal(pickProbe(none([null, -200]), 50), "S1");
+  assert.equal(pickProbe([{ symbol: "A", gap: -500, held: 1n }, { symbol: "B", gap: -10, held: 0n }], 50), null); // A is held
+  assert.equal(pickProbe([], 50), null);
+});

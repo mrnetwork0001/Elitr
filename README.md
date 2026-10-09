@@ -194,6 +194,7 @@ Defaults come from [`packages/shared/src/risk.ts`](packages/shared/src/risk.ts).
 | Min confidence | `RISK_MIN_CONFIDENCE` | 65 | Signal score (after the reputation weight), 1-100. |
 | Stance | n/a | bullish | Buys need a bullish call. |
 | Min gap | `RISK_MIN_GAP_BPS` | 50 bps | On-chain price must sit this far below the TradFi reference. |
+| Probe signal | `RISK_PROBE_SIGNALS` | on | When no asset clears the free pre-screen and nothing is held, one signal is still bought for the asset closest to qualifying, so the analysts keep being scored (at most $0.01 per cycle). The buy itself still needs every check above. |
 | Max signal age | `RISK_MAX_SIGNAL_AGE_SEC` | 300 s | Stale signals are rejected. |
 | Take profit | `RISK_TAKE_PROFIT_BPS` | 300 bps | Exit when up this much vs average cost. |
 | Stop loss | `RISK_STOP_LOSS_BPS` | 200 bps | Exit when down this much. |
@@ -230,7 +231,7 @@ Base `https://web3.binance.com/build`. Every call is signed (`X-OC-APIKEY`, `X-O
 
 Other data: BSC JSON-RPC via viem (balances, pool liquidity, receipts), Yahoo Finance chart API (independent TradFi reference; the RWA `referencePrice` is derived from the on-chain price), and Yahoo Finance / Google News RSS (headlines).
 
-**Tokenized stocks.** Traded: six bStocks with verified PancakeSwap v3 USDT pools above the $50k floor and a real underlying with a Yahoo quote: **NVDAB, TSLAB, BABAB, CRCLB, SNDKB, METAB**. Skipped: TSMB (thin volume), IBMB (~$900 pool), SPCXB (pre-IPO, no reference price), MUB (~$16k pool). Tracked but not traded: NVDAon (Ondo), TSLAx (xStocks). Before paying for a signal, the trader pre-screens each asset for free: a signal is bought only when the on-chain price is already at least `RISK_MIN_GAP_BPS` below the Yahoo reference (or a position is open), so the signal budget goes to actionable calls. Addresses are in [`packages/shared/src/assets.ts`](packages/shared/src/assets.ts) and were verified on-chain.
+**Tokenized stocks.** Traded: six bStocks with verified PancakeSwap v3 USDT pools above the $50k floor and a real underlying with a Yahoo quote: **NVDAB, TSLAB, BABAB, CRCLB, SNDKB, METAB**. Skipped: TSMB (thin volume), IBMB (~$900 pool), SPCXB (pre-IPO, no reference price), MUB (~$16k pool). Tracked but not traded: NVDAon (Ondo), TSLAx (xStocks). Before paying for a signal, the trader pre-screens each asset for free: a signal is bought only when the on-chain price is already at least `RISK_MIN_GAP_BPS` below the Yahoo reference (or a position is open), so the signal budget goes to actionable calls. When nothing qualifies and nothing is held, one probe signal is still bought for the closest asset, so track records keep growing through quiet sessions and weekends (`RISK_PROBE_SIGNALS=0` disables it). Addresses are in [`packages/shared/src/assets.ts`](packages/shared/src/assets.ts) and were verified on-chain.
 
 ## Binance Agentic Wallet: Elitr Skill
 

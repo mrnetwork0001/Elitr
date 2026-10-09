@@ -44,6 +44,19 @@ export function worthBuyingSignal(gap: number | null, heldWei: bigint, minGapBps
   return gap !== null && Number.isFinite(gap) && gap >= minGapBps;
 }
 
+/**
+ * When no asset clears the pre-screen and nothing is held, the basket would go quiet: no payment, no
+ * signal, nothing scored, so the analysts' track records stop growing. Pick ONE asset to still buy a
+ * signal for: the one closest to qualifying (smallest premium over its reference). Costs at most one
+ * signal per cycle. The buy itself still has to pass every risk check, so nothing is forced.
+ */
+export function pickProbe(gaps: { symbol: string; gap: number | null; held: bigint }[], minGapBps: number): string | null {
+  if (gaps.some((g) => worthBuyingSignal(g.gap, g.held, minGapBps))) return null;
+  let best: { symbol: string; gap: number } | null = null;
+  for (const g of gaps) if (g.gap !== null && Number.isFinite(g.gap) && (!best || g.gap > best.gap)) best = { symbol: g.symbol, gap: g.gap };
+  return best?.symbol ?? null;
+}
+
 export function gapBps(reference: number, onchain: number): number {
   return ((reference - onchain) / reference) * 10_000;
 }
