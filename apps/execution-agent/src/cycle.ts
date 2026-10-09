@@ -661,28 +661,40 @@ export class ExecutionAgent {
       priceUsd: s.info?.priceUsd ?? null,
       online: covers(s, sym),
     }));
-    const choice = book.choose(candidates);
     const extra = statuses
       .filter((s) => !covers(s, sym))
       .map((s) => `${s.endpoint.id} not eligible for ${sym}: ${s.online ? `/info symbols ${JSON.stringify(s.info?.symbols ?? [])}` : (s.error ?? "offline")}`);
-    hub.emit({ type: "analyst.selected", symbol: sym, analystId: choice.analystId, reasons: [...choice.reasons, ...extra], candidates: choice.candidates });
-    if (!choice.analystId) {
-      missing.signal = `no analyst selected (${choice.reasons.join("; ") || "no eligible candidates"})`;
-      return null;
+    // Thompson-sample an analyst and buy. An analyst may decline to sell (the flow analyst answers 503 when
+    // a pool had too few swaps; nothing is paid), so fall back once to the remaining analysts in the same
+    // cycle rather than ending it with no signal at all.
+    const declined: string[] = [];
+    let sig: Awaited<ReturnType<typeof buySignal>> = null;
+    for (let attempt = 0; attempt < 2 && !this.killed; attempt++) {
+      const choice = book.choose(candidates.map((c) => (declined.includes(c.analystId) ? { ...c, online: false } : c)));
+      const fallback = attempt ? [`fallback: ${declined.join(", ")} sold no signal for ${sym} this cycle`] : [];
+      hub.emit({ type: "analyst.selected", symbol: sym, analystId: choice.analystId, reasons: [...fallback, ...choice.reasons, ...extra], candidates: choice.candidates });
+      if (!choice.analystId) {
+        missing.signal = attempt
+          ? `no signal purchased from ${declined.join(", ")} this cycle (see preceding events); no other analyst eligible`
+          : `no analyst selected (${choice.reasons.join("; ") || "no eligible candidates"})`;
+        return null;
+      }
+      if (!account) {
+        missing.signal = this.accountErr;
+        return null;
+      }
+      const ep = statuses.find((s) => s.endpoint.id === choice.analystId)!.endpoint;
+      sig = await this.step(`pay.${ep.id}`, () =>
+        buySignal(
+          { hub, store, risk, pc, account, binance, analystId: ep.id, analystUrl: ep.url, live: cfg.live, mevProtection: cfg.mevProtection, onReceipt: (r, l) => this.bookGas(r, l), abort: () => this.killed },
+          sym,
+        ),
+      );
+      if (sig) break;
+      declined.push(ep.id);
     }
-    if (!account) {
-      missing.signal = this.accountErr;
-      return null;
-    }
-    const ep = statuses.find((s) => s.endpoint.id === choice.analystId)!.endpoint;
-    const sig = await this.step(`pay.${ep.id}`, () =>
-      buySignal(
-        { hub, store, risk, pc, account, binance, analystId: ep.id, analystUrl: ep.url, live: cfg.live, mevProtection: cfg.mevProtection, onReceipt: (r, l) => this.bookGas(r, l), abort: () => this.killed },
-        sym,
-      ),
-    );
     if (!sig) {
-      missing.signal = `no signal purchased from ${ep.id} this cycle (see preceding event)`;
+      missing.signal = `no signal purchased from ${declined.join(", ")} this cycle (see preceding events)`;
       return null;
     }
     const weight = book.weight(sig.analystId);
