@@ -1484,7 +1484,7 @@
   display: none;
   flex-direction: column;
   padding: 8px var(--pad-x) 16px !important;
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.985);
   -webkit-backdrop-filter: blur(18px) saturate(1.4);
   backdrop-filter: blur(18px) saturate(1.4);
   border-bottom: 1px solid var(--line);
@@ -1508,6 +1508,12 @@
   color: #0a0a0a;
   box-shadow: inset 3px 0 0 var(--brand);
   padding-left: 12px;
+}
+
+.sticky .stickyMenuCta,
+.sticky .stickyMenuCta:hover,
+.sticky .stickyMenuCta:focus-visible {
+  color: #fff;
 }
 
 .stickyMenuCta {
