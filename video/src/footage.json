@@ -1,0 +1,239 @@
+{
+ "activity": {
+  "file": "footage/activity.mp4",
+  "width": 3200,
+  "height": 1800,
+  "fps": 60,
+  "durationFrames": 871,
+  "marks": {
+   "payments": 205,
+   "scrolled": 703
+  },
+  "url": "/dashboard/activity",
+  "build": "live elitr.xyz",
+  "capturedAt": "2026-10-10T11:38:08.980Z",
+  "deviceScale": 2,
+  "viewport": {
+   "w": 1600,
+   "h": 900
+  },
+  "live": {
+   "header": "Payments251",
+   "first": "Paid $0.0100 USDT → 0x66A4…0F5a"
+  },
+  "rects": {
+   "list": {
+    "x": 304,
+    "y": -252,
+    "w": 1264,
+    "h": 3093
+   }
+  },
+  "notes": "Live Activity view; a real click on the Payments filter chip (mark payments) lists the b402 payments (payment.sent / payment.verified), then an eased scroll down the list (mark scrolled)."
+ },
+ "analysts": {
+  "file": "footage/analysts.mp4",
+  "width": 3200,
+  "height": 1800,
+  "fps": 60,
+  "durationFrames": 1102,
+  "marks": {
+   "cards": 192,
+   "flowTrust": 252,
+   "scroll": 432,
+   "calls": 588,
+   "ratings": 864
+  },
+  "url": "/dashboard/analysts",
+  "build": "live elitr.xyz",
+  "capturedAt": "2026-10-10T11:35:18.873Z",
+  "deviceScale": 2,
+  "viewport": {
+   "w": 1600,
+   "h": 900
+  },
+  "live": {
+   "rates": [
+    "0% over 6 signals",
+    "62% over 21 signals"
+   ],
+   "trust": [
+    "0.13",
+    "0.61"
+   ],
+   "pick": "picked analyst-flow: draw 0.81 vs analyst 0.09 ($0.01) (13/21 correct)"
+  },
+  "rects": {
+   "market": {
+    "x": 304,
+    "y": 168,
+    "w": 1264,
+    "h": 827
+   },
+   "news": null,
+   "flow": null,
+   "pick": {
+    "x": 321,
+    "y": 486,
+    "w": 1230,
+    "h": 220
+   }
+  },
+  "rectsAt": {
+   "ratings": {
+    "calls": {
+     "x": 321,
+     "y": 188,
+     "w": 1230,
+     "h": 252
+    },
+    "ratings": {
+     "x": 305,
+     "y": 518,
+     "w": 1262,
+     "h": 341
+    }
+   }
+  },
+  "notes": "Live Analysts view. Holds on the two analyst cards (mark cards), the pointer rests on the flow analyst's trust bar (mark flowTrust), an eased scroll to Recent calls (mark calls) and on to the ERC-8004 ratings the trader posted (mark ratings). Nothing clicked."
+ },
+ "gaps": {
+  "file": "footage/gaps.mp4",
+  "width": 3200,
+  "height": 1800,
+  "fps": 60,
+  "durationFrames": 673,
+  "marks": {
+   "board": 144,
+   "table": 264,
+   "bstocks": 409
+  },
+  "url": "/dashboard/gaps",
+  "build": "live elitr.xyz",
+  "capturedAt": "2026-10-10T11:39:52.434Z",
+  "deviceScale": 2,
+  "viewport": {
+   "w": 1600,
+   "h": 900
+  },
+  "live": {
+   "status": "US market: CLOSED since Fri 16:00 ET·reopens Sun 20:05 ET (in 1d 12h)",
+   "rows": 46
+  },
+  "rects": {
+   "board": {
+    "x": 304,
+    "y": 110,
+    "w": 1264,
+    "h": 789
+   },
+   "crclb": null
+  },
+  "notes": "Live Gap board (RWA Data API + Yahoo): eased scroll to the spread board (mark table), real click on the bStocks issuer chip (mark bstocks). Weekend: US market closed."
+ },
+ "markets": {
+  "file": "footage/markets.mp4",
+  "width": 3200,
+  "height": 1800,
+  "fps": 60,
+  "durationFrames": 808,
+  "marks": {
+   "risk": 228,
+   "rules": 624
+  },
+  "url": "/dashboard/markets",
+  "build": "live elitr.xyz",
+  "capturedAt": "2026-10-10T11:39:09.213Z",
+  "deviceScale": 2,
+  "viewport": {
+   "w": 1600,
+   "h": 900
+  },
+  "live": {
+   "rules": "14 rules",
+   "failing": "4 failing",
+   "symbol": "NVDAB"
+  },
+  "rects": {
+   "risk": {
+    "x": 944,
+    "y": -430,
+    "w": 624,
+    "h": 1308
+   }
+  },
+  "notes": "Live Markets view: eased scroll to the Risk checks panel (mark risk), then slowly down through the 14 buy-side rules with observed vs limit values (mark rules). Nothing clicked."
+ },
+ "overview": {
+  "file": "footage/overview.mp4",
+  "width": 3200,
+  "height": 1800,
+  "fps": 60,
+  "durationFrames": 600,
+  "marks": {
+   "tiles": 360
+  },
+  "url": "/dashboard",
+  "build": "live elitr.xyz",
+  "capturedAt": "2026-10-10T11:42:06.142Z",
+  "deviceScale": 2,
+  "viewport": {
+   "w": 1600,
+   "h": 900
+  },
+  "live": "NET P&L AFTER DATA + GAS LIVE -$1.52 trading -$0.0424 · signals bought $1.39 · gas $0.08 SIGNALS TODAY 4 data spend $0.25 of $1.00 cap ANALYST PICKS 1/ 6 assets latest analyst chosen per asset NVDAB - TSLAB - BABAB Elitr Flow Analyst CRCLB - SNDKB - METAB - LAST DECISION HOLD METAB · 12m ago NVDAB HOLD TSLAB HOLD BABAB HOLD CRCLB HOLD SNDKB HOLD METAB HOLD RISK STATUS 0PASS6BLOCKED failing: Signal confidence, Signal stance, Signal age, Price gap",
+  "rects": {
+   "tiles": {
+    "x": 304,
+    "y": 220,
+    "w": 1264,
+    "h": 287
+   }
+  },
+  "notes": "Live Overview: hero and Today on the desk, then an eased scroll to the key figures (mark tiles)."
+ },
+ "trades": {
+  "file": "footage/trades.mp4",
+  "width": 3200,
+  "height": 1800,
+  "fps": 60,
+  "durationFrames": 778,
+  "marks": {
+   "sell": 156,
+   "buy": 396
+  },
+  "url": "/dashboard/trades",
+  "build": "live elitr.xyz",
+  "capturedAt": "2026-10-10T11:51:44.344Z",
+  "deviceScale": 2,
+  "viewport": {
+   "w": 1600,
+   "h": 900
+  },
+  "live": {
+   "header": "5 · 2 filled",
+   "sell": "SELL NVDAB STOP LOSS 19:16:51 · 1d ago LIVE FILLED Simulated gas 468,910 Broadcast 0x37ff1c…1d3b11 Filled 0.008433 @ $232.12 · $1.96 realized -$0.0424 BUY NVDAB 15:00:28 · 2d ago LIVE FILLED Simulated gas 1,106,050 Broadcast 0x0ce911…a03807 Fil"
+  },
+  "rects": {
+   "log": {
+    "x": 304,
+    "y": 168,
+    "w": 1264,
+    "h": 614
+   },
+   "sell": {
+    "x": 321,
+    "y": 216,
+    "w": 1230,
+    "h": 119
+   },
+   "buy": {
+    "x": 321,
+    "y": 334,
+    "w": 1230,
+    "h": 94
+   }
+  },
+  "notes": "Live Trades view: the autonomous stop-loss SELL of NVDAB (8 Oct, tx 0x37ff1c71…3b11) and the live BUY (7 Oct, tx 0x0ce91120…3807), each simulated, broadcast and filled. The pointer rests on each tx link (marks sell, buy); nothing clicked."
+ }
+}

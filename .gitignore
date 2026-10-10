@@ -41,3 +41,10 @@ studio/**/vendor/*.tgz
 studio/**/agentcore/.env.local
 # Regenerable via `bag skills install`.
 studio/**/.claude/skills/
+
+# Demo film (video/): dependencies, renders, caches and recorded footage stay local.
+video/node_modules/
+video/out/
+video/.cache/
+video/public/footage/
+video/public/stills/

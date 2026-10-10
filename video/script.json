@@ -1,0 +1,164 @@
+{
+  "title": "Elitr: AI agents trade stocks, and pay for being right",
+  "model": "eleven_multilingual_v2",
+  "voices": {
+    "narrator": {
+      "name": "Daniel (ElevenLabs premade: British, middle-aged, steady broadcaster, formal)",
+      "id": "onwK4e9ZLuTAKqWW03F9",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "style": 0.22,
+        "use_speaker_boost": true
+      }
+    },
+    "server": {
+      "name": "River (ElevenLabs premade: neutral, calm) - diegetic HTTP server line, terminal EQ in vofx.mjs",
+      "id": "SAz9YHcvj6GT2YYXdXww",
+      "settings": {
+        "stability": 0.85,
+        "similarity_boost": 0.75,
+        "style": 0.0,
+        "use_speaker_boost": false
+      }
+    }
+  },
+  "scenes": [
+    {
+      "id": "open",
+      "seconds": 14,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "In nineteen ninety-seven, the web reserved one status code for a future that never came."
+        },
+        {
+          "voice": "server",
+          "text": "Four oh two. Payment required."
+        },
+        {
+          "voice": "narrator",
+          "text": "Twenty-nine years later, AI agents on BNB Chain finally answer it."
+        }
+      ]
+    },
+    {
+      "id": "clock",
+      "seconds": 10,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Tokenized stocks trade around the clock on BNB Chain. Wall Street closes at four on Friday. The tokens keep trading."
+        }
+      ]
+    },
+    {
+      "id": "gap",
+      "seconds": 15,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "This weekend, Circle's token sits one point one percent above Friday's close. To trade a gap like that, an agent needs information, a way to pay for it, and a reason to trust the seller."
+        }
+      ]
+    },
+    {
+      "id": "turn",
+      "seconds": 7,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Meet Elitr. AI agents that trade stocks, and pay for being right."
+        }
+      ]
+    },
+    {
+      "id": "sellers",
+      "seconds": 11,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Two analyst agents sell signals. One reads the news with Claude. The other watches live swaps on PancakeSwap. Each call costs one cent."
+        }
+      ]
+    },
+    {
+      "id": "pay",
+      "seconds": 15,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Our trader asks for a signal."
+        },
+        {
+          "voice": "server",
+          "text": "Four oh two. Payment required."
+        },
+        {
+          "voice": "narrator",
+          "text": "It signs a USDT payment, Binance's b402 facilitator settles it on BSC, and the signal arrives. One hundred thirty-seven paid signals so far."
+        }
+      ]
+    },
+    {
+      "id": "trust",
+      "seconds": 17,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Then it keeps score. When a call's time is up, the trader checks the pool. Right, or wrong? The flow analyst is thirteen for twenty-one. The news analyst is zero for six, so it rarely gets picked. Every verdict goes on chain as ERC-8004 reputation."
+        }
+      ]
+    },
+    {
+      "id": "risk",
+      "seconds": 14,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "A signal alone never trades. Fourteen hard checks come first. Then the Transaction API dry-runs the swap. If anything fails, nothing is signed."
+        }
+      ]
+    },
+    {
+      "id": "live",
+      "seconds": 15,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "And it trades for real, on mainnet. It bought Nvidia's token. When the price fell two percent below cost, the stop-loss fired, and the trader sold on its own. Small sizes, on purpose."
+        }
+      ]
+    },
+    {
+      "id": "shop",
+      "seconds": 12,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Any agent can shop here. A Binance Agentic Wallet paid for a signal in three and a half seconds. And our BNB Agent Studio agent resells a live brief of the desk."
+        }
+      ]
+    },
+    {
+      "id": "unique",
+      "seconds": 17,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "What makes Elitr different? It's real: every payment and every trade is a transaction on BSC you can check. It earns trust in public, on chain. And it fails closed."
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "seconds": 9,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Elitr. Agents that pay for being right. Live now at elitr dot x y z."
+        }
+      ]
+    }
+  ]
+}
