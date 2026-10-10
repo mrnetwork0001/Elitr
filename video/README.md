@@ -1,10 +1,10 @@
 # Elitr demo film
 
-A 2:58 film (3840×2160 master and 1920×1080, 60 fps) made with [Remotion](https://www.remotion.dev) for the judges of the **BNB Hack: Tokenized Stocks Edition**. It covers the problem (tokenized stocks trade around the clock while Wall Street is closed, and an AI agent has no way to buy information and judge whom to trust), Elitr working live on BSC mainnet, and what makes it different.
+A 2:59 film (3840×2160 master and 1920×1080, 60 fps) made with [Remotion](https://www.remotion.dev) for the judges of the **BNB Hack: Tokenized Stocks Edition**. It covers the problem (tokenized stocks trade around the clock while Wall Street is closed, and an AI agent has no way to buy information and judge whom to trust), Elitr working live on BSC mainnet, and what makes it different.
 
 The film's motif is **the tape**: a stock-ticker tape that carries real desk events instead of quotes ("402 payment required · paid 0.01 usdt · settled on bsc · signal metab 48 neutral · hold"). Elitr's mark is six slanted bars, so at "Meet Elitr" six tapes, one per traded bStock, collapse into the six bars. The film opens on the status code the tape is about: HTTP 402 Payment Required, reserved in 1997 and answered here by agents over Binance b402.
 
-Outputs (in `out/`, not committed): `elitr-demo-4k.mp4` (master), `elitr-demo-1080p.mp4` (Lanczos downscale of the master), `elitr-thumbnail.png` and `elitr-thumbnail-4k.png`. YouTube title, description and chapters are at the end of this file.
+Both films open on the thumbnail for 1.2 s, then dissolve into the first scene, so the thumbnail is the preview on X and in feeds; it is also embedded as cover art (`scripts/cover.mjs`). Outputs (in `out/`, not committed): `elitr-demo-4k.mp4` (master), `elitr-demo-1080p.mp4` (Lanczos downscale of the master), `elitr-thumbnail.png` and `elitr-thumbnail-4k.png`. YouTube title, description and chapters are at the end of this file.
 
 ## What is real
 
@@ -64,6 +64,8 @@ npx remotion render src/index.ts Elitr out/elitr-demo-4k-raw.mp4 --scale 2 --cod
 node scripts/finish.mjs out/elitr-demo-4k-raw.mp4 out/elitr-demo-4k.mp4         # -14 LUFS, TP <= -1 dBTP
 ffmpeg -i out/elitr-demo-4k.mp4 -vf scale=1920:1080:flags=lanczos -c:v libx264 -crf 16 -preset slow -pix_fmt yuv420p -c:a copy -movflags +faststart out/elitr-demo-1080p.mp4
 npx remotion still src/index.ts Poster out/elitr-thumbnail.png && npx remotion still src/index.ts Poster out/elitr-thumbnail-4k.png --scale 2
+node scripts/cover.mjs out/elitr-demo-4k-nocover.mp4 out/elitr-thumbnail-4k.png out/elitr-demo-4k.mp4 14      # thumbnail cover
+node scripts/cover.mjs out/elitr-demo-1080p-nocover.mp4 out/elitr-thumbnail.png out/elitr-demo-1080p.mp4 16
 ```
 
 The film folder is outside the pnpm workspace (`pnpm-workspace.yaml` lists only `apps/*` and `packages/*`), and its `node_modules`, renders, caches and footage are git-ignored, so the app's build never sees it.
