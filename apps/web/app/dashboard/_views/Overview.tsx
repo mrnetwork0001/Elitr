@@ -83,7 +83,7 @@ export function OverviewView() {
           value={pnl?.netUsd !== null && pnl?.netUsd !== undefined ? <span className={pnl.netUsd > 0 ? "text-pos" : pnl.netUsd < 0 ? "text-neg" : ""}>{signedUsd(pnl.netUsd)}</span> : "-"}
           sub={
             pnl
-              ? `trading ${signedUsd(pnl.realizedUsd + pnl.unrealizedUsd)} · signals bought ${usd(pnl.signalSpendUsd, { max: 2 })} · gas ${usd(pnl.gasSpendUsd, { max: 2 })}`
+              ? `trading ${signedUsd((pnl.realizedUsd ?? 0) + (pnl.unrealizedUsd ?? 0))} · signals bought ${usd(pnl.signalSpendUsd ?? 0, { max: 2 })} · gas ${usd(pnl.gasSpendUsd ?? 0, { max: 2 })}`
               : execOffline
                 ? "execution agent offline"
                 : "no P&L reported yet"
