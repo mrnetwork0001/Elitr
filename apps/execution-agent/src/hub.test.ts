@@ -57,6 +57,8 @@ test("replay keeps trades and ratings that fell out of the recent tail, from the
     { id: "f1", ts: 1, agent: "execution", type: "trade.filled", symbol: "NVDAB", side: "buy", txHash: "0x1", mode: "live" },
     { id: "r1", ts: 2, agent: "execution", type: "reputation.posted", analystId: "analyst", value: 13 },
     { id: "h1", ts: 3, agent: "execution", type: "decision", symbol: "NVDAB", action: "hold", reasons: [] },
+    { id: "e1", ts: 4, agent: "execution", type: "error", where: "operatorTrade:NVDAB", message: "NVDAB tx 0x1 reverted on-chain" },
+    { id: "e2", ts: 5, agent: "execution", type: "error", where: "rwa:NVDAB", message: "HTTP 429" },
   ];
   const noise = Array.from({ length: 800 }, (_, i) => ({ id: `n${i}`, ts: 10 + i, agent: "execution", type: "price.onchain", symbol: "NVDAB", price: 1 }));
   writeFileSync(file, [...old, ...noise].map((e) => JSON.stringify(e)).join("\n") + "\n");
@@ -64,6 +66,7 @@ test("replay keeps trades and ratings that fell out of the recent tail, from the
   let ids = hub.replay().map((e) => e.id);
   assert.ok(ids.includes("f1") && ids.includes("r1"), "milestones from the log are replayed");
   assert.ok(!ids.includes("h1"), "hold decisions are routine, not milestones");
+  assert.ok(ids.includes("e1") && !ids.includes("e2"), "trade errors are milestones, data errors are not");
   assert.equal(ids.at(-1), "n799", "the recent tail still ends the replay");
   // A milestone emitted now, then pushed out of history by routine events, is still replayed.
   hub.emit({ type: "trade.filled", symbol: "TSLAB", side: "sell", txHash: "0x2", mode: "live" } as any);

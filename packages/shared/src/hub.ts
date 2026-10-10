@@ -14,9 +14,13 @@ const MAX_MILESTONES = 300;
 
 /**
  * Rare events the dashboard must keep showing long after the recent tail has moved on: the trade
- * pipeline (simulate, broadcast, confirm, fill), buy/sell decisions, on-chain ratings and identities.
+ * pipeline (simulate, broadcast, confirm, fill, and its errors), buy/sell decisions, on-chain ratings
+ * and identities.
  * A cycle emits ~50 routine events, so without this a trade drops off the dashboard within hours.
  */
+// Same pattern the dashboard uses to attach an error to a trade attempt (apps/web/lib/derive.ts).
+const TX_ERROR_WHERE = /tx|trade|swap|broadcast|simulat|approve|quote|execut|confirm|receipt/i;
+
 export function isMilestone(e: AgentEvent): boolean {
   switch (e.type) {
     case "tx.simulated":
@@ -28,6 +32,9 @@ export function isMilestone(e: AgentEvent): boolean {
       return true;
     case "decision":
       return e.action !== "hold";
+    case "error":
+      // Failures of a trade attempt (e.g. a revert), so the dashboard can close that attempt.
+      return TX_ERROR_WHERE.test(e.where);
     default:
       return false;
   }
@@ -49,7 +56,7 @@ export class EventHub {
       const tailFrom = Math.max(0, lines.length - maxHistory);
       lines.forEach((l, i) => {
         // Parse every line only for milestones; the recent tail is kept whole.
-        if (i < tailFrom && !l.includes('"type":"tx.') && !l.includes('"trade.filled"') && !l.includes('"reputation.posted"') && !l.includes('"identity.registered"') && !l.includes('"decision"')) return;
+        if (i < tailFrom && !l.includes('"type":"tx.') && !l.includes('"trade.filled"') && !l.includes('"reputation.posted"') && !l.includes('"identity.registered"') && !l.includes('"decision"') && !l.includes('"type":"error"')) return;
         let e: AgentEvent;
         try {
           e = JSON.parse(l);
