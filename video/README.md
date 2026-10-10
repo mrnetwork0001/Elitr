@@ -72,6 +72,8 @@ The film folder is outside the pnpm workspace (`pnpm-workspace.yaml` lists only 
 
 ## YouTube
 
+Published: https://www.youtube.com/watch?v=6cOUD_zNElQ
+
 **Title:** Elitr: AI agents trade tokenized stocks on BNB Chain, and pay for being right
 
 **Description:**

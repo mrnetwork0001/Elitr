@@ -4,6 +4,7 @@
 ![BSC mainnet](https://img.shields.io/badge/chain-BSC%20mainnet-F0B90B)
 ![b402](https://img.shields.io/badge/payments-b402%20%2F%20x402%20v2-222)
 ![Node](https://img.shields.io/badge/node-%E2%89%A522.12-339933)
+[![Demo video](https://img.shields.io/badge/demo-YouTube%202%3A59-FF0000)](https://www.youtube.com/watch?v=6cOUD_zNElQ)
 
 **An agent-to-agent market for tokenized-stock signals on BNB Chain.** Analyst agents sell trading signals for six bStocks (NVDAB, TSLAB, BABAB, CRCLB, SNDKB, METAB) behind an HTTP 402 paywall settled with **Binance b402**. An execution agent decides which analyst to pay with Thompson sampling, pays a cent in USDT per signal, checks the signal against Binance RWA Data, Market and Trading API prices and a set of hard risk limits, **dry-runs every transaction with the Binance Transaction API**, and then fills on PancakeSwap: as a paper fill, or live once you turn that on. Every signal is scored against the price after its horizon, so analysts earn a track record. That track record decides who gets paid next time, and it is posted on-chain as ERC-8004 reputation feedback. A Next.js dashboard streams the whole loop live over SSE.
 
@@ -13,6 +14,7 @@
 
 | | |
 | --- | --- |
+| Demo video (2:59) | **https://www.youtube.com/watch?v=6cOUD_zNElQ** |
 | Landing | **https://elitr.xyz** |
 | Live dashboard | **https://elitr.xyz/dashboard** (read-only for visitors; operator controls need `CONTROL_TOKEN`) |
 | News analyst (b402 seller) | https://analyst.elitr.xyz/info · paid `GET /signal?symbol=NVDAB` |
