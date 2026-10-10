@@ -78,12 +78,12 @@ export function OverviewView() {
       <section aria-label="Key figures" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <Tile
           href="/dashboard/portfolio"
-          label="Net P&L"
+          label="Net P&L after data + gas"
           aside={<ModeTag mode={d.portfolio.mode} />}
           value={pnl?.netUsd !== null && pnl?.netUsd !== undefined ? <span className={pnl.netUsd > 0 ? "text-pos" : pnl.netUsd < 0 ? "text-neg" : ""}>{signedUsd(pnl.netUsd)}</span> : "-"}
           sub={
             pnl
-              ? `realized ${signedUsd(pnl.realizedUsd)} · unrealized ${signedUsd(pnl.unrealizedUsd)}`
+              ? `trading ${signedUsd(pnl.realizedUsd + pnl.unrealizedUsd)} · signals bought ${usd(pnl.signalSpendUsd, { max: 2 })} · gas ${usd(pnl.gasSpendUsd, { max: 2 })}`
               : execOffline
                 ? "execution agent offline"
                 : "no P&L reported yet"
