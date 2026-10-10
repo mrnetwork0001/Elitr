@@ -25,6 +25,20 @@
 
 Hosted on an AWS Lightsail instance in Frankfurt (eu-central-1, an allowed region for the Binance Web3 API), behind Caddy with automatic HTTPS, each service a systemd unit that restarts on failure. See [Deployment](#deployment).
 
+### By the numbers (live desk, BSC mainnet, as of 10 Oct 2026)
+
+| | |
+| --- | --- |
+| Signals bought agent-to-agent over b402, each settled on-chain | **137** |
+| Calls scored against the pool price | **134** |
+| ERC-8004 ratings posted by the trader | **46** |
+| ERC-8004 agents registered (news, flow, trader, Studio desk) | **4** |
+| Live fills (one buy, one autonomous stop-loss sell) | **2** |
+| Track records | flow analyst **13 / 21**, news analyst **0 / 6** |
+| Tokenized stocks on the gap board (46 bStocks, 442 Ondo) | **488** |
+
+The desk keeps running every 30 minutes, so the live dashboard shows larger numbers than this snapshot.
+
 ### On-chain proof (BSC mainnet)
 
 Every row is a real transaction made by the running system.
@@ -162,7 +176,7 @@ sequenceDiagram
 | --- | --- |
 | **Technical implementation (30%)** | Signed client in `packages/binance` for five Binance Web3 API modules (RWA Data, Market, Trading, Transaction, b402), plus a raw signed call used for the Wallet and Address Portfolio APIs, running live on BSC mainnet with real b402 settlements, a live trade, and ERC-8004 identities and feedback (see [On-chain proof](#on-chain-proof-bsc-mainnet)). Full b402 merchant (x402 v2 `402` / `PAYMENT-SIGNATURE` / `PAYMENT-RESPONSE`, single-use authorizations, settle only after the signal is produced) and buyer (`@x402/fetch` + `@bnb-chain/b402`, Permit2 approval handling). Every approve and swap is simulated through the Transaction API before broadcast. Risk engine fails closed on missing data, and it has unit tests. State persists atomically. CI runs on Node 22 and 24, and Docker images are provided. |
 | **Creativity & originality (25%)** | Agents *buy information from each other*: a market of competing analysts with real micropayments. The buyer learns which seller to trust (Beta-Bernoulli posterior + Thompson sampling, price-aware) and publishes the result as portable ERC-8004 on-chain reputation. Two very different sellers compete: an LLM news reader and a deterministic on-chain flow reader. Any **Binance Agentic Wallet** can buy the same signals through the [Elitr Skill](skills/elitr-signals/). A **Weekend Gap board** makes the brief's opening story (frozen Friday reference vs 24/7 tokens) visible across every bStocks and Ondo token. |
-| **Developer Experience Report (25%)** | [`DEVELOPER_EXPERIENCE.md`](DEVELOPER_EXPERIENCE.md) is written by the team in their own words (the hackathon rejects generated reports). It is backed by [`docs/dx-raw-log.md`](docs/dx-raw-log.md), a timestamped evidence log (the execution agent also appends to it when it hits API friction), sorted by report question in [`docs/dx-evidence.md`](docs/dx-evidence.md). |
+| **Developer Experience Report (25%)** | The team submitted the report through the hackathon's official form, in their own words (the hackathon rejects generated reports). It is backed by [`docs/dx-raw-log.md`](docs/dx-raw-log.md), a timestamped evidence log (the execution agent also appends to it when it hits API friction), sorted by report question in [`docs/dx-evidence.md`](docs/dx-evidence.md). |
 | **Product quality & UX (20%)** | The dashboard shows the payment between agents, the signal and its sources, both reference prices, every risk check with observed vs limit values, the simulation result, fills, positions and P&L, live. There is a kill switch. A plain-English **"Today on the desk"** summary with a glossary is written for people new to crypto. Defaults are safe: simulate-only, small limits. |
 
 ### Status
@@ -179,6 +193,10 @@ sequenceDiagram
 | Hosted deployment (https://elitr.xyz), HTTPS, operator auth | Live |
 | BNB Agent Studio seller agent "Elitr Desk Brief" ([`studio/`](studio/)), ERC-8004 #367734 | Live on mainnet at https://desk.elitr.xyz (self-hosted; free x402 + A2A) |
 | Reputation safeguards: probation when every analyst is paused; neutral and flat-market calls don't move trust | Live |
+| Autonomous exits: take-profit, stop-loss, bearish call | Proven on mainnet (stop-loss sell of NVDAB, 8 Oct) |
+| Probe signal when no stock clears the pre-screen, with same-cycle fallback to the next analyst | Live |
+| Fail-closed sends: gas and fee budget, pinned swap destination, pending-swap reconciliation after a crash, persisted kill switch | Live |
+| Demo film ([`video/`](video/)), built from live footage and real on-chain data | [YouTube, 2:59](https://www.youtube.com/watch?v=6cOUD_zNElQ) |
 
 ## Risk controls
 
@@ -371,6 +389,8 @@ skills/
 studio/
   ElitrDesk/         BNB Agent Studio seller agent ("Elitr Desk Brief"), self-hosted on BSC mainnet at desk.elitr.xyz
 docker/              agent.Dockerfile (both agents), web.Dockerfile
+deploy/              production ops: systemd watchdog (restart + health checks) and nightly data backup
+video/               the demo film (Remotion + ElevenLabs), its script, scenes and capture pipeline
 docs/                deploy guide, DX evidence log, API reference snapshots
 data/                runtime state + event logs (git-ignored, Docker volume)
 ```
@@ -378,12 +398,13 @@ data/                runtime state + event logs (git-ignored, Docker volume)
 ## More docs
 
 - [`ARCHITECTURE.md`](ARCHITECTURE.md): how it works, module by module.
-- [`DEVELOPER_EXPERIENCE.md`](DEVELOPER_EXPERIENCE.md): developer experience report (written by the team in their own words).
+- [`DEVELOPER_EXPERIENCE.md`](DEVELOPER_EXPERIENCE.md): developer experience notes; the final report was submitted through the hackathon's form.
 - [`docs/dx-raw-log.md`](docs/dx-raw-log.md): timestamped raw evidence behind the DX report.
 - [`docs/dx-evidence.md`](docs/dx-evidence.md): that evidence sorted by DX report question.
 - [`docs/agentic-wallet.md`](docs/agentic-wallet.md): Elitr Skill for Binance Agentic Wallet, install + paid-run runbook.
 - [`docs/agent-studio.md`](docs/agent-studio.md): BNB Agent Studio + ERC-8004 setup.
 - [`docs/deploy.md`](docs/deploy.md): alternative deployments (Docker compose, Railway / Fly.io, VPS).
 - [`studio/README.md`](studio/README.md): Elitr Desk Brief on BNB Agent Studio.
+- [`video/README.md`](video/README.md): how the demo film was made, and where every number and clip in it comes from.
 
 License: none chosen yet.
