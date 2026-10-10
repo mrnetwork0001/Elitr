@@ -398,7 +398,7 @@ data/                runtime state + event logs (git-ignored, Docker volume)
 ## More docs
 
 - [`ARCHITECTURE.md`](ARCHITECTURE.md): how it works, module by module.
-- [`DEVELOPER_EXPERIENCE.md`](DEVELOPER_EXPERIENCE.md): developer experience notes; the final report was submitted through the hackathon's form.
+- [`DEVELOPER_EXPERIENCE.md`](DEVELOPER_EXPERIENCE.md): the evidence record behind the team's Developer Experience Report (submitted through the hackathon's form).
 - [`docs/dx-raw-log.md`](docs/dx-raw-log.md): timestamped raw evidence behind the DX report.
 - [`docs/dx-evidence.md`](docs/dx-evidence.md): that evidence sorted by DX report question.
 - [`docs/agentic-wallet.md`](docs/agentic-wallet.md): Elitr Skill for Binance Agentic Wallet, install + paid-run runbook.
@@ -407,4 +407,4 @@ data/                runtime state + event logs (git-ignored, Docker volume)
 - [`studio/README.md`](studio/README.md): Elitr Desk Brief on BNB Agent Studio.
 - [`video/README.md`](video/README.md): how the demo film was made, and where every number and clip in it comes from.
 
-License: none chosen yet.
+License: [MIT](LICENSE).
