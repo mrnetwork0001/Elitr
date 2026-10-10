@@ -4,6 +4,7 @@ import { K, T } from "../timing";
 import { mono, SCENE_LABEL, SCENE_TONE, TONE } from "../theme";
 import { clamp } from "./motion";
 
+// (no timecode: the top-right corner stays clear)
 const tc = (f: number) => {
   const s = Math.floor(f / T.fps);
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -25,7 +26,6 @@ export const Chrome: React.FC<{ hideAfter?: number }> = ({ hideAfter }) => {
         <span style={{ opacity: 0.85 }}>ELITR // agent desk</span>
         <span style={{ marginLeft: 22, opacity: tagIn }}>{SCENE_LABEL[sc.id]}</span>
       </div>
-      <div style={{ ...base, right: 48, top: 36 }}>ELITR_DEMO.MOV&nbsp;&nbsp;{tc(f)}</div>
       <div style={{ ...base, left: 48, bottom: 34, fontSize: 13 }}>bnb hack · tokenized stocks edition · bsc mainnet</div>
       <div style={{ ...base, right: 48, bottom: 34, fontSize: 13 }}>elitr.xyz</div>
     </AbsoluteFill>

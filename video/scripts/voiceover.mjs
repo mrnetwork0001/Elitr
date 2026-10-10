@@ -34,6 +34,9 @@ const SAY = [
   [/^BNB(\W*)$/, "B-N-B$1"],
   [/^ERC-8004(\W*)$/, "E-R-C-eight-thousand-four$1"],
   [/^API(\W*)$/, "A-P-I$1"],
+  // "live" the adjective (rhymes with "five"), never the verb.
+  [/^Live(\W*)$/, "Lyve$1"],
+  [/^live(\W*)$/, "lyve$1"],
 ];
 const spoken = (text) => text.split(" ").map((w) => SAY.reduce((s, [re, to]) => (re.test(s) ? s.replace(re, to) : s), w)).join(" ");
 

@@ -1,10 +1,10 @@
 # Elitr demo film
 
-A 2:59 film (1920×1080, 60 fps) made with [Remotion](https://www.remotion.dev) for the judges of the **BNB Hack: Tokenized Stocks Edition**. It covers the problem (tokenized stocks trade around the clock while Wall Street is closed, and an AI agent has no way to buy information and judge whom to trust), Elitr working live on BSC mainnet, and what makes it different.
+A 2:58 film (3840×2160 master and 1920×1080, 60 fps) made with [Remotion](https://www.remotion.dev) for the judges of the **BNB Hack: Tokenized Stocks Edition**. It covers the problem (tokenized stocks trade around the clock while Wall Street is closed, and an AI agent has no way to buy information and judge whom to trust), Elitr working live on BSC mainnet, and what makes it different.
 
 The film's motif is **the tape**: a stock-ticker tape that carries real desk events instead of quotes ("402 payment required · paid 0.01 usdt · settled on bsc · signal metab 48 neutral · hold"). Elitr's mark is six slanted bars, so at "Meet Elitr" six tapes, one per traded bStock, collapse into the six bars. The film opens on the status code the tape is about: HTTP 402 Payment Required, reserved in 1997 and answered here by agents over Binance b402.
 
-Outputs (in `out/`, not committed): `elitr-demo-1080p.mp4` and `elitr-thumbnail.png`. YouTube title, description and chapters are at the end of this file.
+Outputs (in `out/`, not committed): `elitr-demo-4k.mp4` (master), `elitr-demo-1080p.mp4` (Lanczos downscale of the master), `elitr-thumbnail.png` and `elitr-thumbnail-4k.png`. YouTube title, description and chapters are at the end of this file.
 
 ## What is real
 
@@ -41,7 +41,7 @@ Outputs (in `out/`, not committed): `elitr-demo-1080p.mp4` and `elitr-thumbnail.
 - **Elitr:** the six-bar mark from `apps/web/components/landing/Hero.tsx`, redrawn as an animatable SVG (`src/ui/Mark.tsx`); the background of the close is Elitr's own hero art (`apps/web/public/hero.jpg`).
 
 **Voice, music and sound.** All from ElevenLabs.
-- **Narration:** **Daniel** (premade, id `onwK4e9ZLuTAKqWW03F9`), model `eleven_multilingual_v2`, via `/v1/text-to-speech/{voice}/with-timestamps`, every line normalised to −16 LUFS. A few words are respelled for the voice only (for example "Ee-leeter" for Elitr, "E-R-C-eight-thousand-four" for ERC-8004), so captions keep the real spelling.
+- **Narration:** **Daniel** (premade, id `onwK4e9ZLuTAKqWW03F9`), model `eleven_multilingual_v2`, via `/v1/text-to-speech/{voice}/with-timestamps`, every line normalised to −16 LUFS. A few words are respelled for the voice only (for example "Ee-leeter" for Elitr, "E-R-C-eight-thousand-four" for ERC-8004, "Lyve" so "live" rhymes with "five"), so captions keep the real spelling.
 - **The server's line** ("Four oh two. Payment required.") is a second voice, **River** (premade, id `SAz9YHcvj6GT2YYXdXww`), band-limited like a machine on a terminal (`scripts/vofx.mjs`).
 - **Score:** the ElevenLabs Music API with a 12-section composition plan that follows the film's timeline (`scripts/music.mjs`).
 - **Sound effects:** 17, made with `/v1/sound-generation` (`scripts/sfx.mjs`).
@@ -60,9 +60,10 @@ node scripts/music.mjs && node scripts/timing.mjs
 node scripts/sfx.mjs
 node scripts/capture.mjs && node scripts/encode.mjs   # live footage from https://elitr.xyz
 node scripts/stills.mjs                    # half-scale check stills + contact sheets (out/stills)
-npx remotion render src/index.ts Elitr out/elitr-demo-1080p-raw.mp4 --codec h264 --crf 16 --x264-preset fast --image-format jpeg --jpeg-quality 95 --pixel-format yuv420p --audio-codec aac --audio-bitrate 320k
-node scripts/finish.mjs out/elitr-demo-1080p-raw.mp4 out/elitr-demo-1080p.mp4   # -14 LUFS, TP <= -1 dBTP
-npx remotion still src/index.ts Poster out/elitr-thumbnail.png
+npx remotion render src/index.ts Elitr out/elitr-demo-4k-raw.mp4 --scale 2 --codec h264 --crf 14 --x264-preset medium --image-format jpeg --jpeg-quality 100 --pixel-format yuv420p --audio-codec aac --audio-bitrate 320k
+node scripts/finish.mjs out/elitr-demo-4k-raw.mp4 out/elitr-demo-4k.mp4         # -14 LUFS, TP <= -1 dBTP
+ffmpeg -i out/elitr-demo-4k.mp4 -vf scale=1920:1080:flags=lanczos -c:v libx264 -crf 16 -preset slow -pix_fmt yuv420p -c:a copy -movflags +faststart out/elitr-demo-1080p.mp4
+npx remotion still src/index.ts Poster out/elitr-thumbnail.png && npx remotion still src/index.ts Poster out/elitr-thumbnail-4k.png --scale 2
 ```
 
 The film folder is outside the pnpm workspace (`pnpm-workspace.yaml` lists only `apps/*` and `packages/*`), and its `node_modules`, renders, caches and footage are git-ignored, so the app's build never sees it.
@@ -84,10 +85,10 @@ BNB Agent Studio agent: https://desk.elitr.xyz
 0:27 The weekend gap
 0:42 Meet Elitr
 0:50 The sellers
-1:03 One b402 purchase
-1:22 Keeping score with ERC-8004
-1:44 Fail closed
-1:58 Live on mainnet
-2:14 Agentic Wallet and Agent Studio
-2:28 Why it's different
+1:02 One b402 purchase
+1:21 Keeping score with ERC-8004
+1:43 Fail closed
+1:57 Live on mainnet
+2:13 Agentic Wallet and Agent Studio
+2:27 Why it's different
 2:44 elitr.xyz

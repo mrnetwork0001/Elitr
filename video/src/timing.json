@@ -1,6 +1,6 @@
 {
  "fps": 60,
- "totalFrames": 10740,
+ "totalFrames": 10672,
  "bpm": 112,
  "beats": [
   2,
@@ -334,10 +334,7 @@
   10545,
   10577,
   10609,
-  10641,
-  10673,
-  10705,
-  10738
+  10641
  ],
  "music": {
   "file": "audio/music.mp3",
@@ -919,129 +916,129 @@
   {
    "id": "sellers",
    "from": 3044,
-   "durationInFrames": 758,
+   "durationInFrames": 719,
    "lines": [
     {
      "voice": "narrator",
      "text": "Two analyst agents sell signals. One reads the news with Claude. The other watches live swaps on PancakeSwap. Each call costs one cent.",
      "file": "audio/vo/sellers_0.mp3",
      "startFrame": 3068,
-     "durationFrames": 703,
+     "durationFrames": 664,
      "words": [
       {
        "word": "Two",
        "start": 3068,
-       "end": 3086
+       "end": 3085
       },
       {
        "word": "analyst",
-       "start": 3093,
-       "end": 3118
+       "start": 3092,
+       "end": 3117
       },
       {
        "word": "agents",
-       "start": 3121,
-       "end": 3143
+       "start": 3120,
+       "end": 3144
       },
       {
        "word": "sell",
-       "start": 3156,
-       "end": 3174
+       "start": 3153,
+       "end": 3168
       },
       {
        "word": "signals.",
-       "start": 3181,
-       "end": 3225
+       "start": 3172,
+       "end": 3215
       },
       {
        "word": "One",
-       "start": 3248,
-       "end": 3265
+       "start": 3238,
+       "end": 3253
       },
       {
        "word": "reads",
-       "start": 3269,
-       "end": 3287
+       "start": 3256,
+       "end": 3271
       },
       {
        "word": "the",
-       "start": 3290,
-       "end": 3294
+       "start": 3274,
+       "end": 3278
       },
       {
        "word": "news",
-       "start": 3298,
-       "end": 3319
+       "start": 3282,
+       "end": 3301
       },
       {
        "word": "with",
-       "start": 3321,
-       "end": 3330
+       "start": 3303,
+       "end": 3312
       },
       {
        "word": "Claude.",
-       "start": 3333,
-       "end": 3372
+       "start": 3315,
+       "end": 3349
       },
       {
        "word": "The",
-       "start": 3392,
-       "end": 3400
+       "start": 3375,
+       "end": 3382
       },
       {
        "word": "other",
-       "start": 3403,
-       "end": 3419
+       "start": 3386,
+       "end": 3397
       },
       {
        "word": "watches",
-       "start": 3442,
-       "end": 3466
+       "start": 3400,
+       "end": 3418
       },
       {
        "word": "live",
-       "start": 3471,
-       "end": 3487
+       "start": 3423,
+       "end": 3440
       },
       {
        "word": "swaps",
-       "start": 3489,
-       "end": 3508
+       "start": 3442,
+       "end": 3464
       },
       {
        "word": "on",
-       "start": 3512,
-       "end": 3517
+       "start": 3476,
+       "end": 3486
       },
       {
        "word": "PancakeSwap.",
-       "start": 3522,
-       "end": 3578
+       "start": 3491,
+       "end": 3548
       },
       {
        "word": "Each",
-       "start": 3604,
-       "end": 3618
+       "start": 3571,
+       "end": 3583
       },
       {
        "word": "call",
-       "start": 3621,
-       "end": 3641
+       "start": 3587,
+       "end": 3605
       },
       {
        "word": "costs",
-       "start": 3648,
-       "end": 3677
+       "start": 3625,
+       "end": 3653
       },
       {
        "word": "one",
-       "start": 3700,
-       "end": 3720
+       "start": 3670,
+       "end": 3686
       },
       {
        "word": "cent.",
-       "start": 3724,
-       "end": 3770
+       "start": 3689,
+       "end": 3731
       }
      ]
     }
@@ -1049,45 +1046,45 @@
   },
   {
    "id": "pay",
-   "from": 3802,
+   "from": 3763,
    "durationInFrames": 1139,
    "lines": [
     {
      "voice": "narrator",
      "text": "Our trader asks for a signal.",
      "file": "audio/vo/pay_0.mp3",
-     "startFrame": 3826,
+     "startFrame": 3787,
      "durationFrames": 140,
      "words": [
       {
        "word": "Our",
-       "start": 3826,
-       "end": 3837
+       "start": 3787,
+       "end": 3798
       },
       {
        "word": "trader",
-       "start": 3840,
-       "end": 3859
+       "start": 3801,
+       "end": 3820
       },
       {
        "word": "asks",
-       "start": 3863,
-       "end": 3889
+       "start": 3824,
+       "end": 3850
       },
       {
        "word": "for",
-       "start": 3899,
-       "end": 3909
+       "start": 3860,
+       "end": 3870
       },
       {
        "word": "a",
-       "start": 3912,
-       "end": 3914
+       "start": 3873,
+       "end": 3875
       },
       {
        "word": "signal.",
-       "start": 3919,
-       "end": 3965
+       "start": 3880,
+       "end": 3926
       }
      ]
     },
@@ -1095,33 +1092,33 @@
      "voice": "server",
      "text": "Four oh two. Payment required.",
      "file": "audio/vo/pay_1.mp3",
-     "startFrame": 3997,
+     "startFrame": 3958,
      "durationFrames": 113,
      "words": [
       {
        "word": "Four",
-       "start": 3997,
-       "end": 4012
+       "start": 3958,
+       "end": 3973
       },
       {
        "word": "oh",
-       "start": 4016,
-       "end": 4020
+       "start": 3977,
+       "end": 3981
       },
       {
        "word": "two.",
-       "start": 4022,
-       "end": 4042
+       "start": 3983,
+       "end": 4003
       },
       {
        "word": "Payment",
-       "start": 4044,
-       "end": 4062
+       "start": 4005,
+       "end": 4023
       },
       {
        "word": "required.",
-       "start": 4064,
-       "end": 4108
+       "start": 4025,
+       "end": 4069
       }
      ]
     },
@@ -1129,123 +1126,123 @@
      "voice": "narrator",
      "text": "It signs a USDT payment, Binance's b402 facilitator settles it on BSC, and the signal arrives. One hundred thirty-seven paid signals so far.",
      "file": "audio/vo/pay_2.mp3",
-     "startFrame": 4140,
+     "startFrame": 4101,
      "durationFrames": 770,
      "words": [
       {
        "word": "It",
-       "start": 4140,
-       "end": 4150
+       "start": 4101,
+       "end": 4111
       },
       {
        "word": "signs",
-       "start": 4153,
-       "end": 4177
+       "start": 4114,
+       "end": 4138
       },
       {
        "word": "a",
-       "start": 4180,
-       "end": 4182
+       "start": 4141,
+       "end": 4143
       },
       {
        "word": "USDT",
-       "start": 4189,
-       "end": 4249
+       "start": 4150,
+       "end": 4210
       },
       {
        "word": "payment,",
-       "start": 4262,
-       "end": 4304
+       "start": 4223,
+       "end": 4265
       },
       {
        "word": "Binance's",
-       "start": 4323,
-       "end": 4361
+       "start": 4284,
+       "end": 4322
       },
       {
        "word": "b402",
-       "start": 4365,
-       "end": 4420
+       "start": 4326,
+       "end": 4381
       },
       {
        "word": "facilitator",
-       "start": 4424,
-       "end": 4467
+       "start": 4385,
+       "end": 4428
       },
       {
        "word": "settles",
-       "start": 4486,
-       "end": 4509
+       "start": 4447,
+       "end": 4470
       },
       {
        "word": "it",
-       "start": 4512,
-       "end": 4517
+       "start": 4473,
+       "end": 4478
       },
       {
        "word": "on",
-       "start": 4521,
-       "end": 4529
+       "start": 4482,
+       "end": 4490
       },
       {
        "word": "BSC,",
-       "start": 4534,
-       "end": 4591
+       "start": 4495,
+       "end": 4552
       },
       {
        "word": "and",
-       "start": 4611,
-       "end": 4619
+       "start": 4572,
+       "end": 4580
       },
       {
        "word": "the",
-       "start": 4622,
-       "end": 4626
+       "start": 4583,
+       "end": 4587
       },
       {
        "word": "signal",
-       "start": 4629,
-       "end": 4653
+       "start": 4590,
+       "end": 4614
       },
       {
        "word": "arrives.",
-       "start": 4660,
-       "end": 4707
+       "start": 4621,
+       "end": 4668
       },
       {
        "word": "One",
-       "start": 4730,
-       "end": 4741
+       "start": 4691,
+       "end": 4702
       },
       {
        "word": "hundred",
-       "start": 4743,
-       "end": 4758
+       "start": 4704,
+       "end": 4719
       },
       {
        "word": "thirty-seven",
-       "start": 4761,
-       "end": 4796
+       "start": 4722,
+       "end": 4757
       },
       {
        "word": "paid",
-       "start": 4801,
-       "end": 4817
+       "start": 4762,
+       "end": 4778
       },
       {
        "word": "signals",
-       "start": 4821,
-       "end": 4847
+       "start": 4782,
+       "end": 4808
       },
       {
        "word": "so",
-       "start": 4850,
-       "end": 4862
+       "start": 4811,
+       "end": 4823
       },
       {
        "word": "far.",
-       "start": 4867,
-       "end": 4909
+       "start": 4828,
+       "end": 4870
       }
      ]
     }
@@ -1253,240 +1250,240 @@
   },
   {
    "id": "trust",
-   "from": 4941,
+   "from": 4902,
    "durationInFrames": 1302,
    "lines": [
     {
      "voice": "narrator",
      "text": "Then it keeps score. When a call's time is up, the trader checks the pool. Right, or wrong? The flow analyst is thirteen for twenty-one. The news analyst is zero for six, so it rarely gets picked. Every verdict goes on chain as ERC-8004 reputation.",
      "file": "audio/vo/trust_0.mp3",
-     "startFrame": 4965,
+     "startFrame": 4926,
      "durationFrames": 1246,
      "words": [
       {
        "word": "Then",
-       "start": 4965,
-       "end": 4987
+       "start": 4926,
+       "end": 4948
       },
       {
        "word": "it",
-       "start": 4997,
-       "end": 5007
+       "start": 4958,
+       "end": 4968
       },
       {
        "word": "keeps",
-       "start": 5010,
-       "end": 5027
+       "start": 4971,
+       "end": 4988
       },
       {
        "word": "score.",
-       "start": 5029,
-       "end": 5065
+       "start": 4990,
+       "end": 5026
       },
       {
        "word": "When",
-       "start": 5088,
-       "end": 5099
+       "start": 5049,
+       "end": 5060
       },
       {
        "word": "a",
-       "start": 5101,
-       "end": 5102
+       "start": 5062,
+       "end": 5063
       },
       {
        "word": "call's",
-       "start": 5106,
-       "end": 5125
+       "start": 5067,
+       "end": 5086
       },
       {
        "word": "time",
-       "start": 5127,
-       "end": 5142
+       "start": 5088,
+       "end": 5103
       },
       {
        "word": "is",
-       "start": 5144,
-       "end": 5150
+       "start": 5105,
+       "end": 5111
       },
       {
        "word": "up,",
-       "start": 5153,
-       "end": 5175
+       "start": 5114,
+       "end": 5136
       },
       {
        "word": "the",
-       "start": 5188,
-       "end": 5194
+       "start": 5149,
+       "end": 5155
       },
       {
        "word": "trader",
-       "start": 5197,
-       "end": 5215
+       "start": 5158,
+       "end": 5176
       },
       {
        "word": "checks",
-       "start": 5217,
-       "end": 5232
+       "start": 5178,
+       "end": 5193
       },
       {
        "word": "the",
-       "start": 5235,
-       "end": 5239
+       "start": 5196,
+       "end": 5200
       },
       {
        "word": "pool.",
-       "start": 5242,
-       "end": 5274
+       "start": 5203,
+       "end": 5235
       },
       {
        "word": "Right,",
-       "start": 5294,
-       "end": 5323
+       "start": 5255,
+       "end": 5284
       },
       {
        "word": "or",
-       "start": 5334,
-       "end": 5343
+       "start": 5295,
+       "end": 5304
       },
       {
        "word": "wrong?",
-       "start": 5345,
-       "end": 5376
+       "start": 5306,
+       "end": 5337
       },
       {
        "word": "The",
-       "start": 5399,
-       "end": 5405
+       "start": 5360,
+       "end": 5366
       },
       {
        "word": "flow",
-       "start": 5408,
-       "end": 5420
+       "start": 5369,
+       "end": 5381
       },
       {
        "word": "analyst",
-       "start": 5424,
-       "end": 5451
+       "start": 5385,
+       "end": 5412
       },
       {
        "word": "is",
-       "start": 5456,
-       "end": 5465
+       "start": 5417,
+       "end": 5426
       },
       {
        "word": "thirteen",
-       "start": 5469,
-       "end": 5498
+       "start": 5430,
+       "end": 5459
       },
       {
        "word": "for",
-       "start": 5503,
-       "end": 5509
+       "start": 5464,
+       "end": 5470
       },
       {
        "word": "twenty-one.",
-       "start": 5511,
-       "end": 5560
+       "start": 5472,
+       "end": 5521
       },
       {
        "word": "The",
-       "start": 5579,
-       "end": 5586
+       "start": 5540,
+       "end": 5547
       },
       {
        "word": "news",
-       "start": 5591,
-       "end": 5604
+       "start": 5552,
+       "end": 5565
       },
       {
        "word": "analyst",
-       "start": 5607,
-       "end": 5632
+       "start": 5568,
+       "end": 5593
       },
       {
        "word": "is",
-       "start": 5643,
-       "end": 5652
+       "start": 5604,
+       "end": 5613
       },
       {
        "word": "zero",
-       "start": 5655,
-       "end": 5676
+       "start": 5616,
+       "end": 5637
       },
       {
        "word": "for",
-       "start": 5680,
-       "end": 5687
+       "start": 5641,
+       "end": 5648
       },
       {
        "word": "six,",
-       "start": 5690,
-       "end": 5726
+       "start": 5651,
+       "end": 5687
       },
       {
        "word": "so",
-       "start": 5745,
-       "end": 5754
+       "start": 5706,
+       "end": 5715
       },
       {
        "word": "it",
-       "start": 5758,
-       "end": 5763
+       "start": 5719,
+       "end": 5724
       },
       {
        "word": "rarely",
-       "start": 5767,
-       "end": 5786
+       "start": 5728,
+       "end": 5747
       },
       {
        "word": "gets",
-       "start": 5790,
-       "end": 5803
+       "start": 5751,
+       "end": 5764
       },
       {
        "word": "picked.",
-       "start": 5807,
-       "end": 5841
+       "start": 5768,
+       "end": 5802
       },
       {
        "word": "Every",
-       "start": 5883,
-       "end": 5902
+       "start": 5844,
+       "end": 5863
       },
       {
        "word": "verdict",
-       "start": 5906,
-       "end": 5928
+       "start": 5867,
+       "end": 5889
       },
       {
        "word": "goes",
-       "start": 5931,
-       "end": 5944
+       "start": 5892,
+       "end": 5905
       },
       {
        "word": "on",
-       "start": 5949,
-       "end": 5954
+       "start": 5910,
+       "end": 5915
       },
       {
        "word": "chain",
-       "start": 5958,
-       "end": 5983
+       "start": 5919,
+       "end": 5944
       },
       {
        "word": "as",
-       "start": 6003,
-       "end": 6015
+       "start": 5964,
+       "end": 5976
       },
       {
        "word": "ERC-8004",
-       "start": 6020,
-       "end": 6139
+       "start": 5981,
+       "end": 6100
       },
       {
        "word": "reputation.",
-       "start": 6144,
-       "end": 6211
+       "start": 6105,
+       "end": 6172
       }
      ]
     }
@@ -1494,130 +1491,130 @@
   },
   {
    "id": "risk",
-   "from": 6243,
+   "from": 6204,
    "durationInFrames": 847,
    "lines": [
     {
      "voice": "narrator",
      "text": "A signal alone never trades. Fourteen hard checks come first. Then the Transaction API dry-runs the swap. If anything fails, nothing is signed.",
      "file": "audio/vo/risk_0.mp3",
-     "startFrame": 6267,
+     "startFrame": 6228,
      "durationFrames": 792,
      "words": [
       {
        "word": "A",
-       "start": 6267,
-       "end": 6271
+       "start": 6228,
+       "end": 6232
       },
       {
        "word": "signal",
-       "start": 6276,
-       "end": 6296
+       "start": 6237,
+       "end": 6257
       },
       {
        "word": "alone",
-       "start": 6300,
-       "end": 6333
+       "start": 6261,
+       "end": 6294
       },
       {
        "word": "never",
-       "start": 6348,
-       "end": 6362
+       "start": 6309,
+       "end": 6323
       },
       {
        "word": "trades.",
-       "start": 6366,
-       "end": 6408
+       "start": 6327,
+       "end": 6369
       },
       {
        "word": "Fourteen",
-       "start": 6431,
-       "end": 6461
+       "start": 6392,
+       "end": 6422
       },
       {
        "word": "hard",
-       "start": 6465,
-       "end": 6478
+       "start": 6426,
+       "end": 6439
       },
       {
        "word": "checks",
-       "start": 6480,
-       "end": 6502
+       "start": 6441,
+       "end": 6463
       },
       {
        "word": "come",
-       "start": 6514,
-       "end": 6530
+       "start": 6475,
+       "end": 6491
       },
       {
        "word": "first.",
-       "start": 6534,
-       "end": 6576
+       "start": 6495,
+       "end": 6537
       },
       {
        "word": "Then",
-       "start": 6602,
-       "end": 6613
+       "start": 6563,
+       "end": 6574
       },
       {
        "word": "the",
-       "start": 6616,
-       "end": 6620
+       "start": 6577,
+       "end": 6581
       },
       {
        "word": "Transaction",
-       "start": 6623,
-       "end": 6665
+       "start": 6584,
+       "end": 6626
       },
       {
        "word": "API",
-       "start": 6684,
-       "end": 6730
+       "start": 6645,
+       "end": 6691
       },
       {
        "word": "dry-runs",
-       "start": 6757,
-       "end": 6794
+       "start": 6718,
+       "end": 6755
       },
       {
        "word": "the",
-       "start": 6797,
-       "end": 6801
+       "start": 6758,
+       "end": 6762
       },
       {
        "word": "swap.",
-       "start": 6804,
-       "end": 6837
+       "start": 6765,
+       "end": 6798
       },
       {
        "word": "If",
-       "start": 6867,
-       "end": 6876
+       "start": 6828,
+       "end": 6837
       },
       {
        "word": "anything",
-       "start": 6879,
-       "end": 6901
+       "start": 6840,
+       "end": 6862
       },
       {
        "word": "fails,",
-       "start": 6906,
-       "end": 6945
+       "start": 6867,
+       "end": 6906
       },
       {
        "word": "nothing",
-       "start": 6968,
-       "end": 6991
+       "start": 6929,
+       "end": 6952
       },
       {
        "word": "is",
-       "start": 6998,
-       "end": 7005
+       "start": 6959,
+       "end": 6966
       },
       {
        "word": "signed.",
-       "start": 7009,
-       "end": 7058
+       "start": 6970,
+       "end": 7019
       }
      ]
     }
@@ -1625,180 +1622,180 @@
   },
   {
    "id": "live",
-   "from": 7090,
+   "from": 7051,
    "durationInFrames": 967,
    "lines": [
     {
      "voice": "narrator",
      "text": "And it trades for real, on mainnet. It bought Nvidia's token. When the price fell two percent below cost, the stop-loss fired, and the trader sold on its own. Small sizes, on purpose.",
      "file": "audio/vo/live_0.mp3",
-     "startFrame": 7114,
+     "startFrame": 7075,
      "durationFrames": 912,
      "words": [
       {
        "word": "And",
-       "start": 7114,
-       "end": 7124
+       "start": 7075,
+       "end": 7085
       },
       {
        "word": "it",
-       "start": 7129,
-       "end": 7133
+       "start": 7090,
+       "end": 7094
       },
       {
        "word": "trades",
-       "start": 7135,
-       "end": 7156
+       "start": 7096,
+       "end": 7117
       },
       {
        "word": "for",
-       "start": 7159,
-       "end": 7166
+       "start": 7120,
+       "end": 7127
       },
       {
        "word": "real,",
-       "start": 7171,
-       "end": 7200
+       "start": 7132,
+       "end": 7161
       },
       {
        "word": "on",
-       "start": 7210,
-       "end": 7223
+       "start": 7171,
+       "end": 7184
       },
       {
        "word": "mainnet.",
-       "start": 7229,
-       "end": 7273
+       "start": 7190,
+       "end": 7234
       },
       {
        "word": "It",
-       "start": 7292,
-       "end": 7303
+       "start": 7253,
+       "end": 7264
       },
       {
        "word": "bought",
-       "start": 7306,
-       "end": 7324
+       "start": 7267,
+       "end": 7285
       },
       {
        "word": "Nvidia's",
-       "start": 7327,
-       "end": 7358
+       "start": 7288,
+       "end": 7319
       },
       {
        "word": "token.",
-       "start": 7361,
-       "end": 7402
+       "start": 7322,
+       "end": 7363
       },
       {
        "word": "When",
-       "start": 7429,
-       "end": 7440
+       "start": 7390,
+       "end": 7401
       },
       {
        "word": "the",
-       "start": 7442,
-       "end": 7446
+       "start": 7403,
+       "end": 7407
       },
       {
        "word": "price",
-       "start": 7449,
-       "end": 7469
+       "start": 7410,
+       "end": 7430
       },
       {
        "word": "fell",
-       "start": 7471,
-       "end": 7485
+       "start": 7432,
+       "end": 7446
       },
       {
        "word": "two",
-       "start": 7489,
-       "end": 7499
+       "start": 7450,
+       "end": 7460
       },
       {
        "word": "percent",
-       "start": 7503,
-       "end": 7522
+       "start": 7464,
+       "end": 7483
       },
       {
        "word": "below",
-       "start": 7525,
-       "end": 7540
+       "start": 7486,
+       "end": 7501
       },
       {
        "word": "cost,",
-       "start": 7546,
-       "end": 7581
+       "start": 7507,
+       "end": 7542
       },
       {
        "word": "the",
-       "start": 7600,
-       "end": 7607
+       "start": 7561,
+       "end": 7568
       },
       {
        "word": "stop-loss",
-       "start": 7611,
-       "end": 7643
+       "start": 7572,
+       "end": 7604
       },
       {
        "word": "fired,",
-       "start": 7646,
-       "end": 7681
+       "start": 7607,
+       "end": 7642
       },
       {
        "word": "and",
-       "start": 7692,
-       "end": 7701
+       "start": 7653,
+       "end": 7662
       },
       {
        "word": "the",
-       "start": 7703,
-       "end": 7708
+       "start": 7664,
+       "end": 7669
       },
       {
        "word": "trader",
-       "start": 7710,
-       "end": 7733
+       "start": 7671,
+       "end": 7694
       },
       {
        "word": "sold",
-       "start": 7740,
-       "end": 7767
+       "start": 7701,
+       "end": 7728
       },
       {
        "word": "on",
-       "start": 7779,
-       "end": 7792
+       "start": 7740,
+       "end": 7753
       },
       {
        "word": "its",
-       "start": 7795,
-       "end": 7804
+       "start": 7756,
+       "end": 7765
       },
       {
        "word": "own.",
-       "start": 7809,
-       "end": 7842
+       "start": 7770,
+       "end": 7803
       },
       {
        "word": "Small",
-       "start": 7868,
-       "end": 7896
+       "start": 7829,
+       "end": 7857
       },
       {
        "word": "sizes,",
-       "start": 7903,
-       "end": 7945
+       "start": 7864,
+       "end": 7906
       },
       {
        "word": "on",
-       "start": 7954,
-       "end": 7966
+       "start": 7915,
+       "end": 7927
       },
       {
        "word": "purpose.",
-       "start": 7971,
-       "end": 8025
+       "start": 7932,
+       "end": 7986
       }
      ]
     }
@@ -1806,175 +1803,175 @@
   },
   {
    "id": "shop",
-   "from": 8057,
-   "durationInFrames": 825,
+   "from": 8018,
+   "durationInFrames": 811,
    "lines": [
     {
      "voice": "narrator",
      "text": "Any agent can shop here. A Binance Agentic Wallet paid for a signal in three and a half seconds. And our BNB Agent Studio agent resells a live brief of the desk.",
      "file": "audio/vo/shop_0.mp3",
-     "startFrame": 8081,
-     "durationFrames": 770,
+     "startFrame": 8042,
+     "durationFrames": 756,
      "words": [
       {
        "word": "Any",
-       "start": 8081,
-       "end": 8098
+       "start": 8042,
+       "end": 8057
       },
       {
        "word": "agent",
-       "start": 8103,
-       "end": 8126
+       "start": 8062,
+       "end": 8083
       },
       {
        "word": "can",
-       "start": 8130,
-       "end": 8137
+       "start": 8086,
+       "end": 8094
       },
       {
        "word": "shop",
-       "start": 8140,
-       "end": 8153
+       "start": 8097,
+       "end": 8110
       },
       {
        "word": "here.",
-       "start": 8158,
-       "end": 8179
+       "start": 8114,
+       "end": 8137
       },
       {
        "word": "A",
-       "start": 8202,
-       "end": 8207
+       "start": 8164,
+       "end": 8168
       },
       {
        "word": "Binance",
-       "start": 8214,
-       "end": 8249
+       "start": 8175,
+       "end": 8206
       },
       {
        "word": "Agentic",
-       "start": 8250,
-       "end": 8273
+       "start": 8208,
+       "end": 8230
       },
       {
        "word": "Wallet",
-       "start": 8276,
-       "end": 8293
+       "start": 8234,
+       "end": 8252
       },
       {
        "word": "paid",
-       "start": 8308,
-       "end": 8325
+       "start": 8263,
+       "end": 8279
       },
       {
        "word": "for",
-       "start": 8328,
-       "end": 8335
+       "start": 8282,
+       "end": 8289
       },
       {
        "word": "a",
-       "start": 8337,
-       "end": 8339
+       "start": 8291,
+       "end": 8293
       },
       {
        "word": "signal",
-       "start": 8344,
-       "end": 8368
+       "start": 8297,
+       "end": 8321
       },
       {
        "word": "in",
-       "start": 8383,
-       "end": 8394
+       "start": 8333,
+       "end": 8342
       },
       {
        "word": "three",
-       "start": 8399,
-       "end": 8418
+       "start": 8347,
+       "end": 8362
       },
       {
        "word": "and",
-       "start": 8420,
-       "end": 8425
+       "start": 8364,
+       "end": 8368
       },
       {
        "word": "a",
-       "start": 8429,
-       "end": 8431
+       "start": 8370,
+       "end": 8372
       },
       {
        "word": "half",
-       "start": 8435,
-       "end": 8448
+       "start": 8376,
+       "end": 8388
       },
       {
        "word": "seconds.",
-       "start": 8452,
-       "end": 8492
+       "start": 8392,
+       "end": 8432
       },
       {
        "word": "And",
-       "start": 8518,
-       "end": 8528
+       "start": 8455,
+       "end": 8465
       },
       {
        "word": "our",
-       "start": 8531,
-       "end": 8538
+       "start": 8469,
+       "end": 8477
       },
       {
        "word": "BNB",
-       "start": 8541,
-       "end": 8576
+       "start": 8481,
+       "end": 8518
       },
       {
        "word": "Agent",
-       "start": 8588,
-       "end": 8609
+       "start": 8532,
+       "end": 8555
       },
       {
        "word": "Studio",
-       "start": 8612,
-       "end": 8640
+       "start": 8560,
+       "end": 8587
       },
       {
        "word": "agent",
-       "start": 8644,
-       "end": 8665
+       "start": 8592,
+       "end": 8617
       },
       {
        "word": "resells",
-       "start": 8685,
-       "end": 8721
+       "start": 8640,
+       "end": 8679
       },
       {
        "word": "a",
-       "start": 8725,
-       "end": 8727
+       "start": 8682,
+       "end": 8684
       },
       {
        "word": "live",
-       "start": 8734,
-       "end": 8759
+       "start": 8691,
+       "end": 8711
       },
       {
        "word": "brief",
-       "start": 8762,
-       "end": 8781
+       "start": 8714,
+       "end": 8732
       },
       {
        "word": "of",
-       "start": 8787,
-       "end": 8794
+       "start": 8736,
+       "end": 8743
       },
       {
        "word": "the",
-       "start": 8798,
-       "end": 8802
+       "start": 8746,
+       "end": 8750
       },
       {
        "word": "desk.",
-       "start": 8805,
-       "end": 8850
+       "start": 8753,
+       "end": 8797
       }
      ]
     }
@@ -1982,165 +1979,165 @@
   },
   {
    "id": "unique",
-   "from": 8882,
-   "durationInFrames": 1016,
+   "from": 8829,
+   "durationInFrames": 1020,
    "lines": [
     {
      "voice": "narrator",
      "text": "What makes Elitr different? It's real: every payment and every trade is a transaction on BSC you can check. It earns trust in public, on chain. And it fails closed.",
      "file": "audio/vo/unique_0.mp3",
-     "startFrame": 8906,
+     "startFrame": 8853,
      "durationFrames": 884,
      "words": [
       {
        "word": "What",
-       "start": 8906,
-       "end": 8919
+       "start": 8853,
+       "end": 8866
       },
       {
        "word": "makes",
-       "start": 8923,
-       "end": 8938
+       "start": 8870,
+       "end": 8885
       },
       {
        "word": "Elitr",
-       "start": 8945,
-       "end": 8967
+       "start": 8892,
+       "end": 8914
       },
       {
        "word": "different?",
-       "start": 8971,
-       "end": 9008
+       "start": 8918,
+       "end": 8955
       },
       {
        "word": "It's",
-       "start": 9036,
-       "end": 9048
+       "start": 8983,
+       "end": 8995
       },
       {
        "word": "real:",
-       "start": 9052,
-       "end": 9088
+       "start": 8999,
+       "end": 9035
       },
       {
        "word": "every",
-       "start": 9112,
-       "end": 9129
+       "start": 9059,
+       "end": 9076
       },
       {
        "word": "payment",
-       "start": 9133,
-       "end": 9161
+       "start": 9080,
+       "end": 9108
       },
       {
        "word": "and",
-       "start": 9169,
-       "end": 9178
+       "start": 9116,
+       "end": 9125
       },
       {
        "word": "every",
-       "start": 9183,
-       "end": 9199
+       "start": 9130,
+       "end": 9146
       },
       {
        "word": "trade",
-       "start": 9203,
-       "end": 9237
+       "start": 9150,
+       "end": 9184
       },
       {
        "word": "is",
-       "start": 9248,
-       "end": 9258
+       "start": 9195,
+       "end": 9205
       },
       {
        "word": "a",
-       "start": 9261,
-       "end": 9263
+       "start": 9208,
+       "end": 9210
       },
       {
        "word": "transaction",
-       "start": 9266,
-       "end": 9314
+       "start": 9213,
+       "end": 9261
       },
       {
        "word": "on",
-       "start": 9334,
-       "end": 9344
+       "start": 9281,
+       "end": 9291
       },
       {
        "word": "BSC",
-       "start": 9349,
-       "end": 9394
+       "start": 9296,
+       "end": 9341
       },
       {
        "word": "you",
-       "start": 9411,
-       "end": 9417
+       "start": 9358,
+       "end": 9364
       },
       {
        "word": "can",
-       "start": 9421,
-       "end": 9428
+       "start": 9368,
+       "end": 9375
       },
       {
        "word": "check.",
-       "start": 9432,
-       "end": 9463
+       "start": 9379,
+       "end": 9410
       },
       {
        "word": "It",
-       "start": 9490,
-       "end": 9500
+       "start": 9437,
+       "end": 9447
       },
       {
        "word": "earns",
-       "start": 9504,
-       "end": 9522
+       "start": 9451,
+       "end": 9469
       },
       {
        "word": "trust",
-       "start": 9526,
-       "end": 9551
+       "start": 9473,
+       "end": 9498
       },
       {
        "word": "in",
-       "start": 9558,
-       "end": 9566
+       "start": 9505,
+       "end": 9513
       },
       {
        "word": "public,",
-       "start": 9571,
-       "end": 9605
+       "start": 9518,
+       "end": 9552
       },
       {
        "word": "on",
-       "start": 9617,
-       "end": 9627
+       "start": 9564,
+       "end": 9574
       },
       {
        "word": "chain.",
-       "start": 9631,
-       "end": 9667
+       "start": 9578,
+       "end": 9614
       },
       {
        "word": "And",
-       "start": 9691,
-       "end": 9699
+       "start": 9638,
+       "end": 9646
       },
       {
        "word": "it",
-       "start": 9703,
-       "end": 9707
+       "start": 9650,
+       "end": 9654
       },
       {
        "word": "fails",
-       "start": 9711,
-       "end": 9729
+       "start": 9658,
+       "end": 9676
       },
       {
        "word": "closed.",
-       "start": 9733,
-       "end": 9789
+       "start": 9680,
+       "end": 9736
       }
      ]
     }
@@ -2148,90 +2145,90 @@
   },
   {
    "id": "close",
-   "from": 9898,
-   "durationInFrames": 842,
+   "from": 9849,
+   "durationInFrames": 823,
    "lines": [
     {
      "voice": "narrator",
      "text": "Elitr. Agents that pay for being right. Live now at elitr dot x y z.",
      "file": "audio/vo/close_0.mp3",
-     "startFrame": 9922,
-     "durationFrames": 519,
+     "startFrame": 9873,
+     "durationFrames": 499,
      "words": [
       {
        "word": "Elitr.",
-       "start": 9922,
-       "end": 9972
+       "start": 9873,
+       "end": 9925
       },
       {
        "word": "Agents",
-       "start": 10003,
-       "end": 10033
+       "start": 9955,
+       "end": 9987
       },
       {
        "word": "that",
-       "start": 10036,
-       "end": 10043
+       "start": 9990,
+       "end": 9999
       },
       {
        "word": "pay",
-       "start": 10047,
-       "end": 10067
+       "start": 10003,
+       "end": 10020
       },
       {
        "word": "for",
-       "start": 10073,
-       "end": 10084
+       "start": 10025,
+       "end": 10033
       },
       {
        "word": "being",
-       "start": 10087,
-       "end": 10102
+       "start": 10037,
+       "end": 10052
       },
       {
        "word": "right.",
-       "start": 10107,
-       "end": 10137
+       "start": 10058,
+       "end": 10090
       },
       {
        "word": "Live",
-       "start": 10173,
-       "end": 10189
+       "start": 10120,
+       "end": 10141
       },
       {
        "word": "now",
-       "start": 10193,
-       "end": 10211
+       "start": 10145,
+       "end": 10162
       },
       {
        "word": "at",
-       "start": 10231,
-       "end": 10243
+       "start": 10182,
+       "end": 10193
       },
       {
        "word": "elitr",
-       "start": 10248,
-       "end": 10286
+       "start": 10199,
+       "end": 10237
       },
       {
        "word": "dot",
-       "start": 10309,
-       "end": 10329
+       "start": 10260,
+       "end": 10276
       },
       {
        "word": "x",
-       "start": 10343,
-       "end": 10358
+       "start": 10287,
+       "end": 10299
       },
       {
        "word": "y",
-       "start": 10373,
-       "end": 10392
+       "start": 10310,
+       "end": 10318
       },
       {
        "word": "z.",
-       "start": 10398,
-       "end": 10440
+       "start": 10324,
+       "end": 10372
       }
      ]
     }
